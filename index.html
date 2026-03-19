@@ -1,1 +1,182 @@
 
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedRush - Online Araba Oyunları</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+</head>
+<body>
+    <!-- Login Ekranı -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-logo">
+                <h1>🏎️ SpeedRush</h1>
+                <p>Extreme Racing Experience</p>
+            </div>
+            <div class="login-form">
+                <input type="email" id="emailInput" placeholder="E-posta adresiniz">
+                <input type="password" id="passwordInput" placeholder="Şifreniz">
+                <button id="loginBtn" class="btn-primary">Giriş Yap</button>
+                <button id="registerBtn" class="btn-secondary">Kayıt Ol</button>
+                <div id="loginError" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ana Uygulama -->
+    <div id="mainApp" class="main-app hidden">
+        <!-- Üst Bar -->
+        <header class="top-bar">
+            <div class="profile-section" id="profileBtn">
+                <img src="https://via.placeholder.com/40" alt="Profil" id="userAvatar">
+                <span id="userName">Misafir</span>
+                <div class="level-badge">Lv.1</div>
+            </div>
+            
+            <div class="logo-center">
+                <h2>SpeedRush</h2>
+            </div>
+            
+            <button class="menu-btn" id="mainMenuBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </header>
+
+        <!-- Ana Menü Modal -->
+        <div id="mainMenuModal" class="modal hidden">
+            <div class="modal-content menu-modal">
+                <h3>Ana Menü</h3>
+                <nav>
+                    <a href="#" class="menu-item active" data-section="home">🏠 Ana Sayfa</a>
+                    <a href="#" class="menu-item" data-section="games">🎮 Oyunlar</a>
+                    <a href="#" class="menu-item" data-section="leaderboard">🏆 Sıralama</a>
+                    <a href="#" class="menu-item" data-section="garage">🚗 Garajım</a>
+                    <a href="#" class="menu-item" data-section="shop">🛒 Mağaza</a>
+                    <a href="#" class="menu-item" data-section="settings">⚙️ Ayarlar</a>
+                </nav>
+                <button id="logoutBtn" class="btn-logout">Çıkış Yap</button>
+            </div>
+        </div>
+
+        <!-- Profil Modal -->
+        <div id="profileModal" class="modal hidden">
+            <div class="modal-content profile-modal">
+                <div class="profile-header">
+                    <img src="https://via.placeholder.com/80" alt="Profil" id="profileAvatar">
+                    <h3 id="profileName">Kullanıcı Adı</h3>
+                    <p id="profileEmail">email@example.com</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-value" id="totalGames">0</span>
+                        <span class="stat-label">Oyun</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-value" id="totalWins">0</span>
+                        <span class="stat-label">Galibiyet</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-value" id="bestTime">--</span>
+                        <span class="stat-label">En İyi Süre</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-value" id="coins">0</span>
+                        <span class="stat-label">Coin</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ana İçerik -->
+        <main class="main-content">
+            <!-- Home Section -->
+            <section id="homeSection" class="section active">
+                <div class="hero-banner">
+                    <h1>🏎️ SpeedRush Racing</h1>
+                    <p>En hızlı pistlerde yarış, en iyi zamanları kır!</p>
+                    <button class="btn-play" onclick="startGame()">🎮 Hemen Oyna</button>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🏁</div>
+                        <h3>10+ Pist</h3>
+                        <p>Farklı zorluklarda yarış pistleri</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🚗</div>
+                        <h3>20+ Araba</h3>
+                        <p>Kilitle ve özelleştir</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🏆</div>
+                        <h3>Sıralama</h3>
+                        <p>Dünya genelinde yarış</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Games Section -->
+            <section id="gamesSection" class="section">
+                <h2 class="section-title">🎮 Oyun Modları</h2>
+                <div class="games-grid">
+                    <div class="game-card" onclick="startGame('time_trial')">
+                        <div class="game-preview">⏱️</div>
+                        <h3>Zaman Yarışı</h3>
+                        <p>En iyi zamanı yap</p>
+                    </div>
+                    <div class="game-card" onclick="startGame('circuit')">
+                        <div class="game-preview">🏁</div>
+                        <h3>Pist Yarışı</h3>
+                        <p>3 turda birinci ol</p>
+                    </div>
+                    <div class="game-card" onclick="startGame('drift')">
+                        <div class="game-preview">💨</div>
+                        <h3>Drift Modu</h3>
+                        <p>En uzun drifti yap</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Leaderboard Section -->
+            <section id="leaderboardSection" class="section">
+                <h2 class="section-title">🏆 Küresel Sıralama</h2>
+                <div class="leaderboard-tabs">
+                    <button class="tab-btn active" data-tab="weekly">Haftalık</button>
+                    <button class="tab-btn" data-tab="monthly">Aylık</button>
+                    <button class="tab-btn" data-tab="alltime">Tüm Zamanlar</button>
+                </div>
+                <div class="leaderboard-list" id="leaderboardList">
+                    <!-- Dinamik olarak doldurulacak -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Oyun Canvas -->
+        <div id="gameContainer" class="game-container hidden">
+            <canvas id="gameCanvas"></canvas>
+            <div class="game-ui">
+                <div class="game-stats">
+                    <div class="stat">⏱️ <span id="gameTime">00:00</span></div>
+                    <div class="stat">🏎️ <span id="gameSpeed">0</span> km/h</div>
+                    <div class="stat">💰 <span id="gameCoins">0</span></div>
+                </div>
+                <button class="btn-exit" onclick="exitGame()">✕ Çık</button>
+            </div>
+            <div class="game-controls-hint">
+                <p>⬆️ Hızlan | ⬇️ Yavaşla | ⬅️➡️ Direksiyon | SPACE Fren</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
