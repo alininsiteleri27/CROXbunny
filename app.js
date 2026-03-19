@@ -4,15 +4,15 @@
 
 // Firebase yapılandırması - BURAYA BİLGİLERİNİ GİR
 const firebaseConfig = {
-    apiKey: "SENIN_API_KEY",
-    authDomain: "SENIN_AUTH_DOMAIN",
-    databaseURL: "SENIN_DATABASE_URL",
-    projectId: "SENIN_PROJECT_ID",
-    storageBucket: "SENIN_STORAGE_BUCKET",
-    messagingSenderId: "SENIN_MESSAGING_SENDER_ID",
-    appId: "SENIN_APP_ID"
+  apiKey: "AIzaSyD88CFBRWV8YM49V_YDjluMFXUIQO8V1iM",
+  authDomain: "mht4-aa21c.firebaseapp.com",
+  databaseURL: "https://mht4-aa21c-default-rtdb.firebaseio.com",
+  projectId: "mht4-aa21c",
+  storageBucket: "mht4-aa21c.firebasestorage.app",
+  messagingSenderId: "681370223057",
+  appId: "1:681370223057:web:4074c8f6793b9aad5860f0",
+  measurementId: "G-JNEZGMPJ28"
 };
-
 // Firebase başlat
 let auth, database;
 let currentUser = null;
