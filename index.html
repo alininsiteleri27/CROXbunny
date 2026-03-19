@@ -1,182 +1,299 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpeedRush - Online Araba Oyunları</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeonDrive — Oyun Merkezi</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet"/>
 </head>
 <body>
-    <!-- Login Ekranı -->
-    <div id="loginScreen" class="login-screen">
-        <div class="login-container">
-            <div class="login-logo">
-                <h1>🏎️ SpeedRush</h1>
-                <p>Extreme Racing Experience</p>
-            </div>
-            <div class="login-form">
-                <input type="email" id="emailInput" placeholder="E-posta adresiniz">
-                <input type="password" id="passwordInput" placeholder="Şifreniz">
-                <button id="loginBtn" class="btn-primary">Giriş Yap</button>
-                <button id="registerBtn" class="btn-secondary">Kayıt Ol</button>
-                <div id="loginError" class="error-message"></div>
-            </div>
+
+  <!-- ══════════ LOGIN EKRANI ══════════ -->
+  <div id="loginScreen" class="screen active">
+    <div class="login-bg">
+      <div class="grid-floor"></div>
+      <div class="scanline"></div>
+    </div>
+    <div class="login-box">
+      <div class="logo-area">
+        <span class="logo-icon">⬡</span>
+        <h1 class="logo-text">NEON<span>DRIVE</span></h1>
+        <p class="logo-sub">OYUN MERKEZİ</p>
+      </div>
+
+      <!-- Tab seçici -->
+      <div class="auth-tabs">
+        <button class="tab-btn active" onclick="switchTab('login')">GİRİŞ</button>
+        <button class="tab-btn" onclick="switchTab('register')">KAYIT</button>
+      </div>
+
+      <!-- Giriş Formu -->
+      <div id="loginForm" class="auth-form">
+        <div class="input-group">
+          <label>E-POSTA</label>
+          <input type="email" id="loginEmail" placeholder="oyuncu@mail.com" />
         </div>
+        <div class="input-group">
+          <label>ŞİFRE</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" />
+        </div>
+        <button class="btn-primary" onclick="loginUser()">
+          <span>GİRİŞ YAP</span>
+          <span class="btn-arrow">▶</span>
+        </button>
+        <p class="auth-link" onclick="forgotPassword()">Şifremi unuttum?</p>
+      </div>
+
+      <!-- Kayıt Formu -->
+      <div id="registerForm" class="auth-form hidden">
+        <div class="input-group">
+          <label>KULLANICI ADI</label>
+          <input type="text" id="regUsername" placeholder="SüperSürücü42" />
+        </div>
+        <div class="input-group">
+          <label>E-POSTA</label>
+          <input type="email" id="regEmail" placeholder="oyuncu@mail.com" />
+        </div>
+        <div class="input-group">
+          <label>ŞİFRE</label>
+          <input type="password" id="regPassword" placeholder="En az 6 karakter" />
+        </div>
+        <button class="btn-primary" onclick="registerUser()">
+          <span>HESAP OLUŞTUR</span>
+          <span class="btn-arrow">▶</span>
+        </button>
+      </div>
+
+      <div id="authMessage" class="auth-message"></div>
+    </div>
+  </div>
+
+  <!-- ══════════ ANA EKRAN ══════════ -->
+  <div id="mainScreen" class="screen hidden">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <!-- Sol: Profil -->
+      <div class="nav-profile" onclick="openProfile()">
+        <div class="avatar" id="navAvatar">?</div>
+        <div class="profile-info">
+          <span class="profile-name" id="navUsername">Oyuncu</span>
+          <span class="profile-level" id="navLevel">⭐ Seviye 1</span>
+        </div>
+      </div>
+
+      <!-- Orta: Logo -->
+      <div class="nav-logo">
+        <span class="logo-icon-sm">⬡</span>
+        NEONDRIVE
+      </div>
+
+      <!-- Sağ: Ana Menü -->
+      <button class="nav-menu-btn" onclick="toggleMenu()">
+        <span class="menu-icon">☰</span>
+        ANA MENÜ
+      </button>
+    </nav>
+
+    <!-- ANA MENÜ OVERLAY -->
+    <div id="menuOverlay" class="menu-overlay hidden">
+      <div class="menu-panel">
+        <button class="menu-close" onclick="toggleMenu()">✕</button>
+        <h2 class="menu-title">ANA MENÜ</h2>
+        <nav class="menu-nav">
+          <a class="menu-item" onclick="showSection('games'); toggleMenu()">🎮 Oyunlar</a>
+          <a class="menu-item" onclick="showSection('leaderboard'); toggleMenu()">🏆 Lider Tablosu</a>
+          <a class="menu-item" onclick="showSection('achievements'); toggleMenu()">🎖 Başarımlar</a>
+          <a class="menu-item" onclick="showSection('store'); toggleMenu()">🛒 Mağaza</a>
+          <a class="menu-item" onclick="openProfile(); toggleMenu()">👤 Profil</a>
+          <a class="menu-item logout" onclick="logoutUser()">🔴 Çıkış Yap</a>
+        </nav>
+        <div class="menu-footer">v1.0.0 — NeonDrive</div>
+      </div>
     </div>
 
-    <!-- Ana Uygulama -->
-    <div id="mainApp" class="main-app hidden">
-        <!-- Üst Bar -->
-        <header class="top-bar">
-            <div class="profile-section" id="profileBtn">
-                <img src="https://via.placeholder.com/40" alt="Profil" id="userAvatar">
-                <span id="userName">Misafir</span>
-                <div class="level-badge">Lv.1</div>
-            </div>
-            
-            <div class="logo-center">
-                <h2>SpeedRush</h2>
-            </div>
-            
-            <button class="menu-btn" id="mainMenuBtn">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </header>
+    <!-- BÖLÜMLER -->
+    <main class="main-content">
 
-        <!-- Ana Menü Modal -->
-        <div id="mainMenuModal" class="modal hidden">
-            <div class="modal-content menu-modal">
-                <h3>Ana Menü</h3>
-                <nav>
-                    <a href="#" class="menu-item active" data-section="home">🏠 Ana Sayfa</a>
-                    <a href="#" class="menu-item" data-section="games">🎮 Oyunlar</a>
-                    <a href="#" class="menu-item" data-section="leaderboard">🏆 Sıralama</a>
-                    <a href="#" class="menu-item" data-section="garage">🚗 Garajım</a>
-                    <a href="#" class="menu-item" data-section="shop">🛒 Mağaza</a>
-                    <a href="#" class="menu-item" data-section="settings">⚙️ Ayarlar</a>
-                </nav>
-                <button id="logoutBtn" class="btn-logout">Çıkış Yap</button>
+      <!-- OYUNLAR -->
+      <section id="section-games" class="section active">
+        <div class="section-header">
+          <h2>🎮 OYUNLAR</h2>
+          <p>Bir oyun seç ve yarışmaya başla</p>
+        </div>
+        <div class="games-grid">
+          <div class="game-card featured" onclick="startGame('car')">
+            <div class="game-thumb car-thumb">
+              <div class="car-preview">🏎️</div>
+              <span class="badge-new">YENİ</span>
             </div>
+            <div class="game-info">
+              <h3>TURBO RACE</h3>
+              <p>Neon yollarda sınırları zorla!</p>
+              <div class="game-meta">
+                <span>⭐ 4.9</span>
+                <span>👥 1,234</span>
+                <span class="game-tag">YARIŞMA</span>
+              </div>
+            </div>
+            <button class="btn-play">OYNA ▶</button>
+          </div>
+
+          <div class="game-card locked">
+            <div class="game-thumb">
+              <div class="lock-icon">🔒</div>
+            </div>
+            <div class="game-info">
+              <h3>SKY DRIFT</h3>
+              <p>Bulutların üzerinde uç — yakında!</p>
+              <div class="game-meta">
+                <span>⭐ —</span>
+                <span class="game-tag">YAKINDA</span>
+              </div>
+            </div>
+            <button class="btn-play disabled">YAKINDA</button>
+          </div>
+
+          <div class="game-card locked">
+            <div class="game-thumb">
+              <div class="lock-icon">🔒</div>
+            </div>
+            <div class="game-info">
+              <h3>CYBER RUNNER</h3>
+              <p>Şehir labirentinde kaç!</p>
+              <div class="game-meta">
+                <span>⭐ —</span>
+                <span class="game-tag">YAKINDA</span>
+              </div>
+            </div>
+            <button class="btn-play disabled">YAKINDA</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ARABA OYUNU -->
+      <section id="section-car-game" class="section hidden">
+        <div class="game-topbar">
+          <button class="back-btn" onclick="exitGame()">← GERİ</button>
+          <div class="game-hud">
+            <span>SKOR: <b id="score">0</b></span>
+            <span>HIZ: <b id="speed">0</b> km/h</span>
+            <span>CAN: <b id="lives">3</b> ❤️</span>
+          </div>
+          <button class="pause-btn" onclick="togglePause()" id="pauseBtn">⏸ DURDUR</button>
         </div>
 
-        <!-- Profil Modal -->
-        <div id="profileModal" class="modal hidden">
-            <div class="modal-content profile-modal">
-                <div class="profile-header">
-                    <img src="https://via.placeholder.com/80" alt="Profil" id="profileAvatar">
-                    <h3 id="profileName">Kullanıcı Adı</h3>
-                    <p id="profileEmail">email@example.com</p>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <span class="stat-value" id="totalGames">0</span>
-                        <span class="stat-label">Oyun</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-value" id="totalWins">0</span>
-                        <span class="stat-label">Galibiyet</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-value" id="bestTime">--</span>
-                        <span class="stat-label">En İyi Süre</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-value" id="coins">0</span>
-                        <span class="stat-label">Coin</span>
-                    </div>
-                </div>
+        <div class="game-wrapper">
+          <canvas id="gameCanvas"></canvas>
+          <div id="gameOverlay" class="game-overlay hidden">
+            <div class="overlay-box">
+              <h2 id="overlayTitle">HAZIR MISIN?</h2>
+              <p id="overlayMsg">Ok tuşları veya WASD ile sür</p>
+              <p id="overlayScore" class="overlay-score"></p>
+              <button class="btn-primary" onclick="startCarGame()" id="overlayBtn">BAŞLA ▶</button>
             </div>
+          </div>
         </div>
+      </section>
 
-        <!-- Ana İçerik -->
-        <main class="main-content">
-            <!-- Home Section -->
-            <section id="homeSection" class="section active">
-                <div class="hero-banner">
-                    <h1>🏎️ SpeedRush Racing</h1>
-                    <p>En hızlı pistlerde yarış, en iyi zamanları kır!</p>
-                    <button class="btn-play" onclick="startGame()">🎮 Hemen Oyna</button>
-                </div>
-
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">🏁</div>
-                        <h3>10+ Pist</h3>
-                        <p>Farklı zorluklarda yarış pistleri</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🚗</div>
-                        <h3>20+ Araba</h3>
-                        <p>Kilitle ve özelleştir</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🏆</div>
-                        <h3>Sıralama</h3>
-                        <p>Dünya genelinde yarış</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Games Section -->
-            <section id="gamesSection" class="section">
-                <h2 class="section-title">🎮 Oyun Modları</h2>
-                <div class="games-grid">
-                    <div class="game-card" onclick="startGame('time_trial')">
-                        <div class="game-preview">⏱️</div>
-                        <h3>Zaman Yarışı</h3>
-                        <p>En iyi zamanı yap</p>
-                    </div>
-                    <div class="game-card" onclick="startGame('circuit')">
-                        <div class="game-preview">🏁</div>
-                        <h3>Pist Yarışı</h3>
-                        <p>3 turda birinci ol</p>
-                    </div>
-                    <div class="game-card" onclick="startGame('drift')">
-                        <div class="game-preview">💨</div>
-                        <h3>Drift Modu</h3>
-                        <p>En uzun drifti yap</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Leaderboard Section -->
-            <section id="leaderboardSection" class="section">
-                <h2 class="section-title">🏆 Küresel Sıralama</h2>
-                <div class="leaderboard-tabs">
-                    <button class="tab-btn active" data-tab="weekly">Haftalık</button>
-                    <button class="tab-btn" data-tab="monthly">Aylık</button>
-                    <button class="tab-btn" data-tab="alltime">Tüm Zamanlar</button>
-                </div>
-                <div class="leaderboard-list" id="leaderboardList">
-                    <!-- Dinamik olarak doldurulacak -->
-                </div>
-            </section>
-        </main>
-
-        <!-- Oyun Canvas -->
-        <div id="gameContainer" class="game-container hidden">
-            <canvas id="gameCanvas"></canvas>
-            <div class="game-ui">
-                <div class="game-stats">
-                    <div class="stat">⏱️ <span id="gameTime">00:00</span></div>
-                    <div class="stat">🏎️ <span id="gameSpeed">0</span> km/h</div>
-                    <div class="stat">💰 <span id="gameCoins">0</span></div>
-                </div>
-                <button class="btn-exit" onclick="exitGame()">✕ Çık</button>
-            </div>
-            <div class="game-controls-hint">
-                <p>⬆️ Hızlan | ⬇️ Yavaşla | ⬅️➡️ Direksiyon | SPACE Fren</p>
-            </div>
+      <!-- LİDER TABLOSU -->
+      <section id="section-leaderboard" class="section hidden">
+        <div class="section-header">
+          <h2>🏆 LİDER TABLOSU</h2>
+          <p>En iyi sürücüler</p>
         </div>
+        <div class="leaderboard">
+          <div class="lb-header">
+            <span>#</span><span>OYUNCU</span><span>SKOR</span><span>SEVİYE</span>
+          </div>
+          <div id="leaderboardList">
+            <div class="lb-loading">Yükleniyor...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BAŞARIMLAR -->
+      <section id="section-achievements" class="section hidden">
+        <div class="section-header">
+          <h2>🎖 BAŞARIMLAR</h2>
+          <p>Kazandığın rozetler</p>
+        </div>
+        <div class="achievements-grid" id="achievementsGrid"></div>
+      </section>
+
+      <!-- MAĞAZA -->
+      <section id="section-store" class="section hidden">
+        <div class="section-header">
+          <h2>🛒 MAĞAZA</h2>
+          <p>Bakiye: <span id="storeCoins" class="coins">0 🪙</span></p>
+        </div>
+        <div class="store-grid">
+          <div class="store-item">
+            <div class="item-icon">🚗</div>
+            <h4>KIRMIZI ARABA</h4>
+            <p>Süratli ve ateşli</p>
+            <button class="btn-buy" onclick="buyItem('red_car', 500)">500 🪙</button>
+          </div>
+          <div class="store-item">
+            <div class="item-icon">🚙</div>
+            <h4>MAVİ ARABA</h4>
+            <p>Soğuk ve kararlı</p>
+            <button class="btn-buy" onclick="buyItem('blue_car', 750)">750 🪙</button>
+          </div>
+          <div class="store-item">
+            <div class="item-icon">⚡</div>
+            <h4>HIZ BOOST</h4>
+            <p>Geçici hız artışı</p>
+            <button class="btn-buy" onclick="buyItem('speed_boost', 200)">200 🪙</button>
+          </div>
+          <div class="store-item">
+            <div class="item-icon">🛡️</div>
+            <h4>ZIRH</h4>
+            <p>Bir çarpışmayı geç</p>
+            <button class="btn-buy" onclick="buyItem('armor', 300)">300 🪙</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- PROFİL MODAL -->
+  <div id="profileModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeProfile()"></div>
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeProfile()">✕</button>
+      <div class="profile-header">
+        <div class="profile-avatar-big" id="profileAvatar">?</div>
+        <div>
+          <h2 id="profileName">Oyuncu</h2>
+          <p id="profileEmail" class="profile-email">—</p>
+          <p id="profileLevelBig" class="level-badge">⭐ Seviye 1</p>
+        </div>
+      </div>
+      <div class="profile-stats">
+        <div class="stat-box">
+          <span class="stat-val" id="profileScore">0</span>
+          <span class="stat-label">En Yüksek Skor</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-val" id="profileCoins">0</span>
+          <span class="stat-label">🪙 Coin</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-val" id="profileGames">0</span>
+          <span class="stat-label">Oyun Sayısı</span>
+        </div>
+      </div>
+      <button class="btn-danger" onclick="logoutUser()">Çıkış Yap</button>
     </div>
+  </div>
 
-    <script src="app.js"></script>
+  <!-- TOAST BİLDİRİM -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Firebase SDK -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>
