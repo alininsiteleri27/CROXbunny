@@ -22,10 +22,9 @@
         <p class="logo-sub">OYUN MERKEZİ</p>
       </div>
 
-      <!-- Tab seçici -->
       <div class="auth-tabs">
-        <button class="tab-btn active" onclick="switchTab('login')">GİRİŞ</button>
-        <button class="tab-btn" onclick="switchTab('register')">KAYIT</button>
+        <button class="tab-btn active" data-tab="login">GİRİŞ</button>
+        <button class="tab-btn" data-tab="register">KAYIT</button>
       </div>
 
       <!-- Giriş Formu -->
@@ -38,11 +37,11 @@
           <label>ŞİFRE</label>
           <input type="password" id="loginPassword" placeholder="••••••••" />
         </div>
-        <button class="btn-primary" onclick="loginUser()">
+        <button class="btn-primary" id="btnLogin">
           <span>GİRİŞ YAP</span>
           <span class="btn-arrow">▶</span>
         </button>
-        <p class="auth-link" onclick="forgotPassword()">Şifremi unuttum?</p>
+        <p class="auth-link" id="btnForgot">Şifremi unuttum?</p>
       </div>
 
       <!-- Kayıt Formu -->
@@ -59,7 +58,7 @@
           <label>ŞİFRE</label>
           <input type="password" id="regPassword" placeholder="En az 6 karakter" />
         </div>
-        <button class="btn-primary" onclick="registerUser()">
+        <button class="btn-primary" id="btnRegister">
           <span>HESAP OLUŞTUR</span>
           <span class="btn-arrow">▶</span>
         </button>
@@ -74,8 +73,7 @@
 
     <!-- NAVBAR -->
     <nav class="navbar">
-      <!-- Sol: Profil -->
-      <div class="nav-profile" onclick="openProfile()">
+      <div class="nav-profile" id="navProfileBtn">
         <div class="avatar" id="navAvatar">?</div>
         <div class="profile-info">
           <span class="profile-name" id="navUsername">Oyuncu</span>
@@ -83,14 +81,12 @@
         </div>
       </div>
 
-      <!-- Orta: Logo -->
       <div class="nav-logo">
         <span class="logo-icon-sm">⬡</span>
         NEONDRIVE
       </div>
 
-      <!-- Sağ: Ana Menü -->
-      <button class="nav-menu-btn" onclick="toggleMenu()">
+      <button class="nav-menu-btn" id="navMenuBtn">
         <span class="menu-icon">☰</span>
         ANA MENÜ
       </button>
@@ -99,15 +95,15 @@
     <!-- ANA MENÜ OVERLAY -->
     <div id="menuOverlay" class="menu-overlay hidden">
       <div class="menu-panel">
-        <button class="menu-close" onclick="toggleMenu()">✕</button>
+        <button class="menu-close" id="menuClose">✕</button>
         <h2 class="menu-title">ANA MENÜ</h2>
         <nav class="menu-nav">
-          <a class="menu-item" onclick="showSection('games'); toggleMenu()">🎮 Oyunlar</a>
-          <a class="menu-item" onclick="showSection('leaderboard'); toggleMenu()">🏆 Lider Tablosu</a>
-          <a class="menu-item" onclick="showSection('achievements'); toggleMenu()">🎖 Başarımlar</a>
-          <a class="menu-item" onclick="showSection('store'); toggleMenu()">🛒 Mağaza</a>
-          <a class="menu-item" onclick="openProfile(); toggleMenu()">👤 Profil</a>
-          <a class="menu-item logout" onclick="logoutUser()">🔴 Çıkış Yap</a>
+          <a class="menu-item" id="menuGames">🎮 Oyunlar</a>
+          <a class="menu-item" id="menuLeaderboard">🏆 Lider Tablosu</a>
+          <a class="menu-item" id="menuAchievements">🎖 Başarımlar</a>
+          <a class="menu-item" id="menuStore">🛒 Mağaza</a>
+          <a class="menu-item" id="menuProfile">👤 Profil</a>
+          <a class="menu-item logout" id="menuLogout">🔴 Çıkış Yap</a>
         </nav>
         <div class="menu-footer">v1.0.0 — NeonDrive</div>
       </div>
@@ -123,7 +119,7 @@
           <p>Bir oyun seç ve yarışmaya başla</p>
         </div>
         <div class="games-grid">
-          <div class="game-card featured" onclick="startGame('car')">
+          <div class="game-card featured" id="cardCarGame">
             <div class="game-thumb car-thumb">
               <div class="car-preview">🏎️</div>
               <span class="badge-new">YENİ</span>
@@ -175,23 +171,23 @@
       <!-- ARABA OYUNU -->
       <section id="section-car-game" class="section hidden">
         <div class="game-topbar">
-          <button class="back-btn" onclick="exitGame()">← GERİ</button>
+          <button class="back-btn" id="btnBack">← GERİ</button>
           <div class="game-hud">
             <span>SKOR: <b id="score">0</b></span>
             <span>HIZ: <b id="speed">0</b> km/h</span>
-            <span>CAN: <b id="lives">3</b> ❤️</span>
+            <span>CAN: <b id="lives">❤️❤️❤️</b></span>
           </div>
-          <button class="pause-btn" onclick="togglePause()" id="pauseBtn">⏸ DURDUR</button>
+          <button class="pause-btn" id="pauseBtn">⏸ DURDUR</button>
         </div>
 
         <div class="game-wrapper">
           <canvas id="gameCanvas"></canvas>
-          <div id="gameOverlay" class="game-overlay hidden">
+          <div id="gameOverlay" class="game-overlay">
             <div class="overlay-box">
               <h2 id="overlayTitle">HAZIR MISIN?</h2>
               <p id="overlayMsg">Ok tuşları veya WASD ile sür</p>
               <p id="overlayScore" class="overlay-score"></p>
-              <button class="btn-primary" onclick="startCarGame()" id="overlayBtn">BAŞLA ▶</button>
+              <button class="btn-primary" id="overlayBtn">BAŞLA ▶</button>
             </div>
           </div>
         </div>
@@ -233,25 +229,25 @@
             <div class="item-icon">🚗</div>
             <h4>KIRMIZI ARABA</h4>
             <p>Süratli ve ateşli</p>
-            <button class="btn-buy" onclick="buyItem('red_car', 500)">500 🪙</button>
+            <button class="btn-buy" id="buyRedCar">500 🪙</button>
           </div>
           <div class="store-item">
             <div class="item-icon">🚙</div>
             <h4>MAVİ ARABA</h4>
             <p>Soğuk ve kararlı</p>
-            <button class="btn-buy" onclick="buyItem('blue_car', 750)">750 🪙</button>
+            <button class="btn-buy" id="buyBlueCar">750 🪙</button>
           </div>
           <div class="store-item">
             <div class="item-icon">⚡</div>
             <h4>HIZ BOOST</h4>
             <p>Geçici hız artışı</p>
-            <button class="btn-buy" onclick="buyItem('speed_boost', 200)">200 🪙</button>
+            <button class="btn-buy" id="buySpeedBoost">200 🪙</button>
           </div>
           <div class="store-item">
             <div class="item-icon">🛡️</div>
             <h4>ZIRH</h4>
             <p>Bir çarpışmayı geç</p>
-            <button class="btn-buy" onclick="buyItem('armor', 300)">300 🪙</button>
+            <button class="btn-buy" id="buyArmor">300 🪙</button>
           </div>
         </div>
       </section>
@@ -261,9 +257,9 @@
 
   <!-- PROFİL MODAL -->
   <div id="profileModal" class="modal hidden">
-    <div class="modal-backdrop" onclick="closeProfile()"></div>
+    <div class="modal-backdrop" id="profileModalBackdrop"></div>
     <div class="modal-box">
-      <button class="modal-close" onclick="closeProfile()">✕</button>
+      <button class="modal-close" id="profileModalClose">✕</button>
       <div class="profile-header">
         <div class="profile-avatar-big" id="profileAvatar">?</div>
         <div>
@@ -286,14 +282,13 @@
           <span class="stat-label">Oyun Sayısı</span>
         </div>
       </div>
-      <button class="btn-danger" onclick="logoutUser()">Çıkış Yap</button>
+      <button class="btn-danger" id="btnLogoutProfile">Çıkış Yap</button>
     </div>
   </div>
 
-  <!-- TOAST BİLDİRİM -->
+  <!-- TOAST -->
   <div id="toast" class="toast hidden"></div>
 
-  <!-- Firebase SDK -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
