@@ -1,641 +1,540 @@
-// ═══════════════════════════════════════
-//  NEONDRIVE — app.js  (Fixed)
-// ═══════════════════════════════════════
+const { useState, useEffect, useRef, useMemo } = React;
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  sendPasswordResetEmail,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  getDatabase,
-  ref,
-  set,
-  get,
-  update as dbUpdate,
-  onValue,
-  query,
-  orderByChild,
-  limitToLast
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-// ── Firebase Config ──
-const firebaseConfig = {
-  apiKey: "AIzaSyD88CFBRWV8YM49V_YDjluMFXUIQO8V1iM",
-  authDomain: "mht4-aa21c.firebaseapp.com",
-  databaseURL: "https://mht4-aa21c-default-rtdb.firebaseio.com",
-  projectId: "mht4-aa21c",
-  storageBucket: "mht4-aa21c.firebasestorage.app",
-  messagingSenderId: "681370223057",
-  appId: "1:681370223057:web:4074c8f6793b9aad5860f0",
-  measurementId: "G-JNEZGMPJ28"
+// --- MOCK DATABASE (localStorage Tabanlı Simülasyon) ---
+const MOCK_DATA = {
+  users: [
+    { id: 1, name: 'Ali Yılmaz', username: 'aliyilmaz', avatar: 'https://i.pravatar.cc/150?u=1', role: 'student', grade: 11, score: 85, following: [2], followers: [], bio: 'Matematik aşığı.' },
+    { id: 2, name: 'Ayşe Kaya', username: 'aysekaya', avatar: 'https://i.pravatar.cc/150?u=2', role: 'student', grade: 12, score: 92, following: [1], followers: [1], bio: 'YKS 2024 Yolcusu' },
+    { id: 3, name: 'Ahmet Hoca', username: 'ahmethoca', avatar: 'https://i.pravatar.cc/150?u=3', role: 'teacher', branch: 'Matematik', following: [], followers: [1,2], bio: 'Hayat bir denklemdir.' }
+  ],
+  stories: [
+    { id: 101, userId: 2, image: 'https://picsum.photos/400/800?random=1', text: 'Bugün deneme çok zordu!', timestamp: Date.now() - 3600000, seenBy: [] },
+    { id: 102, userId: 3, image: 'https://picsum.photos/400/800?random=2', text: 'Yarın türev quiz var gençler.', timestamp: Date.now() - 7200000, seenBy: [1] }
+  ],
+  posts: [
+    { id: 201, userId: 1, content: 'Trigonometri formüllerini ezberlemenin kolay bir yolu var mı?', image: null, likes: 5, timestamp: Date.now() - 10000, comments: [{ userId: 3, text: 'Özel üçgenleri çizerek başla.' }] },
+    { id: 202, userId: 2, content: 'Kütüphanede çalışıyorum, katılmak isteyen var mı?', image: 'https://picsum.photos/600/400?random=3', likes: 12, timestamp: Date.now() - 86400000, comments: [] }
+  ],
+  messages: [] // { id, fromId, toId, text, timestamp }
 };
 
-const fbApp = initializeApp(firebaseConfig);
-const auth  = getAuth(fbApp);
-const db    = getDatabase(fbApp);
-
-// ── Global State ──
-let currentUser = null;
-let userData    = null;
-let gameRunning = false;
-let gamePaused  = false;
-let animationId = null;
-
-// ════════════════════════════════════════
-//  AUTH STATE
-// ════════════════════════════════════════
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    currentUser = user;
-    await loadUserData(user.uid);
-    showScreen("mainScreen");
-    showSection("games");
-    updateNavbar();
-  } else {
-    currentUser = null;
-    userData    = null;
-    showScreen("loginScreen");
-  }
-});
-
-async function loadUserData(uid) {
-  const snap = await get(ref(db, `users/${uid}`));
-  if (snap.exists()) {
-    userData = snap.val();
-  } else {
-    userData = {
-      username    : currentUser.email.split("@")[0],
-      email       : currentUser.email,
-      score       : 0,
-      coins       : 100,
-      gamesPlayed : 0,
-      level       : 1,
-      achievements: [],
-      inventory   : [],
-      createdAt   : Date.now()
-    };
-    await set(ref(db, `users/${uid}`), userData);
-  }
+if (!localStorage.getItem('educonnect_db')) {
+  localStorage.setItem('educonnect_db', JSON.stringify(MOCK_DATA));
 }
 
-async function saveUserData() {
-  if (!currentUser || !userData) return;
-  await dbUpdate(ref(db, `users/${currentUser.uid}`), userData);
-}
+const getDB = () => JSON.parse(localStorage.getItem('educonnect_db'));
+const saveDB = (data) => localStorage.setItem('educonnect_db', JSON.stringify(data));
 
-// ════════════════════════════════════════
-//  AUTH FUNCTIONS
-// ════════════════════════════════════════
-async function loginUser() {
-  const email = document.getElementById("loginEmail").value.trim();
-  const pass  = document.getElementById("loginPassword").value;
-  if (!email || !pass) { showMessage("E-posta ve şifre gerekli!", "error"); return; }
-  try {
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch (e) {
-    showMessage(firebaseError(e.code), "error");
-  }
-}
+// --- BİLEŞENLER ---
 
-async function registerUser() {
-  const username = document.getElementById("regUsername").value.trim();
-  const email    = document.getElementById("regEmail").value.trim();
-  const pass     = document.getElementById("regPassword").value;
-  if (!username || !email || !pass) { showMessage("Tüm alanları doldur!", "error"); return; }
-  if (pass.length < 6)              { showMessage("Şifre en az 6 karakter!", "error"); return; }
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    userData = {
-      username, email,
-      score: 0, coins: 100, gamesPlayed: 0,
-      level: 1, achievements: [], inventory: [],
-      createdAt: Date.now()
-    };
-    await set(ref(db, `users/${cred.user.uid}`), userData);
-    showMessage("Hesap oluşturuldu! Giriş yapılıyor...", "success");
-  } catch (e) {
-    showMessage(firebaseError(e.code), "error");
-  }
-}
+const LoginRegister = ({ onLogin }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [role, setRole] = useState('student');
+  const [form, setForm] = useState({ username: '', password: '', name: '', email: '', grade: '9', branch: '', score: '' });
 
-async function forgotPassword() {
-  const email = document.getElementById("loginEmail").value.trim();
-  if (!email) { showMessage("E-postanı gir!", "error"); return; }
-  try {
-    await sendPasswordResetEmail(auth, email);
-    showMessage("Sıfırlama maili gönderildi!", "success");
-  } catch (e) {
-    showMessage(firebaseError(e.code), "error");
-  }
-}
-
-async function logoutUser() {
-  if (gameRunning) stopGame();
-  await signOut(auth);
-  closeProfile();
-  toggleMenu(true);
-}
-
-// ════════════════════════════════════════
-//  UI HELPERS
-// ════════════════════════════════════════
-function showScreen(id) {
-  document.querySelectorAll(".screen").forEach(s => {
-    s.classList.add("hidden"); s.classList.remove("active");
-  });
-  const el = document.getElementById(id);
-  if (el) { el.classList.remove("hidden"); el.classList.add("active"); }
-}
-
-function showSection(name) {
-  document.querySelectorAll(".section").forEach(s => {
-    s.classList.add("hidden"); s.classList.remove("active");
-  });
-  const el = document.getElementById(`section-${name}`);
-  if (el) { el.classList.remove("hidden"); el.classList.add("active"); }
-
-  if (name === "leaderboard")  loadLeaderboard();
-  if (name === "achievements") renderAchievements();
-  if (name === "store" && userData)
-    document.getElementById("storeCoins").textContent = `${userData.coins} 🪙`;
-}
-
-function updateNavbar() {
-  if (!userData) return;
-  const initial = (userData.username || "?")[0].toUpperCase();
-  document.getElementById("navAvatar").textContent     = initial;
-  document.getElementById("profileAvatar").textContent = initial;
-  document.getElementById("navUsername").textContent   = userData.username || "Oyuncu";
-  document.getElementById("navLevel").textContent      = `⭐ Seviye ${userData.level || 1}`;
-}
-
-function switchTab(tab) {
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  document.querySelectorAll(".auth-form").forEach(f => f.classList.add("hidden"));
-  const activeBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
-  if (activeBtn) activeBtn.classList.add("active");
-  const form = document.getElementById(`${tab}Form`);
-  if (form) form.classList.remove("hidden");
-  clearMessage();
-}
-
-function toggleMenu(forceClose = false) {
-  const el = document.getElementById("menuOverlay");
-  if (forceClose) { el.classList.add("hidden"); return; }
-  el.classList.toggle("hidden");
-}
-
-function openProfile() {
-  if (!userData) return;
-  const d = userData;
-  document.getElementById("profileName").textContent     = d.username;
-  document.getElementById("profileEmail").textContent    = d.email;
-  document.getElementById("profileLevelBig").textContent = `⭐ Seviye ${d.level}`;
-  document.getElementById("profileScore").textContent    = (d.score || 0).toLocaleString();
-  document.getElementById("profileCoins").textContent    = d.coins || 0;
-  document.getElementById("profileGames").textContent    = d.gamesPlayed || 0;
-  document.getElementById("profileAvatar").textContent   = (d.username || "?")[0].toUpperCase();
-  document.getElementById("profileModal").classList.remove("hidden");
-}
-
-function closeProfile() {
-  document.getElementById("profileModal").classList.add("hidden");
-}
-
-function showMessage(msg, type = "") {
-  const el = document.getElementById("authMessage");
-  el.textContent = msg;
-  el.className   = `auth-message ${type}`;
-}
-function clearMessage() { showMessage(""); }
-
-function showToast(msg, type = "") {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.className   = `toast ${type}`;
-  t.classList.remove("hidden");
-  setTimeout(() => t.classList.add("hidden"), 3000);
-}
-
-function firebaseError(code) {
-  const map = {
-    "auth/user-not-found"        : "Kullanıcı bulunamadı.",
-    "auth/wrong-password"        : "Hatalı şifre.",
-    "auth/email-already-in-use"  : "Bu e-posta zaten kayıtlı.",
-    "auth/invalid-email"         : "Geçersiz e-posta.",
-    "auth/weak-password"         : "Şifre çok zayıf.",
-    "auth/network-request-failed": "Ağ bağlantısı hatası.",
-    "auth/invalid-credential"    : "E-posta veya şifre hatalı.",
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const db = getDB();
+    if (isLogin) {
+      const u = db.users.find(u => u.username === form.username || u.email === form.username);
+      if (u) {
+        onLogin(u);
+      } else {
+        alert('Kullanıcı bulunamadı!');
+      }
+    } else {
+      const newUser = {
+        id: Date.now(), ...form, role, avatar: `https://i.pravatar.cc/150?u=${Date.now()}`,
+        following: [], followers: [], bio: 'Yeni katıldı.'
+      };
+      db.users.push(newUser);
+      saveDB(db);
+      onLogin(newUser);
+    }
   };
-  return map[code] || "Bir hata oluştu: " + code;
-}
 
-// ════════════════════════════════════════
-//  LEADERBOARD
-// ════════════════════════════════════════
-function loadLeaderboard() {
-  const listEl = document.getElementById("leaderboardList");
-  listEl.innerHTML = '<div class="lb-loading">Yükleniyor...</div>';
-  const q = query(ref(db, "users"), orderByChild("score"), limitToLast(20));
-  onValue(q, (snap) => {
-    const players = [];
-    snap.forEach(child => players.push({ ...child.val(), uid: child.key }));
-    players.sort((a, b) => (b.score || 0) - (a.score || 0));
-    if (!players.length) {
-      listEl.innerHTML = '<div class="lb-loading">Henüz kayıt yok.</div>';
-      return;
-    }
-    listEl.innerHTML = players.map((p, i) => {
-      const cls   = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
-      const medal = i === 0 ? "🥇"   : i === 1 ? "🥈"     : i === 2 ? "🥉"     : `${i+1}`;
-      return `<div class="lb-row">
-        <span class="lb-rank ${cls}">${medal}</span>
-        <span class="lb-name">${p.username || "?"}</span>
-        <span class="lb-score">${(p.score||0).toLocaleString()}</span>
-        <span class="lb-level">Sv. ${p.level||1}</span>
-      </div>`;
-    }).join("");
-  }, { onlyOnce: true });
-}
+  return (
+    <div className="auth-wrapper">
+      <div className="auth-card glass-panel animate-slide-up">
+        <div className="auth-header">
+          <h1 className="auth-title">EduConnect</h1>
+          <p className="auth-subtitle">Okulunun Sosyal Ağına {isLogin ? 'Giriş Yap' : 'Katıl'}</p>
+        </div>
+        
+        <div className="auth-tabs">
+          <div className={`auth-tab ${isLogin ? 'active' : ''}`} onClick={() => setIsLogin(true)}>Giriş Yap</div>
+          <div className={`auth-tab ${!isLogin ? 'active' : ''}`} onClick={() => setIsLogin(false)}>Kayıt Ol</div>
+        </div>
 
-// ════════════════════════════════════════
-//  ACHIEVEMENTS
-// ════════════════════════════════════════
-const ACHIEVEMENTS = [
-  { id: "first_game", icon: "🎮", name: "İLK OYUN",    desc: "İlk oyununu oynadın!" },
-  { id: "score_100",  icon: "💯", name: "YÜZE 100",    desc: "100 skor kazan" },
-  { id: "score_500",  icon: "🔥", name: "ATEŞ OYUNCU", desc: "500 skor kazan" },
-  { id: "score_1000", icon: "⚡", name: "ŞIMŞEK",      desc: "1000 skor kazan" },
-  { id: "score_5000", icon: "🏆", name: "ŞAMPİYON",    desc: "5000 skor kazan" },
-  { id: "games_5",    icon: "🎯", name: "KARARLI",     desc: "5 oyun oyna" },
-  { id: "games_10",   icon: "🌟", name: "DENEYİMLİ",   desc: "10 oyun oyna" },
-  { id: "buy_item",   icon: "🛒", name: "ALIŞVERİŞ",   desc: "Mağazadan ürün al" },
-  { id: "level_5",    icon: "🚀", name: "YÜKSELİŞ",    desc: "Seviye 5'e ulaş" },
-];
+        <form onSubmit={handleSubmit}>
+          {!isLogin && (
+            <div className="form-group mb-4">
+               <label className="form-label">Kayıt Tipi</label>
+               <select className="form-control" value={role} onChange={e => setRole(e.target.value)}>
+                 <option value="student">Öğrenci</option>
+                 <option value="teacher">Öğretmen</option>
+               </select>
+            </div>
+          )}
 
-function renderAchievements() {
-  const grid     = document.getElementById("achievementsGrid");
-  const unlocked = userData?.achievements || [];
-  grid.innerHTML = ACHIEVEMENTS.map(a => `
-    <div class="achievement-item ${unlocked.includes(a.id) ? "unlocked" : "locked"}">
-      <div class="achievement-icon">${a.icon}</div>
-      <div class="achievement-name">${a.name}</div>
-      <div class="achievement-desc">${a.desc}</div>
-    </div>`).join("");
-}
+          {!isLogin && (
+            <>
+              <div className="form-group">
+                <input className="form-control" placeholder="Ad Soyad" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <input className="form-control" type="email" placeholder="E-posta" required value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+              </div>
+            </>
+          )}
 
-function checkAchievements() {
-  if (!userData) return;
-  const unlocked = userData.achievements || [];
-  const prev     = unlocked.length;
-  const check    = (id, cond) => { if (cond && !unlocked.includes(id)) unlocked.push(id); };
-  check("first_game", userData.gamesPlayed >= 1);
-  check("score_100",  userData.score >= 100);
-  check("score_500",  userData.score >= 500);
-  check("score_1000", userData.score >= 1000);
-  check("score_5000", userData.score >= 5000);
-  check("games_5",    userData.gamesPlayed >= 5);
-  check("games_10",   userData.gamesPlayed >= 10);
-  check("buy_item",   (userData.inventory||[]).length >= 1);
-  check("level_5",    userData.level >= 5);
-  if (unlocked.length > prev) {
-    userData.achievements = unlocked;
-    const a = ACHIEVEMENTS.find(x => x.id === unlocked[unlocked.length-1]);
-    if (a) showToast(`🎖 Başarım: ${a.name}`);
-  }
-}
+          <div className="form-group">
+            <input className="form-control" placeholder="Kullanıcı Adı" required value={form.username} onChange={e => setForm({...form, username: e.target.value})} />
+          </div>
+          <div className="form-group">
+            <input className="form-control" type="password" placeholder="Şifre" required value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
+          </div>
 
-// ════════════════════════════════════════
-//  STORE
-// ════════════════════════════════════════
-function buyItem(id, price) {
-  if (!userData) return;
-  if (userData.coins < price)               { showToast("Yeterli coin yok!", "error"); return; }
-  if ((userData.inventory||[]).includes(id)) { showToast("Bu ürün zaten sende!", "error"); return; }
-  userData.coins    -= price;
-  userData.inventory = [...(userData.inventory||[]), id];
-  document.getElementById("storeCoins").textContent = `${userData.coins} 🪙`;
-  checkAchievements();
-  saveUserData();
-  showToast("✅ Satın alındı!");
-}
+          {!isLogin && role === 'student' && (
+            <>
+              <div className="form-group mt-2">
+                <select className="form-control" value={form.grade} onChange={e => setForm({...form, grade: e.target.value})}>
+                  <option value="9">9. Sınıf</option>
+                  <option value="10">10. Sınıf</option>
+                  <option value="11">11. Sınıf</option>
+                  <option value="12">12. Sınıf</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <input className="form-control" type="number" placeholder="Ortalama Sınav Neti" value={form.score} onChange={e => setForm({...form, score: parseFloat(e.target.value)})} />
+              </div>
+            </>
+          )}
 
-// ════════════════════════════════════════
-//  CAR GAME ENGINE
-// ════════════════════════════════════════
-let canvas, ctx;
-let car, obstacles = [], coins_arr = [];
-let gameScore = 0, gameSpeed = 3;
-let gameLives = 3, gameFrame = 0;
-let keys = {};
-let roadOffset = 0;
+          {!isLogin && role === 'teacher' && (
+            <div className="form-group mt-2">
+               <input className="form-control" placeholder="Branş (Fizik, Mat..)" required value={form.branch} onChange={e => setForm({...form, branch: e.target.value})} />
+            </div>
+          )}
 
-const CANVAS_W = 400, CANVAS_H = 600;
-const ROAD_W   = 280;
-const ROAD_X   = (CANVAS_W - ROAD_W) / 2;
-const LANE_W   = ROAD_W / 3;
+          {isLogin && (
+            <div className="flex-row justify-between mb-4 mt-2" style={{fontSize:'0.85rem'}}>
+              <label className="flex-row gap-2" style={{color:'var(--text-muted)'}}><input type="checkbox"/> Beni Hatırla</label>
+              <a href="#" className="text-primary">Şifremi Unuttum</a>
+            </div>
+          )}
 
-function startGame(type) {
-  if (type !== "car") return;
-  showSection("car-game");
-  setTimeout(() => {
-    canvas        = document.getElementById("gameCanvas");
-    canvas.width  = CANVAS_W;
-    canvas.height = CANVAS_H;
-    ctx = canvas.getContext("2d");
-    showOverlay("HAZIR MISIN?", "← → veya A D ile sür", "", "BAŞLA ▶", startCarGame);
-    drawStartScreen();
-  }, 100);
-}
+          <button type="submit" className="btn btn-primary w-100 mt-4">
+            {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 
-function showOverlay(title, msg, scoreText, btnText, btnFn) {
-  document.getElementById("overlayTitle").textContent = title;
-  document.getElementById("overlayMsg").textContent   = msg;
-  document.getElementById("overlayScore").textContent = scoreText;
-  const btn = document.getElementById("overlayBtn");
-  btn.textContent = btnText;
-  btn.onclick     = btnFn;
-  document.getElementById("gameOverlay").classList.remove("hidden");
-}
+// --- Story Viewer Modal ---
+const StoryViewer = ({ stories, initialIndex, onClose, currentUser }) => {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [progress, setProgress] = useState(0);
 
-function drawStartScreen() {
-  if (!ctx) return;
-  ctx.fillStyle = "#050810";
-  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-  drawRoad(0);
-  drawCar(CANVAS_W / 2, CANVAS_H - 100, "#00f5ff");
-}
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress(p => {
+        if (p >= 100) {
+          if (currentIndex < stories.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+            return 0;
+          } else {
+            onClose();
+            return 100;
+          }
+        }
+        return p + 2; // ~5 sec per story
+      });
+    }, 100);
+    return () => clearInterval(timer);
+  }, [currentIndex, stories.length]);
 
-function startCarGame() {
-  document.getElementById("gameOverlay").classList.add("hidden");
-  car = { x: CANVAS_W / 2, y: CANVAS_H - 100, w: 34, h: 60, color: "#00f5ff", lane: 1 };
-  obstacles = []; coins_arr = [];
-  gameScore = 0; gameSpeed = 3; gameLives = 3; gameFrame = 0;
-  gameRunning = true; gamePaused = false;
-  keys = {};
-  updateHUD();
-  document.removeEventListener("keydown", onKey);
-  document.removeEventListener("keyup",   offKey);
-  document.addEventListener("keydown", onKey);
-  document.addEventListener("keyup",   offKey);
-  if (animationId) cancelAnimationFrame(animationId);
-  gameLoop();
-}
+  const story = stories[currentIndex];
+  const isOwner = story.userId === currentUser.id;
 
-function onKey(e)  { keys[e.key] = true;  }
-function offKey(e) { keys[e.key] = false; }
+  return (
+    <div className="modal-overlay">
+      <div className="story-viewer">
+        <div className="story-progress-container">
+          {stories.map((s, i) => (
+             <div key={s.id} className="story-progress-bar">
+               <div className="story-progress-fill" style={{ width: i < currentIndex ? '100%' : i === currentIndex ? `${progress}%` : '0%' }}></div>
+             </div>
+          ))}
+        </div>
+        <div className="story-header-overlay">
+           <div className="story-user">
+             <img src={`https://i.pravatar.cc/150?u=${story.userId}`} className="avatar avatar-sm" />
+             <span>{story.userId === currentUser.id ? 'Sen' : 'Kullanıcı'}</span>
+           </div>
+           <button onClick={onClose} style={{color:'white', fontSize:'1.2rem'}}><i className="fas fa-times"></i></button>
+        </div>
+        <div className="story-content">
+          <img src={story.image} alt="Story" />
+          <h3 style={{position:'absolute', color:'white', textShadow:'0 2px 4px rgba(0,0,0,0.8)', textAlign:'center', padding:'1rem'}}>{story.text}</h3>
+        </div>
+        
+        <div className="story-nav-area story-nav-left" onClick={() => {if(currentIndex>0){setCurrentIndex(idx=>idx-1); setProgress(0);}}}></div>
+        <div className="story-nav-area story-nav-right" onClick={() => {if(currentIndex<stories.length-1){setCurrentIndex(idx=>idx+1); setProgress(0);}else{onClose()}}}></div>
 
-function togglePause() {
-  if (!gameRunning) return;
-  gamePaused = !gamePaused;
-  document.getElementById("pauseBtn").textContent = gamePaused ? "▶ DEVAM" : "⏸ DURDUR";
-  if (!gamePaused) gameLoop();
-}
+        {!isOwner && (
+          <div className="story-reply relative">
+            <input type="text" placeholder="Yanıt gönder..." onClick={e=>e.stopPropagation()} />
+          </div>
+        )}
+        {isOwner && (
+          <div className="story-reply text-center" style={{color:'white', fontSize:'0.9rem'}}>
+             <i className="fas fa-eye"></i> {story.seenBy.length} Görüntülenme
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
-function exitGame() {
-  stopGame();
-  showSection("games");
-}
+// --- MAIN APP COMPONENT ---
+const MainApp = ({ user, onLogout }) => {
+  const [db, setDb] = useState(getDB());
+  const [activeTab, setActiveTab] = useState('sosyalles'); // sosyalles, okul, sinav, projeler, admin
+  const [activeMenu, setActiveMenu] = useState('feed'); // feed, chat, rank, profile
+  const [dropdownProfile, setDropdownProfile] = useState(false);
+  const [dropdownHamburger, setDropdownHamburger] = useState(false);
+  
+  const [viewingStoryIndex, setViewingStoryIndex] = useState(null);
+  const [targetProfile, setTargetProfile] = useState(null); // Modalda profil görmek için
 
-function stopGame() {
-  gameRunning = false;
-  if (animationId) cancelAnimationFrame(animationId);
-  document.removeEventListener("keydown", onKey);
-  document.removeEventListener("keyup",   offKey);
-}
+  const refreshDB = () => setDb(getDB());
 
-function gameLoop() {
-  if (!gameRunning || gamePaused) return;
-  gameFrame++;
-  updateGame();
-  render();
-  animationId = requestAnimationFrame(gameLoop);
-}
-
-function updateGame() {
-  gameSpeed = Math.min(12, 3 + gameScore / 300);
-  gameScore += Math.ceil(gameSpeed * 0.1);
-
-  const laneTargets = [
-    ROAD_X + LANE_W * 0.5,
-    ROAD_X + LANE_W * 1.5,
-    ROAD_X + LANE_W * 2.5
-  ];
-
-  if ((keys["ArrowLeft"]  || keys["a"] || keys["A"]) && car.lane > 0) car.lane = Math.max(0, car.lane - 0.08);
-  if ((keys["ArrowRight"] || keys["d"] || keys["D"]) && car.lane < 2) car.lane = Math.min(2, car.lane + 0.08);
-
-  const l = car.lane;
-  if (l <= 1) car.x = laneTargets[0] + (laneTargets[1] - laneTargets[0]) * l;
-  else        car.x = laneTargets[1] + (laneTargets[2] - laneTargets[1]) * (l - 1);
-
-  roadOffset = (roadOffset + gameSpeed) % 80;
-
-  const spawnRate = Math.max(38, 90 - Math.floor(gameScore / 50));
-  if (gameFrame % spawnRate === 0) {
-    const lane = Math.floor(Math.random() * 3);
-    obstacles.push({
-      x: laneTargets[lane], y: -80, w: 30, h: 56,
-      color: ["#ff006e","#ff4500","#ff8800"][Math.floor(Math.random()*3)]
+  // Helper getters
+  const getUser = id => db.users.find(u => u.id === id);
+  const activeStories = db.stories.filter(s => Date.now() - s.timestamp < 24*3600000); // 24h
+  // Benim takip ettiklerimin storyleri + Benimkiler
+  const visibleStories = activeStories.filter(s => s.userId === user.id || user.following.includes(s.userId));
+  
+  // Ana Akış - Gönderi oluştur
+  const submitPost = (e) => {
+    e.preventDefault();
+    const text = e.target.postText.value;
+    if(!text) return;
+    const newDb = {...db};
+    newDb.posts.unshift({
+      id: Date.now(),
+      userId: user.id,
+      content: text,
+      image: null,
+      likes: 0,
+      timestamp: Date.now(),
+      comments: []
     });
-  }
+    saveDB(newDb);
+    refreshDB();
+    e.target.reset();
+  };
 
-  if (gameFrame % 60 === 0) {
-    const lane = Math.floor(Math.random() * 3);
-    coins_arr.push({ x: laneTargets[lane], y: -20, r: 10, collected: false });
-  }
+  return (
+    <div className="app-container">
+      {/* ÜST NAVİGASYON */}
+      <nav className="navbar glass-panel" style={{borderRadius:0, borderBottom:'1px solid var(--border-color)'}}>
+        <div className="nav-left relative">
+           <div className="profile-dropdown-trigger" onClick={() => setDropdownProfile(!dropdownProfile)}>
+             <img src={user.avatar} alt="Profile" className="avatar" />
+             <span style={{fontWeight:600}} className="d-none d-md-block">{user.name}</span>
+             <i className="fas fa-chevron-down" style={{fontSize:'0.8rem', color:'var(--text-muted)'}}></i>
+           </div>
+           
+           {/* Profil Dropdown */}
+           <div className={`dropdown-menu ${dropdownProfile ? 'show' : ''}`} style={{left:0, right:'auto'}}>
+             <a className="dropdown-item" onClick={()=>{setTargetProfile(user); setDropdownProfile(false);}}><i className="fas fa-user-circle"></i> Profili Görüntüle</a>
+             <a className="dropdown-item"><i className="fas fa-key"></i> Şifre Yenile</a>
+             <a className="dropdown-item"><i className="fas fa-id-badge"></i> Kullanıcı Adı Değiştir</a>
+             <a className="dropdown-item"><i className="fas fa-image"></i> Profil Fotoğrafı</a>
+             <div className="dropdown-divider"></div>
+             <a className="dropdown-item" style={{color:'var(--danger-color)'}} onClick={onLogout}><i className="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+           </div>
+        </div>
 
-  obstacles.forEach(o => { o.y += gameSpeed; });
-  obstacles = obstacles.filter(o => o.y < CANVAS_H + 100);
-  coins_arr.forEach(c => { c.y += gameSpeed; });
-  coins_arr = coins_arr.filter(c => c.y < CANVAS_H + 30 && !c.collected);
+        <div className="nav-center">
+           <button className={`nav-tab ${activeTab === 'sosyalles' ? 'active' : ''}`} onClick={()=>{setActiveTab('sosyalles'); setActiveMenu('feed');}}><i className="fas fa-fire"></i> <span className="d-none d-md-inline">Sosyalleş</span></button>
+           <button className={`nav-tab ${activeTab === 'okul' ? 'active' : ''}`} onClick={()=>setActiveTab('okul')}><i className="fas fa-school"></i> <span className="d-none d-md-inline">Okulum</span></button>
+           <button className={`nav-tab ${activeTab === 'sinav' ? 'active' : ''}`} onClick={()=>setActiveTab('sinav')}><i className="fas fa-file-alt"></i> <span className="d-none d-md-inline">Deneme Çöz</span></button>
+           <button className={`nav-tab ${activeTab === 'projeler' ? 'active' : ''}`} onClick={()=>setActiveTab('projeler')}><i className="fas fa-lightbulb"></i> <span className="d-none d-md-inline">Projeler</span></button>
+        </div>
 
-  for (let i = obstacles.length - 1; i >= 0; i--) {
-    if (rectsCollide(car, obstacles[i])) {
-      obstacles.splice(i, 1);
-      gameLives--;
-      screenFlash();
-      if (gameLives <= 0) { gameOver(); return; }
-    }
-  }
+        <div className="nav-right relative">
+           <button className="btn btn-circle btn-ghost" onClick={() => setDropdownHamburger(!dropdownHamburger)}>
+             <i className="fas fa-bars" style={{fontSize:'1.2rem'}}></i>
+           </button>
+           {/* Menü Dropdown */}
+           <div className={`dropdown-menu ${dropdownHamburger ? 'show' : ''}`}>
+             <a className="dropdown-item"><i className="fas fa-book text-primary"></i> 📚 Dersler</a>
+             <a className="dropdown-item"><i className="fas fa-clipboard-list text-primary"></i> 📝 Testler</a>
+             <a className="dropdown-item"><i className="fas fa-file-signature text-primary"></i> 📄 Çıkmış Sorular</a>
+             <a className="dropdown-item"><i className="fas fa-tasks text-primary"></i> 📋 Ödevler</a>
+             <div className="dropdown-divider"></div>
+             <a className="dropdown-item" onClick={()=>{setActiveMenu('chat'); setDropdownHamburger(false);}}><i className="fas fa-comments text-success"></i> 💬 Genel Chat</a>
+             <a className="dropdown-item" onClick={()=>{setActiveTab('sosyalles'); setActiveMenu('rank'); setDropdownHamburger(false);}}><i className="fas fa-trophy text-warning"></i> 🏆 Sıralamam</a>
+             <a className="dropdown-item"><i className="fas fa-chalkboard-teacher text-info"></i> 👨‍🏫 Öğretmene Mesaj</a>
+             <a className="dropdown-item"><i className="fas fa-paper-plane text-secondary"></i> 📩 DM</a>
+           </div>
+        </div>
+      </nav>
 
-  coins_arr.forEach(c => {
-    if (!c.collected && circleRectCollide(c, car)) {
-      c.collected = true;
-      gameScore  += 50;
-      if (userData) userData.coins = (userData.coins || 0) + 1;
-    }
-  });
+      {/* ANA İÇERİK IZGARASI */}
+      <div className="main-content">
+        
+        {/* SOL SİDEBAR - HİKAYELER */}
+        <aside className="left-sidebar">
+          <div className="glass-panel story-section">
+            <div className="story-header">
+              Hikayeler
+              <button className="btn btn-circle btn-ghost btn-sm"><i className="fas fa-plus"></i></button>
+            </div>
+            <div className="story-scroll-container">
+              
+              {/* Kendi Hikaye Ekleme */}
+              <div className="story-item">
+                <div className="story-ring add-story"><i className="fas fa-plus"></i></div>
+                <div className="story-info">
+                  <div className="name">Hikaye Ekle</div>
+                  <div className="time">Fotoğraf veya video</div>
+                </div>
+              </div>
 
-  updateHUD();
-}
+              {/* Diğer Hikayeler */}
+              {visibleStories.map((s, idx) => {
+                const u = getUser(s.userId);
+                return (
+                  <div className="story-item" key={s.id} onClick={() => setViewingStoryIndex(idx)}>
+                    <div className="story-ring"><img src={u.avatar} alt="Avatar" /></div>
+                    <div className="story-info">
+                      <div className="name">{u.name}</div>
+                      <div className="time">{new Date(s.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
 
-function rectsCollide(a, o) {
-  return Math.abs(a.x - o.x) < (a.w/2 + o.w/2) - 6 &&
-         Math.abs(a.y - o.y) < (a.h/2 + o.h/2) - 10;
-}
-function circleRectCollide(c, r) {
-  return Math.abs(c.x - r.x) < r.w/2 + c.r &&
-         Math.abs(c.y - r.y) < r.h/2 + c.r;
-}
+        {/* ORTA ALAN - İÇERİK */}
+        <main className="feed-area">
+          {activeMenu === 'feed' && activeTab === 'sosyalles' && (
+            <div className="feed-container animate-fade-in">
+              {/* Gönderi Oluşturma */}
+              <div className="glass-panel create-post">
+                <form onSubmit={submitPost}>
+                  <div className="create-post-top">
+                    <img src={user.avatar} className="avatar" />
+                    <textarea name="postText" className="create-post-input" placeholder={`${user.name}, okulla ilgili ne düşünüyorsun?`}></textarea>
+                  </div>
+                  <div className="create-post-actions">
+                     <div className="flex-row gap-2">
+                       <button type="button" className="action-btn"><i className="fas fa-image"></i> Medya</button>
+                       <button type="button" className="action-btn"><i className="fas fa-smile"></i> His</button>
+                     </div>
+                     <button type="submit" className="btn btn-primary btn-sm">Paylaş</button>
+                  </div>
+                </form>
+              </div>
 
-function updateHUD() {
-  document.getElementById("score").textContent = gameScore.toLocaleString();
-  document.getElementById("speed").textContent = Math.round(gameSpeed * 20);
-  document.getElementById("lives").textContent = "❤️".repeat(Math.max(0, gameLives));
-}
+              {/* Gönderiler */}
+              {db.posts.map(p => {
+                const u = getUser(p.userId);
+                return (
+                  <div className="glass-panel post-card animate-slide-up" key={p.id}>
+                    <div className="post-header">
+                      <div className="post-user cursor-pointer" onClick={()=>setTargetProfile(u)}>
+                        <img src={u.avatar} className="avatar" />
+                        <div className="post-user-info">
+                          <div className="name">{u.name} <span className={`role-badge ${u.role === 'teacher'?'teacher':''}`}>{u.role==='teacher'?'Öğretmen':`${u.grade}. Sınıf`}</span></div>
+                          <div className="meta">@{u.username} • {new Date(p.timestamp).toLocaleTimeString()}</div>
+                        </div>
+                      </div>
+                      <button className="btn btn-ghost btn-circle"><i className="fas fa-ellipsis-h"></i></button>
+                    </div>
+                    <div className="post-content">{p.content}</div>
+                    {p.image && <img src={p.image} className="post-image" />}
+                    
+                    <div className="post-stats mt-3">
+                      <span>{p.likes} Beğeni</span>
+                      <span>{p.comments.length} Yorum</span>
+                    </div>
+                    
+                    <div className="post-actions mt-2">
+                      <button className="post-action active"><i className="fas fa-heart text-secondary"></i> Beğen</button>
+                      <button className="post-action"><i className="fas fa-comment"></i> Yorum Yap</button>
+                      <button className="post-action"><i className="fas fa-share"></i> Paylaş</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-function screenFlash() {
-  if (!canvas) return;
-  canvas.style.outline = "4px solid #ff006e";
-  setTimeout(() => { canvas.style.outline = ""; }, 300);
-}
+          {activeMenu === 'chat' && (
+             <div className="glass-panel p-4 animate-fade-in" style={{minHeight:'600px', display:'flex', flexDirection:'column'}}>
+                <h2 className="mb-4"><i className="fas fa-comments text-success"></i> Okul Genel Chat</h2>
+                <div style={{flex:1, background:'var(--bg-body)', borderRadius:'var(--radius-lg)', padding:'1rem', overflowY:'auto'}}>
+                  <div className="text-center text-muted mb-3"><small>Bugün</small></div>
+                  <div className="flex-row gap-2 mb-3">
+                    <img src={db.users[1].avatar} className="avatar avatar-sm"/>
+                    <div className="glass-panel p-2" style={{borderRadius:'0 1rem 1rem 1rem'}}>
+                      <div style={{fontWeight:'bold', fontSize:'0.8rem', color:'var(--secondary-color)'}}>{db.users[1].name}</div>
+                      Yarınki fizik sınavı hangi konulardandı?
+                    </div>
+                  </div>
+                  <div className="flex-row gap-2 mb-3" style={{flexDirection:'row-reverse'}}>
+                    <div className="glass-panel p-2" style={{borderRadius:'1rem 0 1rem 1rem', background:'var(--primary-color)', color:'white'}}>
+                      Dinamik ve iş-güç-enerji dediler.
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-row gap-2 mt-3">
+                  <input className="form-control" style={{borderRadius:'var(--radius-full)'}} placeholder="Mesaj yaz..." />
+                  <button className="btn btn-primary btn-circle"><i className="fas fa-paper-plane"></i></button>
+                </div>
+             </div>
+          )}
 
-async function gameOver() {
-  stopGame();
-  if (userData) {
-    if (gameScore > (userData.score || 0)) userData.score = gameScore;
-    userData.gamesPlayed = (userData.gamesPlayed || 0) + 1;
-    userData.level       = Math.max(1, Math.floor(Math.sqrt((userData.score||0) / 100)) + 1);
-    checkAchievements();
-    await saveUserData();
-    updateNavbar();
-  }
-  showOverlay("OYUN BİTTİ", "Harika bir sürüş!", `SKOR: ${gameScore.toLocaleString()}`, "TEKRAR OYNA ▶", startCarGame);
-}
+          {activeTab === 'okul' && activeMenu !== 'chat' && (
+            <div className="glass-panel p-4 animate-fade-in text-center">
+               <h1 className="mb-4">Okulum</h1>
+               <i className="fas fa-school text-primary" style={{fontSize:'4rem'}}></i>
+               <p className="mt-4 text-muted">Okul duyuruları, etkinlikler ve haberler burada listelenecek.</p>
+            </div>
+          )}
 
-// ── Render ──
-function render() {
-  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
-  drawBackground();
-  drawRoad(roadOffset);
-  coins_arr.forEach(c => { if (!c.collected) drawCoin(c); });
-  obstacles.forEach(o => drawObstacleCar(o));
-  drawCar(car.x, car.y, car.color);
-}
+          {activeTab === 'sinav' && (
+            <div className="glass-panel p-4 animate-fade-in text-center">
+               <h1 className="mb-4">Deneme & Sınavlar</h1>
+               <i className="fas fa-edit text-accent" style={{fontSize:'4rem'}}></i>
+               <p className="mt-4 text-muted">Online denemeler, geçmiş PDF'ler ve sonuçları buradan takip edebilirsiniz.</p>
+            </div>
+          )}
+        </main>
 
-function drawBackground() {
-  const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-  grad.addColorStop(0, "#050810");
-  grad.addColorStop(1, "#0a0f1e");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-  ctx.fillStyle = "rgba(255,255,255,0.25)";
-  for (let i = 0; i < 30; i++) {
-    ctx.fillRect(((i*137 + gameFrame*0.2) % CANVAS_W), ((i*97 + gameFrame*0.1) % CANVAS_H), 1, 1);
-  }
-}
+        {/* SAĞ SİDEBAR - SIRALAMAM & ARAMA */}
+        <aside className="right-sidebar">
+           {/* ARAMA */}
+           <div className="glass-panel search-widget animate-slide-up">
+              <div className="search-input-wrap">
+                 <i className="fas fa-search"></i>
+                 <input type="text" className="search-input" placeholder="Kullanıcı ara..." />
+              </div>
+           </div>
 
-function drawRoad(offset) {
-  ctx.fillStyle = "#111827";
-  ctx.fillRect(ROAD_X, 0, ROAD_W, CANVAS_H);
-  ctx.shadowColor = "#00f5ff"; ctx.shadowBlur = 12;
-  ctx.strokeStyle = "#00f5ff"; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(ROAD_X, 0); ctx.lineTo(ROAD_X, CANVAS_H); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(ROAD_X+ROAD_W, 0); ctx.lineTo(ROAD_X+ROAD_W, CANVAS_H); ctx.stroke();
-  ctx.shadowBlur = 0;
-  ctx.setLineDash([30, 20]);
-  ctx.strokeStyle = "rgba(255,255,255,0.15)"; ctx.lineWidth = 2;
-  for (let lane = 1; lane < 3; lane++) {
-    const lx = ROAD_X + lane * LANE_W;
-    ctx.beginPath();
-    for (let y = -80 + offset; y < CANVAS_H + 80; y += 80) {
-      ctx.moveTo(lx, y); ctx.lineTo(lx, y + 40);
-    }
-    ctx.stroke();
-  }
-  ctx.setLineDash([]);
-}
+           {/* SIRALAMAM LİSTESİ */}
+           <div className="glass-panel rank-widget animate-slide-up" style={{animationDelay:'0.1s'}}>
+              <div className="rank-widget-header">
+                <span className="flex-row gap-2"><i className="fas fa-trophy text-warning"></i> Sınav Sıralaması</span>
+                <i className="fas fa-filter text-muted cursor-pointer"></i>
+              </div>
+              <div className="rank-list">
+                {db.users.filter(u=>u.role==='student').sort((a,b)=>b.score - a.score).map((u, i) => (
+                  <div className="rank-item cursor-pointer" key={u.id} onClick={()=>setTargetProfile(u)}>
+                     <div className="rank-number">{i+1}</div>
+                     <img src={u.avatar} className="avatar avatar-sm"/>
+                     <div className="rank-user-info">
+                        <div className="name">{u.name}</div>
+                        <div className="score">{u.score.toFixed(1)} Net</div>
+                     </div>
+                  </div>
+                ))}
+              </div>
+              <button className="btn btn-outline w-100 mt-4 btn-sm" onClick={()=>{setActiveTab('sosyalles'); setActiveMenu('rank');}}>Tam Listeyi Gör</button>
+           </div>
+        </aside>
 
-function drawCar(x, y, color) {
-  ctx.save(); ctx.translate(x, y);
-  ctx.shadowColor = color; ctx.shadowBlur = 20;
-  ctx.fillStyle = color;
-  ctx.beginPath(); ctx.roundRect(-13, -28, 26, 56, 6); ctx.fill();
-  ctx.fillStyle = "rgba(0,0,0,0.6)";
-  ctx.beginPath(); ctx.roundRect(-9, -22, 18, 28, 4); ctx.fill();
-  ctx.fillStyle = "#ffe600"; ctx.shadowColor = "#ffe600"; ctx.shadowBlur = 8;
-  ctx.fillRect(-11,-30,6,4); ctx.fillRect(5,-30,6,4);
-  ctx.fillStyle = "#ff006e";
-  ctx.fillRect(-11,26,6,4); ctx.fillRect(5,26,6,4);
-  ctx.shadowBlur = 0; ctx.restore();
-}
+      </div>
 
-function drawObstacleCar(o) {
-  ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(Math.PI);
-  ctx.shadowColor = o.color; ctx.shadowBlur = 15;
-  ctx.fillStyle = o.color;
-  ctx.beginPath(); ctx.roundRect(-13,-28,26,56,6); ctx.fill();
-  ctx.fillStyle = "rgba(0,0,0,0.5)";
-  ctx.beginPath(); ctx.roundRect(-9,-22,18,28,4); ctx.fill();
-  ctx.shadowBlur = 0; ctx.restore();
-}
+      {/* Profil Görüntüleme Modalı */}
+      {targetProfile && (
+        <div className="modal-overlay" onClick={()=>setTargetProfile(null)}>
+           <div className="profile-modal animate-slide-up" onClick={e=>e.stopPropagation()}>
+              <div className="profile-modal-header">
+                 <div className="close-modal-btn" onClick={()=>setTargetProfile(null)}><i className="fas fa-times"></i></div>
+              </div>
+              <div className="profile-modal-body">
+                 <img src={targetProfile.avatar} className="profile-modal-avatar"/>
+                 <h2 className="mt-3">{targetProfile.name}</h2>
+                 <p className="text-muted">@{targetProfile.username} {targetProfile.role==='teacher' ? `• ${targetProfile.branch} Öğretmeni` : `• ${targetProfile.grade}. Sınıf`}</p>
+                 <p className="mt-2" style={{fontStyle:'italic', color:'var(--text-light)'}}>"{targetProfile.bio}"</p>
+                 
+                 <div className="profile-stats-bar">
+                    <div className="profile-stat-item">
+                       <span className="profile-stat-number">{targetProfile.followers.length}</span>
+                       <span className="profile-stat-label">Takipçi</span>
+                    </div>
+                    <div className="profile-stat-item">
+                       <span className="profile-stat-number">{targetProfile.following.length}</span>
+                       <span className="profile-stat-label">Takip Edilen</span>
+                    </div>
+                    {targetProfile.role === 'student' && (
+                      <div className="profile-stat-item">
+                         <span className="profile-stat-number text-primary">{targetProfile.score || 0}</span>
+                         <span className="profile-stat-label">Ort. Net</span>
+                      </div>
+                    )}
+                 </div>
 
-function drawCoin(c) {
-  ctx.save(); ctx.translate(c.x, c.y);
-  ctx.shadowColor = "#ffe600"; ctx.shadowBlur = 12;
-  ctx.fillStyle = "#ffe600";
-  ctx.beginPath(); ctx.arc(0, 0, c.r, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = "#050810";
-  ctx.font = "bold 11px monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillText("$", 0, 0);
-  ctx.shadowBlur = 0; ctx.restore();
-}
+                 <div className="flex-row justify-center gap-2 mt-4">
+                    {targetProfile.id !== user.id && (
+                      <>
+                        <button className="btn btn-primary"><i className="fas fa-user-plus"></i> Takip Et</button>
+                        <button className="btn btn-outline"><i className="fas fa-envelope"></i> Mesaj</button>
+                      </>
+                    )}
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
 
-// ════════════════════════════════════════
-//  DOM EVENT LISTENERS
-// ════════════════════════════════════════
-document.addEventListener("DOMContentLoaded", () => {
+      {/* Story Viewer */}
+      {viewingStoryIndex !== null && (
+        <StoryViewer 
+           stories={visibleStories} 
+           initialIndex={viewingStoryIndex} 
+           onClose={() => setViewingStoryIndex(null)} 
+           currentUser={user}
+        />
+      )}
 
-  // ── Auth tabs ──
-  document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.addEventListener("click", () => switchTab(btn.dataset.tab));
-  });
+      {/* Sabit Destek Butonu */}
+      <div className="support-fab" title="Canlı Destek / Yardım">
+        <i className="fas fa-headset"></i>
+      </div>
+    </div>
+  );
+};
 
-  // ── Auth buttons ──
-  document.getElementById("btnLogin").addEventListener("click", loginUser);
-  document.getElementById("btnRegister").addEventListener("click", registerUser);
-  document.getElementById("btnForgot").addEventListener("click", forgotPassword);
+// --- APP Kök Bileşeni ---
+const App = () => {
+  const [currentUser, setCurrentUser] = useState(null);
 
-  // ── Navbar ──
-  document.getElementById("navProfileBtn").addEventListener("click", openProfile);
-  document.getElementById("navMenuBtn").addEventListener("click", () => toggleMenu());
+  // Tema Kontrolü - Basit Simülasyon (İstenirse butona bağlanabilir)
+  useEffect(() => {
+    // document.documentElement.setAttribute('data-theme', 'dark'); // Örnek karanlık tema
+  }, []);
 
-  // ── Menu ──
-  document.getElementById("menuOverlay").addEventListener("click", (e) => {
-    if (e.target.id === "menuOverlay") toggleMenu(true);
-  });
-  document.getElementById("menuClose").addEventListener("click",        () => toggleMenu(true));
-  document.getElementById("menuGames").addEventListener("click",        () => { showSection("games");        toggleMenu(true); });
-  document.getElementById("menuLeaderboard").addEventListener("click",  () => { showSection("leaderboard");  toggleMenu(true); });
-  document.getElementById("menuAchievements").addEventListener("click", () => { showSection("achievements"); toggleMenu(true); });
-  document.getElementById("menuStore").addEventListener("click",        () => { showSection("store");        toggleMenu(true); });
-  document.getElementById("menuProfile").addEventListener("click",      () => { openProfile();               toggleMenu(true); });
-  document.getElementById("menuLogout").addEventListener("click",       logoutUser);
+  return (
+    <>
+      {!currentUser ? (
+        <LoginRegister onLogin={(user) => setCurrentUser(user)} />
+      ) : (
+        <MainApp user={currentUser} onLogout={() => setCurrentUser(null)} />
+      )}
+    </>
+  );
+};
 
-  // ── Profile modal ──
-  document.getElementById("profileModalBackdrop").addEventListener("click", closeProfile);
-  document.getElementById("profileModalClose").addEventListener("click", closeProfile);
-  document.getElementById("btnLogoutProfile").addEventListener("click", logoutUser);
-
-  // ── Game card ──
-  document.getElementById("cardCarGame").addEventListener("click", () => startGame("car"));
-
-  // ── Game controls ──
-  document.getElementById("btnBack").addEventListener("click", exitGame);
-  document.getElementById("pauseBtn").addEventListener("click", togglePause);
-
-  // ── Store ──
-  document.getElementById("buyRedCar").addEventListener("click",    () => buyItem("red_car",     500));
-  document.getElementById("buyBlueCar").addEventListener("click",   () => buyItem("blue_car",    750));
-  document.getElementById("buySpeedBoost").addEventListener("click",() => buyItem("speed_boost", 200));
-  document.getElementById("buyArmor").addEventListener("click",     () => buyItem("armor",       300));
-
-  // ── Overlay start ──
-  document.getElementById("overlayBtn").addEventListener("click", startCarGame);
-});
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
