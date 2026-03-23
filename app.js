@@ -67,18 +67,17 @@ const SANDIKLAR = [
     havuz:[{tip:"esya",deger:"tir",agirlik:20},{tip:"esya",deger:"kepce",agirlik:18},{tip:"esya",deger:"vinc",agirlik:15},{tip:"esya",deger:"silikon_tabancasi",agirlik:12},{tip:"altin",deger:5,agirlik:18},{tip:"altin",deger:10,agirlik:10},{tip:"banknot",deger:500,agirlik:7}] }
 ];
 
-// Dolap tanımları (eşyaları güç aralığına göre grupla)
-const DOLAPLAR = [
-  { id:0, ad:"Bronz Dolap", icon:"🗄️", minGuc:1,  maxGuc:20 },
-  { id:1, ad:"Gümüş Dolap", icon:"🗃️", minGuc:21, maxGuc:40 },
-  { id:2, ad:"Altın Dolap", icon:"🏺", minGuc:41, maxGuc:60 },
-  { id:3, ad:"Kristal Dolap",icon:"💎",minGuc:61, maxGuc:99 }
-];
-
 // Seçilebilir avatarlar
 const AVATARLAR = ["👷","⛏️","🪨","💎","🔥","🐉","🦅","🌑","⚡","🌊","🤖","👑","🧙","🥷","🤠","🦁","🐺","🦊","🧲","🚀"];
 
 const LIG_ODULU_ARALIK_MS = 10 * 60 * 1000;
+
+// Dolap tipleri (market satın alma)
+const DOLAP_TIPLERI = [
+  { id:"normal",  ad:"Normal Dolap",  emoji:"🗄️", cssClass:"dolap-normal",  kapasite:10, maliyet:300,  aciklama:"10 eşya kapasiteli standart madenci dolabı." },
+  { id:"ustun",   ad:"Üstün Dolap",   emoji:"🗃️", cssClass:"dolap-ustun",   kapasite:20, maliyet:500,  aciklama:"20 eşya kapasiteli güçlendirilmiş çelik dolap." },
+  { id:"dubleks", ad:"Dubleks Dolap", emoji:"🏺", cssClass:"dolap-dubleks", kapasite:30, maliyet:650,  aciklama:"30 eşya kapasiteli nadir altın kaplama dubleks dolap!" }
+];
 
 // ── Global Durum ──
 let mevcutKullanici = null;
@@ -125,9 +124,18 @@ async function veriGuncelle(uid, data){ await db.collection("kullanicilar").doc(
 
 async function kullaniciBelgesiOlustur(uid, email, username){
   const now = firebase.firestore.Timestamp.now();
-  const d = { uid, email, username, lig:"Bronz", altin:0, banknot:10, kurus:0, madenci:"Beyza", esyalar:[], guc:0, sonOdul:now, avatar:"👷", kayitTarihi:now };
+  // Başlangıçta 1 normal dolap
+  const d = { uid, email, username, lig:"Bronz", altin:0, banknot:10, kurus:0, madenci:"Beyza", esyalar:[], guc:0, sonOdul:now, avatar:"👷", profilFoto:null, uretimAltin:0, dolaplar:{normal:1,ustun:0,dubleks:0}, kayitTarihi:now };
   await db.collection("kullanicilar").doc(uid).set(d);
   return d;
+}
+
+// Toplam dolap kapasitesi ve doluluk
+function dolapKapasiteHesapla(v){
+  const d = v.dolaplar || {normal:1,ustun:0,dubleks:0};
+  const kapasite = (d.normal||0)*10 + (d.ustun||0)*20 + (d.dubleks||0)*30;
+  const dolu = (v.esyalar||[]).length;
+  return {kapasite, dolu};
 }
 
 function kullaniciyiDinle(uid){
@@ -229,6 +237,12 @@ function uiGuncelle(){
   // Profil avatar butonu
   document.getElementById("profile-topbtn-avatar").textContent = v.avatar||"👷";
 
+  // Sidebar info panel
+  const {kapasite,dolu} = dolapKapasiteHesapla(kullaniciVerisi);
+  const sipPow = document.getElementById("sip-power"); if(sipPow) sipPow.textContent=formatSayi(kullaniciVerisi.guc||0);
+  const uA = kullaniciVerisi.uretimAltin||0;
+  const sipU = document.getElementById("sip-uretim"); if(sipU) sipU.textContent=(uA>0?`🥇${uA}%|`:"")+(uA<100?`💵${100-uA}%`:"💵100%");
+
   // Aktif sayfa
   switch(aktifSayfa){
     case "village":     koyGuncelle(); break;
@@ -254,34 +268,37 @@ function koyGuncelle(){
   // Madenci avatarı tünelde
   document.getElementById("village-miner-emoji").textContent = madenci ? madenci.emoji : "👷";
 
-  // Dolapları render et
-  dolaplaraRender(v.esyalar||[]);
+  // Village timer (sidebar)
+  // koyGuncelle her çağrıldığında sidebar timer da güncel
+  // Dolapları render et — kapasiteye göre
+  dolaplaraRender(v);
 }
 
-function dolaplaraRender(esyalar){
+function dolaplaraRender(v){
   const row = document.getElementById("cabinets-row");
   row.innerHTML="";
+  const esyalar = v.esyalar || [];
+  const d = v.dolaplar || {normal:1,ustun:0,dubleks:0};
 
-  DOLAPLAR.forEach(dolap=>{
-    // Bu dolaptaki eşyalar
-    const icEsyalar = esyalar.filter(id=>{
-      const e=esyaBul(id);
-      return e && e.guc>=dolap.minGuc && e.guc<=dolap.maxGuc;
-    });
+  // Sahip olunan dolapların listesini oluştur
+  const dolapListesi = [];
+  for(let i=0;i<(d.normal||0);i++) dolapListesi.push({tip:'normal',kapasite:10,emoji:'🗄️',label:'Normal'});
+  for(let i=0;i<(d.ustun||0);i++) dolapListesi.push({tip:'ustun',kapasite:20,emoji:'🗃️',label:'Üstün'});
+  for(let i=0;i<(d.dubleks||0);i++) dolapListesi.push({tip:'dubleks',kapasite:30,emoji:'🏺',label:'Dubleks'});
 
-    // Tekrarsız eşyalar (miniatur)
-    const tekrarsiz=[...new Set(icEsyalar)];
+  // Eşyaları dolaplara dağıt (sıralı)
+  const esyaSlot = [...esyalar];
+  dolapListesi.forEach((dolap, idx) => {
+    const dolapEsyalar = esyaSlot.splice(0, dolap.kapasite);
+    const tekrarsiz = [...new Set(dolapEsyalar)];
+    const doluOran = dolapEsyalar.length / dolap.kapasite;
+    const acik = dolapEsyalar.length > 0;
 
-    const div=document.createElement("div");
-    div.className="cabinet"+(icEsyalar.length>0?" open":"");
-    div.dataset.dolap=dolap.id;
-    div.addEventListener("click",()=>dolabAc(dolap.id, esyalar));
+    const div = document.createElement("div");
+    div.className = "cabinet" + (acik ? " open" : "");
+    div.addEventListener("click",()=>dolabAc(idx, dolapListesi, dolapEsyalar, dolap));
 
-    // Sayı rozeti
-    const rozetHTML = icEsyalar.length>0
-      ? `<div class="cabinet-count-badge">${icEsyalar.length}</div>` : "";
-
-    // Minik eşyalar (max 4)
+    const rozetHTML = dolapEsyalar.length>0 ? `<div class="cabinet-count-badge">${dolapEsyalar.length}</div>` : "";
     const miniHTML = tekrarsiz.slice(0,4).map(id=>{ const e=esyaBul(id); return e?`<span class="cabinet-item-mini">${e.emoji}</span>`:""; }).join("");
 
     div.innerHTML=`
@@ -300,28 +317,28 @@ function dolaplaraRender(esyalar){
       </div>
       <div class="cabinet-bottom"></div>
       <div class="cabinet-legs"><div class="cabinet-leg"></div><div class="cabinet-leg"></div></div>
-      <div class="cabinet-label">${dolap.icon} ${dolap.ad.split(" ")[0]}</div>
+      <div class="cabinet-label">${dolap.emoji} ${dolap.label}</div>
     `;
     row.appendChild(div);
   });
 }
 
 // Dolap aç modalı
-function dolabAc(dolapId, esyalar){
-  const dolap=DOLAPLAR[dolapId];
-  document.getElementById("cabinet-modal-icon").textContent  = dolap.icon;
-  document.getElementById("cabinet-modal-title").textContent = dolap.ad;
+function dolabAc(idx, dolapListesi, dolapEsyalar, dolap){
+  document.getElementById("cabinet-modal-icon").textContent  = dolap.emoji;
+  document.getElementById("cabinet-modal-title").textContent = dolap.label + " Dolabı";
 
-  const icEsyalar = esyalar.filter(id=>{ const e=esyaBul(id); return e&&e.guc>=dolap.minGuc&&e.guc<=dolap.maxGuc; });
+  // Kapasite göstergesi
+  const yuzde = (dolapEsyalar.length / dolap.kapasite) * 100;
+  document.getElementById("cabinet-capacity-bar").style.width = yuzde + "%";
+  document.getElementById("cabinet-capacity-txt").textContent = `${dolapEsyalar.length}/${dolap.kapasite} eşya`;
 
-  // Tekrar sayımı
   const sayim={};
-  icEsyalar.forEach(id=>{sayim[id]=(sayim[id]||0)+1;});
-
+  dolapEsyalar.forEach(id=>{sayim[id]=(sayim[id]||0)+1;});
   const interior=document.getElementById("cabinet-interior");
   interior.innerHTML="";
 
-  if(icEsyalar.length===0){
+  if(dolapEsyalar.length===0){
     interior.innerHTML=`<div class="cabinet-empty-msg">Bu dolap boş! Market'ten sandık aç 📦</div>`;
   } else {
     Object.entries(sayim).forEach(([id,adet])=>{
@@ -331,7 +348,6 @@ function dolabAc(dolapId, esyalar){
       interior.appendChild(card);
     });
   }
-
   document.getElementById("cabinet-modal").classList.remove("hidden");
 }
 
@@ -356,8 +372,15 @@ async function ligOduluDagit(ligOdul){
     else{ const ben=oyuncular.find(o=>o.uid===mevcutKullanici.uid); pay=Math.floor(((ben?ben.guc:0)/toplamGuc)*ligOdul); }
     pay=Math.max(pay,1);
     const now=firebase.firestore.Timestamp.now();
-    await veriGuncelle(mevcutKullanici.uid,{banknot:firebase.firestore.FieldValue.increment(pay),sonOdul:now});
-    ligOduluBildirimGoster(pay,kullaniciVerisi.lig);
+    // Üretim tercihine göre altın/banknot dağıt
+    const altinPct = kullaniciVerisi.uretimAltin||0;
+    const altinMiktar  = Math.floor(pay * altinPct / 100);
+    const banknotMiktar = pay - altinMiktar;
+    const gunc = {sonOdul:now};
+    if(altinMiktar>0)   gunc.altin   = firebase.firestore.FieldValue.increment(altinMiktar);
+    if(banknotMiktar>0) gunc.banknot = firebase.firestore.FieldValue.increment(banknotMiktar);
+    await veriGuncelle(mevcutKullanici.uid, gunc);
+    ligOduluBildirimGoster(pay, kullaniciVerisi.lig, altinMiktar, banknotMiktar);
   }catch(e){ console.error("Lig ödülü hatası:",e); }
 }
 
@@ -376,13 +399,15 @@ function ligGeriSayimBaslat(){
     const dk=Math.floor(kalan/60000), sn=Math.floor((kalan%60000)/1000);
     const fmt=String(dk).padStart(2,"0")+":"+String(sn).padStart(2,"0");
     const el=document.getElementById("village-timer"); if(el) el.textContent=fmt;
+    const el2=document.getElementById("sip-timer"); if(el2) el2.textContent=fmt;
   }
   ligCountdownInt=setInterval(tick,1000); tick();
 }
 
-function ligOduluBildirimGoster(miktar,lig){
-  document.getElementById("reward-amount-display").textContent="+"+miktar+" Banknot";
-  document.getElementById("reward-lig-display").textContent   =lig+" Ligi";
+function ligOduluBildirimGoster(miktar, lig, altinM=0, banknotM=0){
+  const amtTxt = altinM>0 ? `+${altinM} Altın & +${banknotM} Banknot` : `+${miktar} Banknot`;
+  document.getElementById("reward-amount-display").textContent = amtTxt;
+  document.getElementById("reward-lig-display").textContent = lig+" Ligi";
   const rain=document.getElementById("coin-rain"); rain.innerHTML="";
   for(let i=0;i<18;i++){
     const c=document.createElement("span"); c.className="falling-coin"; c.textContent="💵";
@@ -403,6 +428,9 @@ document.getElementById("reward-close-btn").addEventListener("click",()=>{
 // MARKET
 // ============================================================
 function marketGuncelle(){
+  if(!kullaniciVerisi) return;
+
+  // Sandıklar
   const grid=document.getElementById("chests-grid"); grid.innerHTML="";
   SANDIKLAR.forEach(s=>{
     const birimClass=s.birim==="altin"?"gold":s.birim==="banknot"?"banknot":"kurus";
@@ -421,6 +449,68 @@ function marketGuncelle(){
     `;
     grid.appendChild(card);
   });
+
+  // Kapasite bilgisi
+  const {kapasite, dolu} = dolapKapasiteHesapla(kullaniciVerisi);
+  const kapInfo = document.getElementById("market-kapasite-info");
+  if(kapInfo) kapInfo.textContent = `Mevcut kapasite: ${dolu}/${kapasite} eşya dolu. Yeni dolap al!`;
+
+  // Dolaplar shop
+  const cGrid = document.getElementById("cabinets-shop-grid"); cGrid.innerHTML="";
+  DOLAP_TIPLERI.forEach(dt=>{
+    const card=document.createElement("div"); card.className=`chest-card ${dt.cssClass}`;
+    card.innerHTML=`
+      <div class="chest-header">
+        <div class="chest-emoji">${dt.emoji}</div>
+        <div class="chest-info">
+          <div class="chest-name">${dt.ad}</div>
+          <div class="chest-cost banknot">💵 ${dt.maliyet} Banknot</div>
+        </div>
+      </div>
+      <div class="chest-contents">${dt.aciklama}<br/><strong>Kapasite: ${dt.kapasite} eşya</strong></div>
+      <button class="btn-primary chest-buy-btn" onclick="dolapSatinAl('${dt.id}')">${dt.emoji} Satın Al — 💵 ${dt.maliyet}</button>
+    `;
+    cGrid.appendChild(card);
+  });
+
+  // Kilitli madenciler
+  const mGrid = document.getElementById("miners-market-grid"); mGrid.innerHTML="";
+  const aktifM = madenciBul(kullaniciVerisi.madenci);
+  MADENCILER.filter(m => m.maliyet > 0).forEach(m=>{
+    const isOwned = m.katsayi < (aktifM ? aktifM.katsayi : 2) || kullaniciVerisi.madenci === m.id;
+    if(isOwned) return; // Sadece kilitli olanları göster
+    const birimIcon = m.birim==="altin"?"🥇":"💵";
+    const birimAdi  = m.birim==="altin"?"Altın":"Banknot";
+    const card=document.createElement("div"); card.className=`miner-card-modal ${m.id}`;
+    card.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:16px 12px;text-align:center;position:relative;overflow:hidden";
+    card.innerHTML=`
+      <span class="mc-emoji" style="font-size:2.4rem;display:block;margin-bottom:8px">${m.emoji}</span>
+      <div class="mc-name" style="font-family:'Cinzel',serif;font-size:.95rem;font-weight:700;margin-bottom:4px">${m.id}</div>
+      <div class="mc-coeff" style="font-size:.78rem;color:var(--text-dim);margin-bottom:12px">×${m.katsayi} Katsayı</div>
+      <button class="btn-primary" style="font-size:.78rem;padding:9px" onclick="madenciSatinAl('${m.id}')">🔓 ${birimIcon} ${m.maliyet} ${birimAdi}</button>
+    `;
+    mGrid.appendChild(card);
+  });
+  if(mGrid.children.length===0){
+    mGrid.innerHTML=`<div class="inv-empty" style="grid-column:1/-1">Tüm madenciler açık! 🎉</div>`;
+  }
+}
+
+async function dolapSatinAl(tip){
+  if(!mevcutKullanici||!kullaniciVerisi) return;
+  const dt = DOLAP_TIPLERI.find(d=>d.id===tip); if(!dt) return;
+  const v = kullaniciVerisi;
+  if(v.banknot < dt.maliyet){ toast(`Yeterli Banknot yok! Gerekli: ${dt.maliyet} 💵`,"error"); return; }
+  try{
+    const yeniDolaplar = {...(v.dolaplar||{normal:1,ustun:0,dubleks:0})};
+    yeniDolaplar[tip] = (yeniDolaplar[tip]||0) + 1;
+    await veriGuncelle(mevcutKullanici.uid, {
+      banknot: firebase.firestore.FieldValue.increment(-dt.maliyet),
+      dolaplar: yeniDolaplar
+    });
+    toast(`${dt.ad} satın alındı! ${dt.emoji}`,"success");
+    marketGuncelle();
+  }catch(e){ toast("Hata: "+e.message,"error"); }
 }
 
 async function sandikAc(id){
@@ -446,15 +536,22 @@ async function sandikAc(id){
     if(s.birim==="banknot") gunc.banknot =firebase.firestore.FieldValue.increment(-s.maliyet);
     if(s.birim==="kurus")   gunc.kurus   =firebase.firestore.FieldValue.increment(-s.maliyet);
 
+    // Kapasite kontrolü
+    const {kapasite, dolu} = dolapKapasiteHesapla(v);
+
     let ikon="🎁",ad="",acik="";
     if(kazanim.tip==="esya"){
       const esya=esyaBul(kazanim.deger);
       if((v.esyalar||[]).includes(kazanim.deger)){
         gunc.kurus=firebase.firestore.FieldValue.increment(esya.guc);
         ikon="🪙"; ad="Tekrar "+esya.ad; acik=`Zaten sahipsin! +${esya.guc} Kuruş aldın.`;
+      } else if(dolu >= kapasite){
+        // Dolap dolu — para ödülüne çevir
+        gunc.kurus=firebase.firestore.FieldValue.increment(esya.guc * 2);
+        ikon="🪙"; ad="Dolap Dolu!"; acik=`${esya.ad} için yer yok. +${esya.guc*2} Kuruş aldın. Yeni dolap al!`;
       } else {
         gunc.esyalar=firebase.firestore.FieldValue.arrayUnion(kazanim.deger);
-        const ye=[...( v.esyalar||[]),kazanim.deger];
+        const ye=[...(v.esyalar||[]),kazanim.deger];
         gunc.guc=gucHesapla({...v,esyalar:ye});
         ikon=esya.emoji; ad=esya.ad; acik=`Yeni eşya! +${esya.guc} güç puanı.`;
       }
@@ -548,14 +645,26 @@ document.getElementById("profile-modal").addEventListener("click",e=>{ if(e.targ
 
 function profilModalAc(){
   const v=kullaniciVerisi;
+  // Avatar
   document.getElementById("profile-avatar-display").textContent = v.avatar||"👷";
-  document.getElementById("profile-username").textContent       = v.username||"Madenci";
-  document.getElementById("profile-email").textContent         = v.email||"—";
+  // Profil fotoğrafı
+  const fotoImg = document.getElementById("profile-photo-img");
+  if(v.profilFoto){ fotoImg.src=v.profilFoto; fotoImg.classList.remove("hidden"); document.getElementById("profile-big-avatar").classList.add("hidden"); }
+  else { fotoImg.classList.add("hidden"); document.getElementById("profile-big-avatar").classList.remove("hidden"); }
+  // Bilgiler
+  document.getElementById("profile-username").textContent = v.username||"Madenci";
+  document.getElementById("profile-email").textContent    = v.email||"—";
   const lb=document.getElementById("profile-lig-badge"); lb.textContent=v.lig; lb.className="lig-badge "+v.lig;
-  document.getElementById("pstat-guc").textContent    = formatSayi(v.guc||0);
-  document.getElementById("pstat-madenci").textContent= v.madenci||"Beyza";
-  document.getElementById("pstat-lig-rank").textContent   ="Yükleniyor...";
-  document.getElementById("pstat-global-rank").textContent="Yükleniyor...";
+  // Kayıt tarihi
+  const ktEl = document.getElementById("profile-kayit");
+  if(ktEl && v.kayitTarihi){ const t=v.kayitTarihi.toDate(); ktEl.textContent="Kayıt: "+t.toLocaleDateString("tr-TR"); }
+  document.getElementById("pstat-guc").textContent     = formatSayi(v.guc||0);
+  document.getElementById("pstat-madenci").textContent = v.madenci||"Beyza";
+  document.getElementById("pstat-lig-rank").textContent    = "Yükleniyor...";
+  document.getElementById("pstat-global-rank").textContent = "Yükleniyor...";
+  // Şifre alanı temizle
+  const pwEl = document.getElementById("new-password"); if(pwEl) pwEl.value="";
+  const pwErr = document.getElementById("password-error"); if(pwErr) pwErr.textContent="";
 
   // Sıralama
   (async()=>{
@@ -569,13 +678,69 @@ function profilModalAc(){
     }catch(e){ document.getElementById("pstat-lig-rank").textContent="—"; document.getElementById("pstat-global-rank").textContent="—"; }
   })();
 
-  // Madenciler
-  madencilerModalRender();
-
   document.getElementById("profile-modal").classList.remove("hidden");
 }
 
 function profilModalKapat(){ document.getElementById("profile-modal").classList.add("hidden"); }
+
+// Şifre değiştir
+document.getElementById("btn-change-password").addEventListener("click", async()=>{
+  const pw = document.getElementById("new-password").value;
+  const errEl = document.getElementById("password-error");
+  errEl.textContent="";
+  if(pw.length<6){ errEl.textContent="En az 6 karakter giriniz."; return; }
+  try{
+    await mevcutKullanici.updatePassword(pw);
+    document.getElementById("new-password").value="";
+    toast("Şifre güncellendi! 🔒","success");
+  }catch(e){
+    if(e.code==="auth/requires-recent-login") errEl.textContent="Güvenlik için lütfen çıkış yapıp tekrar giriş yap.";
+    else errEl.textContent=turkceleHata(e.code);
+  }
+});
+
+// Profil fotoğrafı yükle (Canvas ile küçültülür)
+document.getElementById("profile-photo-input").addEventListener("change", async(e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const img = new Image();
+  img.onload = async()=>{
+    const canvas = document.createElement("canvas");
+    const size = 200;
+    canvas.width=size; canvas.height=size;
+    const ctx = canvas.getContext("2d");
+    const min = Math.min(img.width,img.height);
+    const sx=(img.width-min)/2, sy=(img.height-min)/2;
+    ctx.drawImage(img,sx,sy,min,min,0,0,size,size);
+    const b64 = canvas.toDataURL("image/jpeg",0.7);
+    try{
+      await veriGuncelle(mevcutKullanici.uid,{profilFoto:b64});
+      toast("Profil fotoğrafı güncellendi! 📷","success");
+    }catch(err){ toast("Hata: "+err.message,"error"); }
+  };
+  img.src = URL.createObjectURL(file);
+});
+
+// Şikayet gönder
+async function sikayetGonder(tip){
+  const mesaj = document.getElementById("sikayet-mesaj").value.trim();
+  if(!mesaj){ toast("Mesaj alanını doldur!","error"); return; }
+  try{
+    await db.collection("sikayetler").add({
+      uid: mevcutKullanici.uid,
+      username: kullaniciVerisi.username||"?",
+      tip,
+      mesaj,
+      tarih: firebase.firestore.Timestamp.now()
+    });
+    document.getElementById("sikayet-mesaj").value="";
+    toast("Şikayetin iletildi! Teşekkürler 🙏","success");
+  }catch(e){ toast("Gönderim hatası: "+e.message,"error"); }
+}
+document.getElementById("btn-kullanici-sikayet").addEventListener("click",()=>sikayetGonder("kullanici"));
+document.getElementById("btn-sistem-sikayet").addEventListener("click",()=>sikayetGonder("sistem"));
+
+// (Madenciler artık profilde değil — tünel modalında)
+function madencilerModalRender_deprecated(){}  // eski fonksiyon kaldırıldı
 
 function madencilerModalRender(){
   if(!kullaniciVerisi) return;
@@ -631,33 +796,66 @@ async function madenciSatinAl(id){
 // ============================================================
 // AVATAR SEÇİCİ
 // ============================================================
-document.getElementById("profile-big-avatar").addEventListener("click",()=>{
-  avatarModalAc();
-});
+document.getElementById("profile-big-avatar").addEventListener("click",avatarModalAc);
 document.getElementById("avatar-modal-close").addEventListener("click",()=>document.getElementById("avatar-modal").classList.add("hidden"));
 document.getElementById("avatar-modal").addEventListener("click",e=>{ if(e.target===document.getElementById("avatar-modal")) document.getElementById("avatar-modal").classList.add("hidden"); });
 
 function avatarModalAc(){
   const grid=document.getElementById("avatar-grid"); grid.innerHTML="";
   const mevcutAvatar=kullaniciVerisi?.avatar||"👷";
-
   AVATARLAR.forEach(av=>{
     const btn=document.createElement("button");
     btn.className="avatar-option"+(av===mevcutAvatar?" selected":"");
     btn.textContent=av;
     btn.addEventListener("click",async()=>{
       if(!mevcutKullanici) return;
-      try{
-        await veriGuncelle(mevcutKullanici.uid,{avatar:av});
-        document.getElementById("avatar-modal").classList.add("hidden");
-        toast("Avatar güncellendi! "+av,"success");
-      }catch(e){ toast("Hata: "+e.message,"error"); }
+      try{ await veriGuncelle(mevcutKullanici.uid,{avatar:av,profilFoto:null}); document.getElementById("avatar-modal").classList.add("hidden"); toast("Avatar güncellendi! "+av,"success"); }
+      catch(e){ toast("Hata: "+e.message,"error"); }
     });
     grid.appendChild(btn);
   });
-
   document.getElementById("avatar-modal").classList.remove("hidden");
 }
+
+// ============================================================
+// TÜNEL TIKLA → MADENCİ MODAL
+// ============================================================
+document.getElementById("tunnel-clickable").addEventListener("click",()=>{
+  if(!kullaniciVerisi) return;
+  madencilerModalRender();
+  document.getElementById("miner-modal").classList.remove("hidden");
+});
+document.getElementById("miner-modal-close").addEventListener("click",()=>document.getElementById("miner-modal").classList.add("hidden"));
+document.getElementById("miner-modal").addEventListener("click",e=>{ if(e.target===document.getElementById("miner-modal")) document.getElementById("miner-modal").classList.add("hidden"); });
+
+// ============================================================
+// ÜRETİM SEÇİMİ MODAL
+// ============================================================
+document.getElementById("sip-edit-btn").addEventListener("click",()=>{
+  if(!kullaniciVerisi) return;
+  const val = kullaniciVerisi.uretimAltin||0;
+  document.getElementById("uretim-slider").value = val;
+  document.getElementById("uretim-altin-pct").textContent = val;
+  document.getElementById("uretim-banknot-pct").textContent = 100-val;
+  document.getElementById("uretim-fill-altin").style.width = val+"%";
+  document.getElementById("uretim-modal").classList.remove("hidden");
+});
+document.getElementById("uretim-modal-close").addEventListener("click",()=>document.getElementById("uretim-modal").classList.add("hidden"));
+document.getElementById("uretim-modal").addEventListener("click",e=>{ if(e.target===document.getElementById("uretim-modal")) document.getElementById("uretim-modal").classList.add("hidden"); });
+document.getElementById("uretim-slider").addEventListener("input",e=>{
+  const v=parseInt(e.target.value);
+  document.getElementById("uretim-altin-pct").textContent=v;
+  document.getElementById("uretim-banknot-pct").textContent=100-v;
+  document.getElementById("uretim-fill-altin").style.width=v+"%";
+});
+document.getElementById("btn-uretim-kaydet").addEventListener("click",async()=>{
+  const v = parseInt(document.getElementById("uretim-slider").value);
+  try{
+    await veriGuncelle(mevcutKullanici.uid,{uretimAltin:v});
+    document.getElementById("uretim-modal").classList.add("hidden");
+    toast(`Üretim tercihi: %${v} Altın / %${100-v} Banknot`,"success");
+  }catch(e){ toast("Hata: "+e.message,"error"); }
+});
 
 // ============================================================
 // NAVİGASYON (Sol Sidebar)
@@ -691,6 +889,7 @@ function sayfayaGit(sayfa){
 window.sandikAc       = sandikAc;
 window.madenciSatinAl = madenciSatinAl;
 window.madenciSecile  = madenciSecile;
+window.dolapSatinAl   = dolapSatinAl;
 
 // ============================================================
 // BAŞLAT
