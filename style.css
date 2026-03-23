@@ -3712,7 +3712,20 @@ input {
   font-weight: 600;
 }
 
-.ld-pay {
+.ld-pay-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.ld-pay-altin {
+  font-size: .78rem;
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.ld-pay-banknot {
   font-size: .78rem;
   color: var(--banknot);
   font-weight: 800;
