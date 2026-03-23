@@ -72,6 +72,12 @@ const AVATARLAR = ["👷","⛏️","🪨","💎","🔥","🐉","🦅","🌑","�
 
 const LIG_ODULU_ARALIK_MS = 10 * 60 * 1000;
 
+// Para Kurları
+const PARA_KURLARI = {
+  altin_banknot: 100,   // 1 Altın = 100 Banknot
+  banknot_kurus: 10     // 1 Banknot = 10 Kuruş
+};
+
 // Dolap tipleri (market satın alma)
 const DOLAP_TIPLERI = [
   { id:"normal",  ad:"Normal Dolap",  emoji:"🗄️", cssClass:"dolap-normal",  kapasite:10, maliyet:300,  aciklama:"10 eşya kapasiteli standart madenci dolabı." },
@@ -361,7 +367,9 @@ document.getElementById("cabinet-modal").addEventListener("click",e=>{
 // ============================================================
 // LİG ÖDÜL SİSTEMİ
 // ============================================================
-async function ligOduluDagit(ligOdul){
+// sessiz=true → popup/toast gösterme (otomatik ödül)
+// donemSayisi → kaç dönem birikmiş (offline earning)
+async function ligOduluDagit(ligOdul, sessiz=false, donemSayisi=1){
   if(!mevcutKullanici||!kullaniciVerisi) return;
   try{
     const snap=await db.collection("kullanicilar").where("lig","==",kullaniciVerisi.lig).get();
@@ -370,7 +378,7 @@ async function ligOduluDagit(ligOdul){
     let pay=0;
     if(toplamGuc===0){ pay=Math.floor(ligOdul/Math.max(oyuncular.length,1)); }
     else{ const ben=oyuncular.find(o=>o.uid===mevcutKullanici.uid); pay=Math.floor(((ben?ben.guc:0)/toplamGuc)*ligOdul); }
-    pay=Math.max(pay,1);
+    pay=Math.max(pay,1) * donemSayisi; // Birikmiş dönemleri de ekle
     const now=firebase.firestore.Timestamp.now();
     // Üretim tercihine göre altın/banknot dağıt
     const altinPct = kullaniciVerisi.uretimAltin||0;
@@ -380,14 +388,26 @@ async function ligOduluDagit(ligOdul){
     if(altinMiktar>0)   gunc.altin   = firebase.firestore.FieldValue.increment(altinMiktar);
     if(banknotMiktar>0) gunc.banknot = firebase.firestore.FieldValue.increment(banknotMiktar);
     await veriGuncelle(mevcutKullanici.uid, gunc);
-    ligOduluBildirimGoster(pay, kullaniciVerisi.lig, altinMiktar, banknotMiktar);
+    if(!sessiz){
+      // Sadece görünür mod açıksa toast göster
+      toast(`⏰ Lig ödülü! +${banknotMiktar>0?banknotMiktar+" Banknot":""} ${altinMiktar>0?altinMiktar+" Altın":""}`.trim(), "gold", 4000);
+    }
   }catch(e){ console.error("Lig ödülü hatası:",e); }
 }
 
+// Kullanıcı offline'dayken biriken ödülleri hesapla ve sessizce ekle
 async function ligOduluKontrol(){
   if(!kullaniciVerisi||!kullaniciVerisi.sonOdul) return;
-  const gecen=Date.now()-kullaniciVerisi.sonOdul.toMillis();
-  if(gecen>=LIG_ODULU_ARALIK_MS){ const l=ligBul(kullaniciVerisi.lig); await ligOduluDagit(l.odul); }
+  const gecen = Date.now() - kullaniciVerisi.sonOdul.toMillis();
+  const donemSayisi = Math.floor(gecen / LIG_ODULU_ARALIK_MS);
+  if(donemSayisi >= 1){
+    const l = ligBul(kullaniciVerisi.lig);
+    // Sessiz=true → popup yok, sadece bakiyeye ekle
+    await ligOduluDagit(l.odul, true, donemSayisi);
+    if(donemSayisi > 1){
+      toast(`⛏️ ${donemSayisi} dönem offline ödülün eklendi!`, "info", 4000);
+    }
+  }
 }
 
 function ligGeriSayimBaslat(){
@@ -395,7 +415,11 @@ function ligGeriSayimBaslat(){
   function tick(){
     if(!kullaniciVerisi||!kullaniciVerisi.sonOdul) return;
     const kalan=LIG_ODULU_ARALIK_MS-(Date.now()-kullaniciVerisi.sonOdul.toMillis());
-    if(kalan<=0){ const l=ligBul(kullaniciVerisi.lig); ligOduluDagit(l.odul); return; }
+    if(kalan<=0){
+      const l=ligBul(kullaniciVerisi.lig);
+      ligOduluDagit(l.odul, true); // sessiz=true → sadece bakiyeye ekle
+      return;
+    }
     const dk=Math.floor(kalan/60000), sn=Math.floor((kalan%60000)/1000);
     const fmt=String(dk).padStart(2,"0")+":"+String(sn).padStart(2,"0");
     const el=document.getElementById("village-timer"); if(el) el.textContent=fmt;
@@ -745,7 +769,8 @@ function madencilerModalRender_deprecated(){}  // eski fonksiyon kaldırıldı
 function madencilerModalRender(){
   if(!kullaniciVerisi) return;
   const v=kullaniciVerisi;
-  const grid=document.getElementById("miners-grid-modal"); grid.innerHTML="";
+  // Tünel modalındaki grid
+  const grid=document.getElementById("miners-modal-grid"); if(!grid){ return; } grid.innerHTML="";
   const aktifM=madenciBul(v.madenci);
 
   MADENCILER.forEach(m=>{
@@ -757,9 +782,9 @@ function madencilerModalRender(){
     let btn="";
     if(isActive) btn=`<button class="btn-secondary mc-btn" disabled>✅ Aktif</button>`;
     else if(isOwned) btn=`<button class="btn-banknot mc-btn" onclick="madenciSecile('${m.id}')">⚙️ Seç</button>`;
-    else{
-      const si=m.birim==="altin"?"🥇":"💵";
-      btn=`<button class="btn-primary mc-btn" onclick="madenciSatinAl('${m.id}')">${si} ${m.maliyet}</button>`;
+    else {
+      // Kilitli → Market'e yönlendir
+      btn=`<button class="btn-primary mc-btn" onclick="document.getElementById('miner-modal').classList.add('hidden');sayfayaGit('market')">🛒 Market'te Al</button>`;
     }
 
     card.innerHTML=`<span class="mc-emoji">${m.emoji}</span><div class="mc-name">${m.id}</div><div class="mc-coeff">×${m.katsayi} Katsayı</div>${btn}`;
