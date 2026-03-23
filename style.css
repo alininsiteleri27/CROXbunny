@@ -2697,10 +2697,12 @@ input {
    FİNANS SAYFASI
    ════════════════════════════════ */
 #page-finans {
-  padding: 0;
-  display: flex;
   flex-direction: column;
   overflow-y: auto;
+}
+
+#page-finans .page-header {
+  padding: 18px 18px 10px;
 }
 
 #page-finans .page-header {
