@@ -523,12 +523,97 @@ input{font-family:'Nunito',sans-serif}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
 
+/* ─ SİDEBAR INFO PANELİ ─ */
+.sidebar-spacer{flex:1}
+.sidebar-info-panel{
+  width:calc(var(--sidebar-w) - 8px);
+  background:rgba(232,124,42,.07);
+  border:1px solid rgba(232,124,42,.2);
+  border-radius:10px;
+  padding:8px 4px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  margin:4px 0;
+}
+.sip-item{display:flex;flex-direction:column;align-items:center;gap:1px;width:100%}
+.sip-val{font-family:'Cinzel',serif;font-size:.72rem;font-weight:800;color:var(--accent);text-align:center;word-break:break-all}
+.sip-label{font-size:.5rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.sip-divider{width:80%;height:1px;background:var(--border)}
+.sip-edit-btn{background:none;border:none;font-size:1rem;cursor:pointer;padding:2px;opacity:.7;transition:opacity .2s}
+.sip-edit-btn:hover{opacity:1}
+.sidebar-btn-home{margin-top:4px;border-top:1px solid var(--border);border-radius:0 0 4px 4px}
+
+/* ─ TÜNEL HINT ─ */
+.tunnel-click-hint{
+  position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
+  font-size:.6rem;color:rgba(245,200,66,.7);font-weight:700;
+  background:rgba(0,0,0,.5);padding:2px 8px;border-radius:10px;
+  white-space:nowrap;pointer-events:none;
+  animation:hintPulse 2s ease-in-out infinite;
+}
+@keyframes hintPulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* ─ DOLAP KAPASİTE ─ */
+.cabinet-capacity-bar-wrap{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin:6px 0 3px;width:100%}
+.cabinet-capacity-bar{height:100%;background:linear-gradient(90deg,var(--banknot),var(--gold));border-radius:3px;transition:width .4s ease}
+.cabinet-capacity-txt{font-size:.75rem;color:var(--text-dim)}
+
+/* ─ MARKET BÖLÜM BAŞLIKLARI ─ */
+.market-section-title{font-family:'Cinzel',serif;font-size:.95rem;font-weight:700;color:var(--accent);padding:16px 16px 8px;border-bottom:1px solid var(--border);margin-bottom:0}
+.market-section-sub{font-size:.8rem;color:var(--text-dim);padding:6px 16px 0}
+
+/* ─ DOLAP MARKETTE ─ */
+.chest-card.dolap-normal::before{background:linear-gradient(90deg,var(--bronz),#e0a060)}
+.chest-card.dolap-normal{border-color:var(--bronz)}
+.chest-card.dolap-ustun::before{background:linear-gradient(90deg,var(--gumus),#e0e0e0)}
+.chest-card.dolap-ustun{border-color:var(--gumus)}
+.chest-card.dolap-dubleks::before{background:linear-gradient(90deg,var(--altin-lig),#ffe080)}
+.chest-card.dolap-dubleks{border-color:var(--altin-lig);box-shadow:0 0 20px rgba(255,215,0,.08)}
+
+/* ─ MADENCİ MARKET GRID ─ */
+.miners-market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:10px 16px 24px}
+
+/* ─ MADENCİ MODAL (TÜNEL) ─ */
+.miner-modal-box{max-width:480px;width:95%}
+.miners-modal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+
+/* ─ PROFİL FOTO ─ */
+.profile-photo-wrap{position:relative;flex-shrink:0}
+.profile-photo{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--banknot)}
+.profile-photo-upload{
+  position:absolute;bottom:-4px;left:-4px;
+  background:var(--banknot);color:#fff;
+  font-size:.75rem;width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;border:2px solid var(--bg);
+}
+.profile-kayit{font-size:.75rem;color:var(--text-dim);margin-bottom:6px}
+
+/* ─ PROFİL BÖLÜMLER ─ */
+.profile-section{border-top:1px solid var(--border);padding-top:16px;margin-top:16px}
+.destek-info{background:var(--surface2);border-radius:var(--radius-sm);padding:12px;font-size:.82rem;color:var(--text-dim);line-height:1.7;margin-bottom:8px}
+.destek-info a{color:var(--accent)}
+.sikayet-btns{display:flex;gap:8px;margin-top:8px}
+.sikayet-btns button{flex:1;font-size:.78rem;padding:9px 6px}
+
+/* ─ ÜRETİM SEÇİMİ ─ */
+.uretim-modal-box{max-width:380px;width:92%}
+.uretim-slider-wrap{background:var(--surface2);border-radius:var(--radius);padding:18px}
+.uretim-labels{display:flex;justify-content:space-between;margin-bottom:14px;font-size:.88rem;font-weight:700}
+.uretim-lbl.gold{color:var(--gold)}
+.uretim-lbl.banknot{color:var(--banknot)}
+.uretim-slider{width:100%;-webkit-appearance:none;appearance:none;height:8px;border-radius:4px;background:linear-gradient(90deg,rgba(245,200,66,.3),rgba(76,175,130,.3));outline:none;margin-bottom:10px}
+.uretim-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--accent));cursor:pointer;border:3px solid var(--bg);box-shadow:0 0 8px rgba(245,200,66,.4)}
+.uretim-track{height:8px;background:var(--surface3);border-radius:4px;position:relative;overflow:hidden}
+.uretim-fill-altin{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-dim));border-radius:4px;transition:width .3s}
+
 /* ─ RESPONSIVE ─ */
 @media(max-width:480px){
   :root{--sidebar-w:62px}
   .sidebar-label{display:none}
   .sidebar-btn{padding:12px 4px;width:54px}
   .sidebar-icon{font-size:1.3rem}
+  .sidebar-info-panel{width:54px;padding:6px 2px}
+  .sip-val{font-size:.6rem}
   .vib-label{font-size:.52rem}
   .vib-val{font-size:.78rem}
   .stat-pill{padding:3px 7px;font-size:.75rem}
@@ -538,6 +623,7 @@ input{font-family:'Nunito',sans-serif}
   .cabinet-body-inner{height:68px}
   .cabinet-top,.cabinet-bottom,.cabinet-legs,.cabinet-label{width:68px}
   .chests-grid{grid-template-columns:1fr}
+  .miners-market-grid{grid-template-columns:repeat(2,1fr)}
 }
 @media(min-width:900px){
   .chests-grid{grid-template-columns:repeat(2,1fr)}
