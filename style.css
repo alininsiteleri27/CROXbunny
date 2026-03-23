@@ -3704,6 +3704,7 @@ input {
   align-items: flex-end;
   gap: 2px;
   flex-shrink: 0;
+  min-width: 80px;
 }
 
 .ld-guc {
@@ -3720,15 +3721,17 @@ input {
 }
 
 .ld-pay-altin {
-  font-size: .78rem;
+  font-size: .82rem;
   color: var(--gold);
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .ld-pay-banknot {
-  font-size: .78rem;
+  font-size: .82rem;
   color: var(--banknot);
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .ld-pct {
