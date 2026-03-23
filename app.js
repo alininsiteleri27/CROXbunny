@@ -1497,6 +1497,20 @@ async function ligDetayGoster() {
       const sira = i + 1;
       const sm = sira === 1 ? "🥇" : sira === 2 ? "🥈" : sira === 3 ? "🥉" : `#${sira}`;
 
+    // Her oyuncunun üretim tercihine göre altın/banknot payı
+      const oAltinPct = o.uretimAltin || 0;
+      const oAltinM = Math.floor(oPay * oAltinPct / 100);
+      const oBanknotM = oPay - oAltinM;
+
+      let oPayHtml = "";
+      if (oAltinM > 0 && oBanknotM > 0) {
+        oPayHtml = `<span class="ld-pay-altin">🥇 ${formatSayi(oAltinM)}</span><span class="ld-pay-banknot">💵 ${formatSayi(oBanknotM)}</span>`;
+      } else if (oAltinM > 0) {
+        oPayHtml = `<span class="ld-pay-altin">🥇 ${formatSayi(oAltinM)}</span>`;
+      } else {
+        oPayHtml = `<span class="ld-pay-banknot">💵 ${formatSayi(oBanknotM)}</span>`;
+      }
+
       const row = document.createElement("div");
       row.className = "lig-detay-row" + (benim ? " benim" : "");
       row.innerHTML = `
@@ -1508,7 +1522,7 @@ async function ligDetayGoster() {
         </div>
         <div class="ld-stats">
           <div class="ld-guc">⚡ ${formatSayi(oGuc)}</div>
-          <div class="ld-pay">💵 ${formatSayi(oPay)}</div>
+          <div class="ld-pay-wrap">${oPayHtml}</div>
           <div class="ld-pct">${oPct}%</div>
         </div>
       `;
