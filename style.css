@@ -2710,12 +2710,12 @@ input {
 /* Portföy büyük kart */
 .finans-portfolyo-card {
   margin: 0 16px 16px;
-  background: linear-gradient(135deg, rgba(245,200,66,.15), rgba(232,124,42,.12));
-  border: 1.5px solid rgba(245,200,66,.35);
+  background: linear-gradient(135deg, rgba(245, 200, 66, .15), rgba(232, 124, 42, .12));
+  border: 1.5px solid rgba(245, 200, 66, .35);
   border-radius: 18px;
   padding: 22px 20px;
   text-align: center;
-  box-shadow: 0 6px 28px rgba(245,200,66,.1);
+  box-shadow: 0 6px 28px rgba(245, 200, 66, .1);
 }
 
 .finans-portfolyo-label {
@@ -2765,13 +2765,13 @@ input {
 }
 
 .finans-card.gold {
-  border-color: rgba(245,200,66,.3);
-  background: linear-gradient(160deg, rgba(245,200,66,.08), var(--surface));
+  border-color: rgba(245, 200, 66, .3);
+  background: linear-gradient(160deg, rgba(245, 200, 66, .08), var(--surface));
 }
 
 .finans-card.banknot {
-  border-color: rgba(76,175,130,.3);
-  background: linear-gradient(160deg, rgba(76,175,130,.08), var(--surface));
+  border-color: rgba(76, 175, 130, .3);
+  background: linear-gradient(160deg, rgba(76, 175, 130, .08), var(--surface));
 }
 
 .finans-card-icon {
@@ -2796,8 +2796,13 @@ input {
   margin-bottom: 4px;
 }
 
-.finans-card.gold .finans-card-val { color: var(--gold); }
-.finans-card.banknot .finans-card-val { color: var(--banknot); }
+.finans-card.gold .finans-card-val {
+  color: var(--gold);
+}
+
+.finans-card.banknot .finans-card-val {
+  color: var(--banknot);
+}
 
 .finans-card-sub {
   font-size: .72rem;
@@ -2820,8 +2825,8 @@ input {
 /* Saatlik kazanç kart */
 .finans-saatlik-card {
   margin: 0 16px 16px;
-  background: linear-gradient(135deg, rgba(76,175,130,.1), rgba(76,175,130,.05));
-  border: 1.5px solid rgba(76,175,130,.25);
+  background: linear-gradient(135deg, rgba(76, 175, 130, .1), rgba(76, 175, 130, .05));
+  border: 1.5px solid rgba(76, 175, 130, .25);
   border-radius: 14px;
   padding: 16px 18px;
   text-align: center;
@@ -2866,7 +2871,7 @@ input {
 }
 
 .finans-kur-row.highlight {
-  background: linear-gradient(90deg, rgba(245,200,66,.07), transparent);
+  background: linear-gradient(90deg, rgba(245, 200, 66, .07), transparent);
 }
 
 .finans-kur-icon {
@@ -2887,12 +2892,672 @@ input {
   margin: 0 16px 24px;
   width: calc(100% - 32px);
   background: linear-gradient(135deg, #2a9a5a, #1a7a42);
-  box-shadow: 0 4px 18px rgba(42,154,90,.3);
+  box-shadow: 0 4px 18px rgba(42, 154, 90, .3);
   opacity: .75;
   cursor: not-allowed;
 }
 
 .finans-cekim-btn:hover {
   transform: none;
-  box-shadow: 0 4px 18px rgba(42,154,90,.3);
+  box-shadow: 0 4px 18px rgba(42, 154, 90, .3);
+}
+
+/* ════════════════════════════════
+   ADMİN PANELİ CSS
+   ════════════════════════════════ */
+
+/* ─ Admin Panel Wrapper ─ */
+.admin-panel {
+  padding: 16px;
+  max-width: 900px;
+  width: 100%;
+}
+
+.admin-panel-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-panel-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.admin-panel-sub {
+  font-size: .83rem;
+  color: var(--text-dim);
+}
+
+/* ─ Admin Sekme (Tab) Sistemi ─ */
+.admin-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.admin-tab {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  padding: 9px 16px;
+  font-size: .82rem;
+  font-weight: 700;
+  transition: all .2s;
+  white-space: nowrap;
+}
+
+.admin-tab:hover {
+  background: var(--surface3);
+  color: var(--text);
+}
+
+.admin-tab.active {
+  background: rgba(232, 124, 42, .12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ─ Admin Tab İçerik Alanı ─ */
+.admin-tab-content {
+  animation: pageFade .25s ease;
+}
+
+/* ─ Özet İstatistik Grid ─ */
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.admin-stat-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 14px;
+  text-align: center;
+  transition: border-color .2s, transform .15s;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.admin-stat-card.danger {
+  border-color: rgba(232, 74, 42, .35);
+  background: linear-gradient(160deg, rgba(232, 74, 42, .07), var(--surface));
+}
+
+.admin-stat-card.warn {
+  border-color: rgba(245, 200, 66, .35);
+  background: linear-gradient(160deg, rgba(245, 200, 66, .07), var(--surface));
+}
+
+.admin-stat-card.info {
+  border-color: rgba(76, 175, 130, .35);
+  background: linear-gradient(160deg, rgba(76, 175, 130, .07), var(--surface));
+}
+
+.admin-stat-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.admin-stat-val {
+  font-family: 'Cinzel', serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.admin-stat-label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+}
+
+/* ─ Kullanıcı Arama ─ */
+.admin-search-wrap {
+  margin-bottom: 14px;
+}
+
+.admin-search-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 11px 15px;
+  font-size: .9rem;
+  font-family: 'Nunito', sans-serif;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.admin-search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 124, 42, .15);
+}
+
+.admin-search-input::placeholder {
+  color: var(--text-dim);
+  opacity: .6;
+}
+
+/* ─ Kullanıcı Satırları ─ */
+.admin-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  transition: border-color .2s;
+}
+
+.admin-user-row:hover {
+  border-color: var(--border-glow);
+}
+
+.admin-user-row.banned {
+  border-color: rgba(232, 74, 42, .4);
+  background: linear-gradient(90deg, rgba(232, 74, 42, .06), var(--surface));
+}
+
+.admin-user-av {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
+}
+
+.admin-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-user-name {
+  font-weight: 700;
+  font-size: .9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.admin-user-email {
+  font-size: .75rem;
+  color: var(--text-dim);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-user-stats {
+  font-size: .72rem;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.admin-yonet-btn {
+  flex-shrink: 0;
+  font-size: .75rem;
+  padding: 7px 12px;
+  white-space: nowrap;
+}
+
+/* ─ Duyuru Bölümü ─ */
+.admin-form-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+.admin-form-label {
+  font-size: .82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.admin-textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 11px 14px;
+  font-size: .88rem;
+  font-family: 'Nunito', sans-serif;
+  resize: vertical;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  line-height: 1.6;
+}
+
+.admin-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 124, 42, .15);
+}
+
+.admin-textarea::placeholder {
+  color: var(--text-dim);
+  opacity: .5;
+}
+
+/* Geçmiş Duyurular */
+.admin-duyuru-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  transition: border-color .2s;
+}
+
+.admin-duyuru-row:hover {
+  border-color: var(--border-glow);
+}
+
+.admin-duyuru-mesaj {
+  font-size: .88rem;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.admin-duyuru-meta {
+  font-size: .72rem;
+  color: var(--text-dim);
+}
+
+/* ─ Raporlar ─ */
+.admin-rapor-row {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: border-color .2s;
+}
+
+.admin-rapor-row:hover {
+  border-color: var(--border-glow);
+}
+
+.admin-rapor-row.cozuldu {
+  opacity: .55;
+  border-color: rgba(76, 175, 130, .3);
+}
+
+.admin-rapor-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-rapor-tip {
+  font-size: .72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  background: rgba(232, 124, 42, .12);
+  color: var(--accent);
+  border: 1px solid rgba(232, 124, 42, .25);
+  border-radius: 20px;
+  padding: 2px 10px;
+}
+
+.admin-rapor-meta {
+  font-size: .72rem;
+  color: var(--text-dim);
+  flex: 1;
+}
+
+.admin-rapor-mesaj {
+  font-size: .86rem;
+  color: var(--text);
+  line-height: 1.5;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+/* ─ Ayarlar Tab ─ */
+.admin-ayar-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.admin-ayar-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--accent);
+}
+
+.admin-ayar-desc {
+  font-size: .85rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.admin-ayar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-bakim-durum-lbl {
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+/* ─ Admin Kullanıcı Yönetim Modalı ─ */
+.admin-km-box {
+  max-width: 560px;
+  width: 96%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.akm-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.akm-avatar-big {
+  font-size: 2.6rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.akm-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.akm-uname {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.akm-email {
+  font-size: .8rem;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.akm-durum {
+  font-size: .78rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.akm-uid-txt {
+  font-size: .68rem;
+  color: var(--text-dim);
+}
+
+.akm-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.akm-stats b {
+  color: var(--text);
+}
+
+.akm-tarih-row {
+  font-size: .72rem;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Bölümler */
+.akm-section {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.akm-section:last-of-type {
+  border-bottom: none;
+}
+
+.akm-section-title {
+  font-size: .78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.akm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.akm-input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: .85rem;
+  font-family: 'Nunito', sans-serif;
+  outline: none;
+  transition: border-color .2s;
+}
+
+.akm-input:focus {
+  border-color: var(--accent);
+}
+
+.akm-input::placeholder {
+  color: var(--text-dim);
+  opacity: .5;
+}
+
+.akm-select {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 9px 10px;
+  font-size: .82rem;
+  font-family: 'Nunito', sans-serif;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.akm-select:focus {
+  border-color: var(--accent);
+}
+
+/* ─ Bildirim / Duyuru Overlay ─ */
+.bildirim-overlay {
+  z-index: 600;
+}
+
+.bildirim-box {
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: 20px;
+  padding: 32px 28px;
+  text-align: center;
+  max-width: 380px;
+  width: 94%;
+  box-shadow: 0 0 40px rgba(232, 124, 42, .25);
+  animation: modalIn .4s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+.bildirim-tip {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+.bildirim-mesaj {
+  font-size: .92rem;
+  color: var(--text);
+  line-height: 1.65;
+  margin-bottom: 22px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+
+.bildirim-anladim-btn {
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+/* ─ Bakım Ekranı ─ */
+.bakim-ekrani {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: radial-gradient(ellipse at 50% 30%, #1a1228, #0a0a0f 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+}
+
+.bakim-icon {
+  font-size: 5rem;
+  margin-bottom: 20px;
+  animation: iconPulse 3s ease-in-out infinite;
+}
+
+.bakim-title {
+  font-family: 'Cinzel', serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+.bakim-sub {
+  font-size: 1rem;
+  color: var(--text-dim);
+  max-width: 400px;
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.bakim-anim {
+  font-size: 2rem;
+  letter-spacing: 10px;
+  animation: bakim 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes bakim {
+  from {
+    opacity: .4;
+    transform: scale(.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* ─ Responsive (Admin) ─ */
+@media(max-width: 600px) {
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-tabs {
+    gap: 4px;
+  }
+
+  .admin-tab {
+    font-size: .72rem;
+    padding: 8px 10px;
+  }
+
+  .akm-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .akm-row {
+    flex-wrap: wrap;
+  }
+
+  .admin-km-box {
+    padding: 20px 14px;
+  }
+
+  .admin-user-row {
+    flex-wrap: wrap;
+  }
+
+  .admin-ayar-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
