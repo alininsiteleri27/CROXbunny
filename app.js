@@ -39,32 +39,179 @@ const MADENCILER = [
 ];
 
 const ESYALAR = [
-  { id:"su_pompasi",        ad:"Su Pompası",         emoji:"💧", guc:5  },
-  { id:"sapka",             ad:"Şapka",              emoji:"🎩", guc:10 },
-  { id:"sincap",            ad:"Sincap",             emoji:"🐿️", guc:15 },
-  { id:"boru",              ad:"Boru",               emoji:"🔧", guc:20 },
-  { id:"fener",             ad:"Fener",              emoji:"🔦", guc:25 },
-  { id:"kask",              ad:"Kask",               emoji:"⛑️", guc:30 },
-  { id:"satil",             ad:"Satıl",              emoji:"🪣", guc:35 },
-  { id:"tahta",             ad:"Tahta",              emoji:"🪵", guc:40 },
-  { id:"silikon_tabancasi", ad:"Silikon Tabancası",  emoji:"🔫", guc:45 },
-  { id:"gozluk",            ad:"Gözlük",             emoji:"🥽", guc:50 },
-  { id:"vinc",              ad:"Vinç",               emoji:"🏗️", guc:55 },
-  { id:"kepce",             ad:"Kepçe",              emoji:"🦾", guc:60 },
-  { id:"tir",               ad:"Tır",                emoji:"🚛", guc:65 }
+  // ── Ortak (Common) ──
+  { id:"toz_komur",         ad:"Kömür Tozu",         emoji:"🌑",  guc:2   },
+  { id:"civata",            ad:"Civata",              emoji:"🔘",  guc:4   },
+  { id:"kazma",             ad:"Kazma",              emoji:"⛏️",  guc:7   },
+  { id:"kaya_parcasi",      ad:"Kaya Parçası",      emoji:"🪨",  guc:10  },
+  { id:"kuresek",           ad:"Kürek",              emoji:"🧹",  guc:14  },
+  { id:"sicim",             ad:"Sicim",               emoji:"🧵",  guc:18  },
+  // ── Az Nadir (Uncommon) ──
+  { id:"su_pompasi",        ad:"Su Pompası",        emoji:"💧",  guc:24  },
+  { id:"sapka",             ad:"Madenci Şapkası",    emoji:"🎩",  guc:30  },
+  { id:"eldiven",           ad:"Madenci Eldiveni",   emoji:"🧤",  guc:36  },
+  { id:"dinamit",           ad:"Dinamit",             emoji:"💣",  guc:42  },
+  { id:"sincap",            ad:"Sincap",              emoji:"🐿️", guc:48  },
+  { id:"balyoz",            ad:"Balyoz",             emoji:"🔨",  guc:54  },
+  { id:"halat",             ad:"Halat",              emoji:"🪢",  guc:60  },
+  // ── Nadir (Rare) ──
+  { id:"fener",             ad:"Fener",               emoji:"🔦",  guc:68  },
+  { id:"kask",              ad:"Çelik Kask",          emoji:"⛑️",  guc:76  },
+  { id:"boru",              ad:"Boru",                emoji:"🔧",  guc:84  },
+  { id:"patlayici",         ad:"Patlayıcı",          emoji:"🧨",  guc:93  },
+  { id:"zincir",            ad:"Çelik Zincir",        emoji:"⛓️",  guc:102 },
+  { id:"satil",             ad:"Satıl",               emoji:"🪣",  guc:112 },
+  { id:"ray",               ad:"Maden Rayı",         emoji:"🛤️",  guc:122 },
+  { id:"vagon_kucuk",       ad:"Küçük Vagon",        emoji:"🚃",  guc:133 },
+  // ── Çok Nadir (Epic) ──
+  { id:"tahta",             ad:"Meşe Tahtası",       emoji:"🪵",  guc:145 },
+  { id:"gozluk",            ad:"Gözlük",              emoji:"🥽",  guc:158 },
+  { id:"matkap",            ad:"Matkap",              emoji:"🔩",  guc:172 },
+  { id:"silikon_tabancasi", ad:"Silikon Tabancası",   emoji:"🔫",  guc:186 },
+  { id:"hidrolik",          ad:"Hidrolik Kriç",      emoji:"⚙️",  guc:202 },
+  { id:"lazer",             ad:"Lazer Kesici",       emoji:"🔴",  guc:218 },
+  { id:"pnomatik",          ad:"Pnömatik Çekiç",     emoji:"🔊",  guc:236 },
+  { id:"vinc",              ad:"Vinç",               emoji:"🏗️",  guc:255 },
+  { id:"kompressor",        ad:"Kompresör",          emoji:"🏭",  guc:275 },
+  { id:"kepce",             ad:"Kepçe",              emoji:"🦾",  guc:296 },
+  { id:"delici",            ad:"Kaya Delici",         emoji:"🔱",  guc:318 },
+  // ── Efsanevi (Legendary) ──
+  { id:"tir",               ad:"Tır",                emoji:"🚛",  guc:345 },
+  { id:"altin_vagon",       ad:"Altın Vagon",        emoji:"🚂",  guc:378 },
+  { id:"tas_kirici",        ad:"Taş Kırıcı",         emoji:"💥",  guc:415 },
+  { id:"titan_kazma",       ad:"Titan Kazma",        emoji:"⚔️",  guc:458 },
+  { id:"dev_ekskavator",    ad:"Dev Ekskavatör",     emoji:"🤖",  guc:510 },
 ];
 
+
 const SANDIKLAR = [
-  { id:"sandik",        ad:"Sandık",        emoji:"📦", cssClass:"wooden", maliyet:100, birim:"kurus",   birimIcon:"🪙",
-    havuz:[{tip:"esya",deger:"su_pompasi",agirlik:35},{tip:"esya",deger:"sapka",agirlik:25},{tip:"esya",deger:"sincap",agirlik:15},{tip:"kurus",deger:50,agirlik:20},{tip:"kurus",deger:20,agirlik:5}] },
-  { id:"demir_sandik",  ad:"Demir Sandık",  emoji:"🗃️", cssClass:"iron",   maliyet:300, birim:"kurus",   birimIcon:"🪙",
-    havuz:[{tip:"esya",deger:"boru",agirlik:20},{tip:"esya",deger:"fener",agirlik:20},{tip:"esya",deger:"kask",agirlik:15},{tip:"esya",deger:"sapka",agirlik:15},{tip:"banknot",deger:5,agirlik:20},{tip:"banknot",deger:10,agirlik:10}] },
-  { id:"celik_sandik",  ad:"Çelik Sandık",  emoji:"🔒", cssClass:"steel",  maliyet:50,  birim:"banknot", birimIcon:"💵",
-    havuz:[{tip:"esya",deger:"satil",agirlik:18},{tip:"esya",deger:"tahta",agirlik:18},{tip:"esya",deger:"gozluk",agirlik:10},{tip:"esya",deger:"vinc",agirlik:8},{tip:"banknot",deger:20,agirlik:25},{tip:"banknot",deger:40,agirlik:15},{tip:"kurus",deger:500,agirlik:6}] },
-  { id:"mucevher_sandik",ad:"Mücevher Sandık",emoji:"💎",cssClass:"jewel", maliyet:200, birim:"banknot", birimIcon:"💵",
-    havuz:[{tip:"esya",deger:"silikon_tabancasi",agirlik:15},{tip:"esya",deger:"vinc",agirlik:15},{tip:"esya",deger:"kepce",agirlik:12},{tip:"esya",deger:"tir",agirlik:8},{tip:"altin",deger:1,agirlik:20},{tip:"altin",deger:3,agirlik:10},{tip:"banknot",deger:100,agirlik:20}] },
-  { id:"bor_sandigi",   ad:"Bor Sandığı",   emoji:"🌟", cssClass:"bor",    maliyet:5,   birim:"altin",   birimIcon:"🥇",
-    havuz:[{tip:"esya",deger:"tir",agirlik:20},{tip:"esya",deger:"kepce",agirlik:18},{tip:"esya",deger:"vinc",agirlik:15},{tip:"esya",deger:"silikon_tabancasi",agirlik:12},{tip:"altin",deger:5,agirlik:18},{tip:"altin",deger:10,agirlik:10},{tip:"banknot",deger:500,agirlik:7}] }
+  // ────────────────────────────────────────────────────────
+  // 1) AHŞAP SANDIK — 250 Kuruş
+  // Toplam: 220 | Common: %84 | Uncommon: %10 | Para: %6
+  // ────────────────────────────────────────────────────────
+  { id:"sandik", ad:"Ahşap Sandık", emoji:"📦", cssClass:"wooden", maliyet:250, birim:"kurus", birimIcon:"🪙",
+    havuz:[
+      {tip:"esya",   deger:"toz_komur",    agirlik:44},
+      {tip:"esya",   deger:"civata",        agirlik:38},
+      {tip:"esya",   deger:"kazma",         agirlik:30},
+      {tip:"esya",   deger:"kaya_parcasi",  agirlik:24},
+      {tip:"esya",   deger:"kuresek",       agirlik:20},
+      {tip:"esya",   deger:"sicim",         agirlik:16},
+      {tip:"kurus",  deger:8,               agirlik:12},
+      {tip:"esya",   deger:"su_pompasi",    agirlik:10},
+      {tip:"kurus",  deger:20,              agirlik:6 },
+      {tip:"esya",   deger:"sapka",         agirlik:6 },
+      {tip:"esya",   deger:"eldiven",       agirlik:5 },
+      {tip:"esya",   deger:"balyoz",        agirlik:3 },
+    ]},
+  // ────────────────────────────────────────────────────────
+  // 2) DEMİR SANDIK — 700 Kuruş
+  // Toplam: 195 | Common: %52 | Uncommon: %40 | Rare: %5 | Para: %3
+  // ────────────────────────────────────────────────────────
+  { id:"demir_sandik", ad:"Demir Sandık", emoji:"🗃️", cssClass:"iron", maliyet:700, birim:"kurus", birimIcon:"🪙",
+    havuz:[
+      {tip:"esya",   deger:"toz_komur",    agirlik:30},
+      {tip:"esya",   deger:"civata",        agirlik:24},
+      {tip:"esya",   deger:"kazma",         agirlik:20},
+      {tip:"esya",   deger:"kuresek",       agirlik:16},
+      {tip:"esya",   deger:"sicim",         agirlik:12},
+      {tip:"esya",   deger:"su_pompasi",    agirlik:14},
+      {tip:"esya",   deger:"sapka",         agirlik:12},
+      {tip:"esya",   deger:"eldiven",       agirlik:10},
+      {tip:"esya",   deger:"dinamit",       agirlik:10},
+      {tip:"esya",   deger:"sincap",        agirlik:8 },
+      {tip:"esya",   deger:"balyoz",        agirlik:8 },
+      {tip:"esya",   deger:"halat",         agirlik:6 },
+      {tip:"kurus",  deger:60,              agirlik:10},
+      {tip:"esya",   deger:"fener",         agirlik:6 },
+      {tip:"esya",   deger:"kask",          agirlik:4 },
+      {tip:"banknot",deger:3,               agirlik:5 },
+    ]},
+  // ────────────────────────────────────────────────────────
+  // 3) ÇELİK SANDIK — 120 Banknot
+  // Toplam: 195 | Uncommon: %42 | Rare: %40 | Epic: %5 | Para: %13
+  // ────────────────────────────────────────────────────────
+  { id:"celik_sandik", ad:"Çelik Sandık", emoji:"🔒", cssClass:"steel", maliyet:120, birim:"banknot", birimIcon:"💵",
+    havuz:[
+      {tip:"esya",   deger:"eldiven",       agirlik:24},
+      {tip:"esya",   deger:"dinamit",       agirlik:20},
+      {tip:"esya",   deger:"sincap",        agirlik:18},
+      {tip:"esya",   deger:"balyoz",        agirlik:16},
+      {tip:"esya",   deger:"halat",         agirlik:12},
+      {tip:"esya",   deger:"fener",         agirlik:18},
+      {tip:"esya",   deger:"kask",          agirlik:14},
+      {tip:"esya",   deger:"boru",          agirlik:12},
+      {tip:"esya",   deger:"patlayici",     agirlik:12},
+      {tip:"esya",   deger:"zincir",        agirlik:10},
+      {tip:"esya",   deger:"ray",           agirlik:8 },
+      {tip:"esya",   deger:"vagon_kucuk",   agirlik:6 },
+      {tip:"banknot",deger:12,              agirlik:14},
+      {tip:"banknot",deger:30,              agirlik:7 },
+      {tip:"kurus",  deger:500,             agirlik:5 },
+      {tip:"esya",   deger:"tahta",         agirlik:4 },
+      {tip:"esya",   deger:"gozluk",        agirlik:3 },
+      {tip:"esya",   deger:"matkap",        agirlik:2 },
+      {tip:"esya",   deger:"hidrolik",      agirlik:1 },
+    ]},
+  // ────────────────────────────────────────────────────────
+  // 4) MÜCEVHER SANDIK — 500 Banknot
+  // Toplam: 178 | Rare: %46 | Epic: %30 | Para: %19 | Legendary: %5
+  // ────────────────────────────────────────────────────────
+  { id:"mucevher_sandik", ad:"Mücevher Sandık", emoji:"💎", cssClass:"jewel", maliyet:500, birim:"banknot", birimIcon:"💵",
+    havuz:[
+      {tip:"esya",   deger:"patlayici",     agirlik:22},
+      {tip:"esya",   deger:"zincir",        agirlik:18},
+      {tip:"esya",   deger:"satil",         agirlik:16},
+      {tip:"esya",   deger:"ray",           agirlik:14},
+      {tip:"esya",   deger:"vagon_kucuk",   agirlik:12},
+      {tip:"esya",   deger:"tahta",         agirlik:13},
+      {tip:"esya",   deger:"gozluk",        agirlik:11},
+      {tip:"esya",   deger:"matkap",        agirlik:10},
+      {tip:"esya",   deger:"silikon_tabancasi", agirlik:8},
+      {tip:"esya",   deger:"hidrolik",      agirlik:7 },
+      {tip:"esya",   deger:"lazer",         agirlik:5 },
+      {tip:"esya",   deger:"pnomatik",      agirlik:4 },
+      {tip:"esya",   deger:"vinc",          agirlik:3 },
+      {tip:"esya",   deger:"kompressor",    agirlik:2 },
+      {tip:"banknot",deger:60,              agirlik:16},
+      {tip:"altin",  deger:1,               agirlik:10},
+      {tip:"banknot",deger:140,             agirlik:6 },
+      {tip:"altin",  deger:3,               agirlik:5 },
+      {tip:"altin",  deger:5,               agirlik:3 },
+      {tip:"esya",   deger:"tir",           agirlik:5 },
+      {tip:"esya",   deger:"altin_vagon",   agirlik:3 },
+      {tip:"esya",   deger:"tas_kirici",    agirlik:1 },
+    ]},
+  // ────────────────────────────────────────────────────────
+  // 5) BOR SANDIĞI — 15 Altın
+  // Toplam: 193 | Epic: %57 | Para: %18 | Rare: %8
+  // EFSANEVE: 12/193 = %6.2 (tır:4 + altin_vagon:3 + tas_kirici:2 + titan:2 + dev:1)
+  // ────────────────────────────────────────────────────────
+  { id:"bor_sandigi", ad:"Bor Sandığı", emoji:"🌟", cssClass:"bor", maliyet:15, birim:"altin", birimIcon:"🥇",
+    havuz:[
+      {tip:"esya",   deger:"matkap",        agirlik:16},
+      {tip:"esya",   deger:"gozluk",        agirlik:14},
+      {tip:"esya",   deger:"silikon_tabancasi", agirlik:13},
+      {tip:"esya",   deger:"hidrolik",      agirlik:12},
+      {tip:"esya",   deger:"lazer",         agirlik:11},
+      {tip:"esya",   deger:"pnomatik",      agirlik:10},
+      {tip:"esya",   deger:"vinc",          agirlik:10},
+      {tip:"esya",   deger:"kompressor",    agirlik:9 },
+      {tip:"esya",   deger:"kepce",         agirlik:8 },
+      {tip:"esya",   deger:"delici",        agirlik:7 },
+      {tip:"esya",   deger:"ray",           agirlik:8 },
+      {tip:"esya",   deger:"vagon_kucuk",   agirlik:7 },
+      {tip:"altin",  deger:5,               agirlik:12},
+      {tip:"altin",  deger:12,              agirlik:7 },
+      {tip:"banknot",deger:400,             agirlik:7 },
+      {tip:"altin",  deger:20,              agirlik:4 },
+      // ── EFSANEVE %6.2 ──
+      {tip:"esya",   deger:"tir",           agirlik:4 },
+      {tip:"esya",   deger:"altin_vagon",   agirlik:3 },
+      {tip:"esya",   deger:"tas_kirici",    agirlik:2 },
+      {tip:"esya",   deger:"titan_kazma",   agirlik:2 },
+      {tip:"esya",   deger:"dev_ekskavator",agirlik:1 },
+    ]},
 ];
 
 // Seçilebilir avatarlar
@@ -247,7 +394,17 @@ function uiGuncelle(){
   const {kapasite,dolu} = dolapKapasiteHesapla(kullaniciVerisi);
   const sipPow = document.getElementById("sip-power"); if(sipPow) sipPow.textContent=formatSayi(kullaniciVerisi.guc||0);
   const uA = kullaniciVerisi.uretimAltin||0;
-  const sipU = document.getElementById("sip-uretim"); if(sipU) sipU.textContent=(uA>0?`🥇${uA}%|`:"")+(uA<100?`💵${100-uA}%`:"💵100%");
+  // Lig ödülüne göre gerçek miktar hesapla
+  const ligData = ligBul(kullaniciVerisi.lig||"Bronz");
+  const ligOdul = ligData.odul || 10;
+  const tahminiAltin  = Math.floor(ligOdul * uA / 100);
+  const tahminiBank   = ligOdul - tahminiAltin;
+  const sipU = document.getElementById("sip-uretim");
+  if(sipU){
+    if(uA === 100) sipU.textContent = `🥇${tahminiAltin}`;
+    else if(uA === 0) sipU.textContent = `💵${tahminiBank}`;
+    else sipU.textContent = `🥇${tahminiAltin} | 💵${tahminiBank}`;
+  }
 
   // Aktif sayfa
   switch(aktifSayfa){
@@ -255,6 +412,7 @@ function uiGuncelle(){
     case "market":      marketGuncelle(); break;
     case "leaderboard": siralamaSayfaGuncelle(); break;
     case "inventory":   envanterGuncelle(); break;
+    case "finans":      finansGuncelle(); break;
   }
 }
 
@@ -904,8 +1062,44 @@ function sayfayaGit(sayfa){
     case "market":      marketGuncelle(); break;
     case "leaderboard": siralamaSayfaGuncelle(); break;
     case "inventory":   envanterGuncelle(); break;
+    case "finans":      finansGuncelle(); break;
   }
   document.getElementById("main-content").scrollTo({top:0,behavior:"smooth"});
+}
+
+// ============================================================
+// FİNANS SAYFASI
+// ============================================================
+function finansGuncelle(){
+  if(!kullaniciVerisi) return;
+  const v = kullaniciVerisi;
+  const altinMiktar = v.altin || 0;
+  // Kur: 1 Altın = 100 Banknot. Gerçek para için örnek kur: 1 Altın = 0.10 TL (oyun içi, admin ayarlı)
+  const ALTIN_TL_KURU = 0.005; // 1000 Altın = 5 TL
+  const altinTL = (altinMiktar * ALTIN_TL_KURU).toFixed(2);
+
+  const el = document.getElementById("finans-altin-deger");
+  if(el) el.textContent = `${formatSayi(altinMiktar)} 🥇`;
+
+  const elTL = document.getElementById("finans-tl-deger");
+  if(elTL) elTL.textContent = `≈ ${altinTL} ₺`;
+
+  const elBank = document.getElementById("finans-banknot-deger");
+  if(elBank) elBank.textContent = `${formatSayi(v.banknot||0)} 💵`;
+
+  // Lig ödülü tahmini (saatlik)
+  const ligData = ligBul(v.lig||"Bronz");
+  const perSaat = Math.floor(60/10) * ligData.odul; // 10dk'da bir, saatte 6 kez
+  const altinPct = v.uretimAltin||0;
+  const saatlikAltin = Math.floor(perSaat * altinPct / 100);
+  const saatlikBank  = perSaat - saatlikAltin;
+  const elSaatlik = document.getElementById("finans-saatlik");
+  if(elSaatlik) elSaatlik.innerHTML = `🥇 +${saatlikAltin} Altın &nbsp;|&nbsp; 💵 +${saatlikBank} Banknot`;
+
+  // Toplam portföy değeri (TL)
+  const portfolyoTL = (altinMiktar * ALTIN_TL_KURU + (v.banknot||0) * ALTIN_TL_KURU / 100).toFixed(2);
+  const elPortfolyo = document.getElementById("finans-portfolyo");
+  if(elPortfolyo) elPortfolyo.textContent = `≈ ${portfolyoTL} ₺`;
 }
 
 // ============================================================
