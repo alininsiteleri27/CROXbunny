@@ -1437,5 +1437,99 @@ document.getElementById("admin-kullanici-ara")?.addEventListener("input", e => a
 // BAŞlAT
 // ============================================================
 authPartikullerBaslat();
+// ============================================================
+// LİG DETAY MODAL
+// ============================================================
+document.getElementById("topbar-lig").style.cursor = "pointer";
+document.getElementById("topbar-lig").addEventListener("click", ligDetayGoster);
+
+async function ligDetayGoster() {
+  if (!kullaniciVerisi) return;
+  const v = kullaniciVerisi;
+  const ligData = ligBul(v.lig);
+
+  // Modalı göster, yükleniyor durumu
+  document.getElementById("lig-detay-modal").classList.remove("hidden");
+  document.getElementById("lig-detay-adi").textContent = v.lig + " Ligi";
+  document.getElementById("lig-detay-adi").className = "lig-detay-baslik " + v.lig;
+  document.getElementById("lig-detay-odul").textContent = ligData.odul;
+  document.getElementById("lig-detay-liste").innerHTML = `<div class="loading-spinner"><div class="spinner"></div> Hesaplanıyor...</div>`;
+  document.getElementById("lig-detay-benim-pay").textContent = "...";
+  document.getElementById("lig-detay-toplam").textContent = ligData.odul;
+
+  try {
+    const snap = await db.collection("kullanicilar").where("lig", "==", v.lig).orderBy("guc", "desc").get();
+    const oyuncular = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const toplamGuc = oyuncular.reduce((t, o) => t + (o.guc || 0), 0);
+
+    // Benim payım
+    const ben = oyuncular.find(o => o.uid === mevcutKullanici.uid);
+    const benimGuc = ben ? (ben.guc || 0) : 0;
+    let benimPay = 0;
+    if (toplamGuc === 0) {
+      benimPay = Math.floor(ligData.odul / Math.max(oyuncular.length, 1));
+    } else {
+      benimPay = Math.floor((benimGuc / toplamGuc) * ligData.odul);
+    }
+    benimPay = Math.max(benimPay, 1);
+
+    // Üretim tercihine göre
+    const altinPct = v.uretimAltin || 0;
+    const altinM = Math.floor(benimPay * altinPct / 100);
+    const banknotM = benimPay - altinM;
+
+    const payTxt = altinM > 0 && banknotM > 0
+      ? `🥇 ${altinM} + 💵 ${banknotM}`
+      : altinM > 0 ? `🥇 ${altinM}` : `💵 ${banknotM}`;
+    document.getElementById("lig-detay-benim-pay").textContent = payTxt;
+
+    // Oyuncu listesi
+    const liste = document.getElementById("lig-detay-liste");
+    liste.innerHTML = "";
+
+    oyuncular.forEach((o, i) => {
+      const oGuc = o.guc || 0;
+      const oPay = toplamGuc === 0
+        ? Math.floor(ligData.odul / Math.max(oyuncular.length, 1))
+        : Math.max(Math.floor((oGuc / toplamGuc) * ligData.odul), 1);
+      const oPct = toplamGuc === 0 ? (100 / oyuncular.length).toFixed(1) : ((oGuc / toplamGuc) * 100).toFixed(1);
+      const benim = o.uid === mevcutKullanici.uid;
+      const sira = i + 1;
+      const sm = sira === 1 ? "🥇" : sira === 2 ? "🥈" : sira === 3 ? "🥉" : `#${sira}`;
+
+      const row = document.createElement("div");
+      row.className = "lig-detay-row" + (benim ? " benim" : "");
+      row.innerHTML = `
+        <div class="ld-rank">${sm}</div>
+        <div class="ld-avatar">${o.avatar || "👷"}</div>
+        <div class="ld-info">
+          <div class="ld-name">${o.username || "?"}${benim ? " <span class='ld-sen'>(Sen)</span>" : ""}</div>
+          <div class="ld-bar-wrap"><div class="ld-bar" style="width:${Math.min(oPct, 100)}%"></div></div>
+        </div>
+        <div class="ld-stats">
+          <div class="ld-guc">⚡ ${formatSayi(oGuc)}</div>
+          <div class="ld-pay">💵 ${formatSayi(oPay)}</div>
+          <div class="ld-pct">${oPct}%</div>
+        </div>
+      `;
+      liste.appendChild(row);
+    });
+
+    // Toplam oyuncu
+    document.getElementById("lig-detay-oyuncu-say").textContent = oyuncular.length;
+
+  } catch (e) {
+    document.getElementById("lig-detay-liste").innerHTML = `<div class="inv-empty">Yüklenemedi: ${e.message}</div>`;
+  }
+}
+
+document.getElementById("lig-detay-modal-close").addEventListener("click", () => {
+  document.getElementById("lig-detay-modal").classList.add("hidden");
+});
+document.getElementById("lig-detay-modal").addEventListener("click", e => {
+  if (e.target === document.getElementById("lig-detay-modal")) {
+    document.getElementById("lig-detay-modal").classList.add("hidden");
+  }
+});
 
 console.log("%c\u26cf\ufe0f ReisZa%c \u2014 Başlatıldı", "color:#f5c842;font-size:18px;font-weight:bold;font-family:serif;", "color:#e87c2a;font-size:12px;");
