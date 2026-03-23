@@ -105,6 +105,31 @@
         <span class="sidebar-icon">🎮</span>
         <span class="sidebar-label">Oyunlar</span>
       </button>
+      <!-- Spacer -->
+      <div class="sidebar-spacer"></div>
+      <!-- Sol panel: güç + sayaç + üretim -->
+      <div class="sidebar-info-panel">
+        <div class="sip-item">
+          <span class="sip-val" id="sip-power">0</span>
+          <span class="sip-label">⚡ Güç</span>
+        </div>
+        <div class="sip-divider"></div>
+        <div class="sip-item">
+          <span class="sip-val" id="sip-timer">10:00</span>
+          <span class="sip-label">⏳ Ödül</span>
+        </div>
+        <div class="sip-divider"></div>
+        <div class="sip-item">
+          <span class="sip-val" id="sip-uretim">💵100%</span>
+          <span class="sip-label">Üretim</span>
+        </div>
+        <button class="sip-edit-btn" id="sip-edit-btn" title="Üretim Ayarla">⚙️</button>
+      </div>
+      <!-- Ana menüye dön -->
+      <button class="sidebar-btn sidebar-btn-home" id="snav-village" data-page="village">
+        <span class="sidebar-icon">🏠</span>
+        <span class="sidebar-label">Ana Menü</span>
+      </button>
     </aside>
 
     <!-- Sayfa İçeriği -->
@@ -143,8 +168,8 @@
               <div class="torch-glow"></div>
             </div>
 
-            <!-- Kaya kütlesi + tünel -->
-            <div class="rock-mass">
+            <!-- Kaya kütlesi + tünel (tıklanınca madenci modal açılır) -->
+            <div class="rock-mass" id="tunnel-clickable" style="cursor:pointer" title="Madencileri görmek için tıkla">
               <div class="tunnel-arch">
                 <div class="tunnel-depth">
                   <div class="tunnel-rail rail-left"></div>
@@ -156,6 +181,7 @@
                   <div class="miner-emoji" id="village-miner-emoji">👷</div>
                   <div class="pickaxe-swing" id="pickaxe-swing">⛏️</div>
                 </div>
+                <div class="tunnel-click-hint">👆 Tıkla</div>
               </div>
             </div>
           </div>
@@ -200,9 +226,18 @@
       <section class="page" id="page-market">
         <div class="page-header">
           <h2 class="page-title">🛒 Market</h2>
-          <p class="page-subtitle">Sandık al ve şansını dene</p>
+          <p class="page-subtitle">Sandık al, dolap al, madenci kilidi aç</p>
         </div>
+        <!-- Sandıklar -->
+        <div class="market-section-title">📦 Sandıklar</div>
         <div class="chests-grid" id="chests-grid"></div>
+        <!-- Dolaplar -->
+        <div class="market-section-title">🗄️ Dolaplar</div>
+        <p class="market-section-sub" id="market-kapasite-info"></p>
+        <div class="chests-grid" id="cabinets-shop-grid"></div>
+        <!-- Kilitli Madenciler -->
+        <div class="market-section-title">👷 Madenciler</div>
+        <div class="miners-market-grid" id="miners-market-grid"></div>
       </section>
 
       <!-- ===== SIRALAMA ===== -->
@@ -262,17 +297,29 @@
   <div class="modal-overlay hidden" id="profile-modal">
     <div class="modal-box profile-modal-box">
       <button class="modal-close" id="profile-modal-close">✕</button>
+
+      <!-- Foto + Bilgi -->
       <div class="profile-modal-head">
-        <button class="profile-big-avatar" id="profile-big-avatar" title="Avatar Seç">
-          <span id="profile-avatar-display">👷</span>
-          <div class="avatar-change-hint">✏️</div>
-        </button>
+        <div class="profile-photo-wrap">
+          <img id="profile-photo-img" src="" alt="" class="profile-photo hidden" />
+          <button class="profile-big-avatar" id="profile-big-avatar" title="Avatar Seç">
+            <span id="profile-avatar-display">👷</span>
+            <div class="avatar-change-hint">✏️</div>
+          </button>
+          <label class="profile-photo-upload" title="Fotoğraf Yükle">
+            📷
+            <input type="file" id="profile-photo-input" accept="image/jpeg,image/png" style="display:none" />
+          </label>
+        </div>
         <div class="profile-modal-info">
           <div class="profile-username" id="profile-username">Madenci</div>
           <div class="profile-email" id="profile-email">—</div>
+          <div class="profile-kayit" id="profile-kayit">—</div>
           <div class="lig-badge" id="profile-lig-badge">Bronz</div>
         </div>
       </div>
+
+      <!-- İstatistikler -->
       <div class="profile-stats-grid">
         <div class="card profile-stat-card">
           <div class="pstat-icon">⚡</div>
@@ -296,10 +343,23 @@
         </div>
       </div>
 
-      <!-- Madenci seçimi profil modalında -->
-      <div class="miner-section-profile">
-        <h3 class="section-title-modal">👷 Madenciler</h3>
-        <div class="miners-grid-modal" id="miners-grid-modal"></div>
+      <!-- Şifre değiştir -->
+      <div class="profile-section">
+        <h3 class="section-title-modal">🔑 Şifre Değiştir</h3>
+        <div class="form-group"><label>Yeni Şifre</label><input type="password" id="new-password" placeholder="En az 6 karakter" /></div>
+        <div class="auth-error" id="password-error"></div>
+        <button class="btn-secondary" id="btn-change-password" style="width:100%">🔒 Şifreyi Güncelle</button>
+      </div>
+
+      <!-- Destek -->
+      <div class="profile-section">
+        <h3 class="section-title-modal">📞 Destek</h3>
+        <div class="destek-info">Sorun mu yaşıyorsun? Bize e-posta ile ulaş:<br/><a href="mailto:destek@reisza.com">destek@reisza.com</a><br/>Ya da aşağıdan şikayet gönder. En kısa sürede yanıt veririz.</div>
+        <div class="form-group" style="margin-top:12px"><label>Mesajın</label><textarea id="sikayet-mesaj" rows="3" placeholder="Şikayetini veya görüşünü yaz..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-family:inherit;resize:vertical"></textarea></div>
+        <div class="sikayet-btns">
+          <button class="btn-secondary" id="btn-kullanici-sikayet">👤 Kullanıcı Şikayeti</button>
+          <button class="btn-secondary" id="btn-sistem-sikayet">⚙️ Sistem Şikayeti</button>
+        </div>
       </div>
 
       <button class="btn-danger" id="btn-logout">🚪 Çıkış Yap</button>
@@ -337,11 +397,45 @@
       <button class="modal-close" id="cabinet-modal-close">✕</button>
       <div class="cabinet-modal-header">
         <span class="cabinet-modal-icon" id="cabinet-modal-icon">🗄️</span>
-        <h2 class="cabinet-modal-title" id="cabinet-modal-title">Alet Dolabı</h2>
+        <div>
+          <h2 class="cabinet-modal-title" id="cabinet-modal-title">Dolap</h2>
+          <div class="cabinet-capacity-bar-wrap">
+            <div class="cabinet-capacity-bar" id="cabinet-capacity-bar"></div>
+          </div>
+          <div class="cabinet-capacity-txt" id="cabinet-capacity-txt">0/10 eşya</div>
+        </div>
       </div>
-      <div class="cabinet-interior" id="cabinet-interior">
-        <!-- İçerik JS ile doldurulur -->
+      <div class="cabinet-interior" id="cabinet-interior"></div>
+    </div>
+  </div>
+
+  <!-- ===== MADENCİ (TÜNEL) MODAL ===== -->
+  <div class="modal-overlay hidden" id="miner-modal">
+    <div class="modal-box miner-modal-box">
+      <button class="modal-close" id="miner-modal-close">✕</button>
+      <h2 class="modal-title">⛏️ Madenciler</h2>
+      <p style="color:var(--text-dim);font-size:.83rem;margin-bottom:16px">Aktif madencini seç. Satın almak için Market'e git.</p>
+      <div class="miners-modal-grid" id="miners-modal-grid"></div>
+    </div>
+  </div>
+
+  <!-- ===== ÜRETİM SEÇİMİ MODAL ===== -->
+  <div class="modal-overlay hidden" id="uretim-modal">
+    <div class="modal-box uretim-modal-box">
+      <button class="modal-close" id="uretim-modal-close">✕</button>
+      <h2 class="modal-title">⚙️ Üretim Tercihi</h2>
+      <p style="color:var(--text-dim);font-size:.85rem;margin:8px 0 20px">Her 10 dakikada gelen lig ödülünün kaçta kaçının Altın, kaçının Banknot olmasını istersin?</p>
+      <div class="uretim-slider-wrap">
+        <div class="uretim-labels">
+          <span class="uretim-lbl gold">🥇 Altın: <b id="uretim-altin-pct">0</b>%</span>
+          <span class="uretim-lbl banknot">💵 Banknot: <b id="uretim-banknot-pct">100</b>%</span>
+        </div>
+        <input type="range" id="uretim-slider" min="0" max="100" step="5" value="0" class="uretim-slider" />
+        <div class="uretim-track">
+          <div class="uretim-fill-altin" id="uretim-fill-altin"></div>
+        </div>
       </div>
+      <button class="btn-primary" id="btn-uretim-kaydet" style="margin-top:20px">💾 Kaydet</button>
     </div>
   </div>
 
