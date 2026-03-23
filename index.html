@@ -5,17 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="ReisZa — Karanlık yeraltı madenciliği oyunu. Madenci yönet, sandık aç, liga kazan!" />
   <title>ReisZa — Madencilik Oyunu</title>
-
-  <!-- Google Fonts: Cinzel + Nunito -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-
-  <!-- Firebase SDK v9 (compat modu - CDN) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -29,8 +24,6 @@
       <h1 class="logo-title">ReisZa</h1>
       <p class="logo-subtitle">Yeraltının Efendisi Ol</p>
     </div>
-
-    <!-- Giriş Formu -->
     <div class="auth-card" id="login-form">
       <h2 class="auth-title">Giriş Yap</h2>
       <div class="form-group">
@@ -45,8 +38,6 @@
       <button class="btn-primary" id="btn-login">⛏️ Madene Gir</button>
       <p class="auth-switch">Hesabın yok mu? <span id="show-register">Kayıt Ol</span></p>
     </div>
-
-    <!-- Kayıt Formu -->
     <div class="auth-card hidden" id="register-form">
       <h2 class="auth-title">Kayıt Ol</h2>
       <div class="form-group">
@@ -63,7 +54,7 @@
       </div>
       <div class="auth-error" id="register-error"></div>
       <button class="btn-primary" id="btn-register">🪙 Madenci Ol</button>
-      <p class="auth-switch">Zaten hesabın var mı? <span id="show-login">Giriş Yap</span></p>
+      <p class="auth-switch">Hesabın var mı? <span id="show-login">Giriş Yap</span></p>
     </div>
   </div>
 </div>
@@ -71,172 +62,217 @@
 <!-- ==================== ANA UYGULAMA ==================== -->
 <div id="app" class="hidden">
 
-  <!-- Üst Bar -->
+  <!-- ===== TOPBAR ===== -->
   <header class="topbar">
-    <div class="topbar-logo">
-      <span class="topbar-icon">⛏️</span>
-      <span class="topbar-name">ReisZa</span>
+    <div class="topbar-left">
+      <span class="app-title-small">⛏️ ReisZa</span>
+      <div class="lig-badge" id="topbar-lig">Bronz</div>
     </div>
     <div class="topbar-stats">
-      <div class="stat-pill gold" id="stat-altin">
-        <span class="stat-icon">🥇</span>
-        <span class="stat-val" id="val-altin">0</span>
+      <div class="stat-pill gold">
+        <span>🥇</span><span class="stat-val" id="val-altin">0</span>
       </div>
-      <div class="stat-pill banknot" id="stat-banknot">
-        <span class="stat-icon">💵</span>
-        <span class="stat-val" id="val-banknot">0</span>
+      <div class="stat-pill banknot">
+        <span>💵</span><span class="stat-val" id="val-banknot">0</span>
       </div>
-      <div class="stat-pill kurus" id="stat-kurus">
-        <span class="stat-icon">🪙</span>
-        <span class="stat-val" id="val-kurus">0</span>
+      <div class="stat-pill kurus">
+        <span>🪙</span><span class="stat-val" id="val-kurus">0</span>
       </div>
     </div>
-    <div class="topbar-right">
-      <div class="lig-badge" id="topbar-lig">Bronz</div>
-      <div class="topbar-avatar" id="topbar-avatar">R</div>
-    </div>
+    <button class="profile-topbtn" id="profile-topbtn" title="Profilini Görüntüle">
+      <span class="profile-topbtn-avatar" id="profile-topbtn-avatar">👷</span>
+    </button>
   </header>
 
-  <!-- Sayfa İçeriği -->
-  <main class="main-content" id="main-content">
+  <!-- ===== APP BODY (sidebar + içerik) ===== -->
+  <div class="app-body">
 
-    <!-- ===== ANASAYFA ===== -->
-    <section class="page active" id="page-home">
-      <div class="page-header">
-        <h2 class="page-title">⛏️ Görev Merkezi</h2>
-        <p class="page-subtitle" id="home-welcome">Hoş geldin, Madenci!</p>
-      </div>
+    <!-- Sol Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <button class="sidebar-btn" data-page="market" id="snav-market">
+        <span class="sidebar-icon">🛒</span>
+        <span class="sidebar-label">Market</span>
+      </button>
+      <button class="sidebar-btn" data-page="leaderboard" id="snav-leaderboard">
+        <span class="sidebar-icon">🏆</span>
+        <span class="sidebar-label">Sıralama</span>
+      </button>
+      <button class="sidebar-btn" data-page="inventory" id="snav-inventory">
+        <span class="sidebar-icon">🎒</span>
+        <span class="sidebar-label">Envanter</span>
+      </button>
+      <button class="sidebar-btn" data-page="games" id="snav-games">
+        <span class="sidebar-icon">🎮</span>
+        <span class="sidebar-label">Oyunlar</span>
+      </button>
+    </aside>
 
-      <div class="home-grid">
-        <!-- Güç Kartı -->
-        <div class="card power-card">
-          <div class="power-label">⚡ Toplam Güç</div>
-          <div class="power-number" id="home-guc">0</div>
-          <div class="power-formula" id="home-formula">Henüz eşya yok</div>
+    <!-- Sayfa İçeriği -->
+    <main class="main-content" id="main-content">
+
+      <!-- ===== KÖY (Varsayılan / Ana Sayfa) ===== -->
+      <section class="page active" id="page-village">
+        <div class="village-scene" id="village-scene">
+
+          <!-- Mağara tavanı + sarkıtlar -->
+          <div class="cave-ceiling">
+            <div class="stalactite" style="--h:55px;--l:5%;--w:18px"></div>
+            <div class="stalactite" style="--h:35px;--l:12%;--w:12px"></div>
+            <div class="stalactite" style="--h:70px;--l:22%;--w:22px"></div>
+            <div class="stalactite" style="--h:42px;--l:32%;--w:14px"></div>
+            <div class="stalactite" style="--h:28px;--l:42%;--w:10px"></div>
+            <div class="stalactite" style="--h:60px;--l:55%;--w:18px"></div>
+            <div class="stalactite" style="--h:45px;--l:65%;--w:14px"></div>
+            <div class="stalactite" style="--h:80px;--l:73%;--w:24px"></div>
+            <div class="stalactite" style="--h:38px;--l:82%;--w:12px"></div>
+            <div class="stalactite" style="--h:52px;--l:90%;--w:16px"></div>
+          </div>
+
+          <!-- Tünel + Madenci alanı -->
+          <div class="tunnel-section">
+            <!-- Sol meşale -->
+            <div class="torch torch-left">
+              <div class="torch-stick"></div>
+              <div class="flame-wrap"><div class="flame"></div><div class="flame f2"></div><div class="flame f3"></div></div>
+              <div class="torch-glow"></div>
+            </div>
+            <!-- Sağ meşale -->
+            <div class="torch torch-right">
+              <div class="torch-stick"></div>
+              <div class="flame-wrap"><div class="flame"></div><div class="flame f2"></div><div class="flame f3"></div></div>
+              <div class="torch-glow"></div>
+            </div>
+
+            <!-- Kaya kütlesi + tünel -->
+            <div class="rock-mass">
+              <div class="tunnel-arch">
+                <div class="tunnel-depth">
+                  <div class="tunnel-rail rail-left"></div>
+                  <div class="tunnel-rail rail-right"></div>
+                  <div class="tunnel-darkness"></div>
+                </div>
+                <!-- Madenci karakteri -->
+                <div class="miner-at-tunnel" id="miner-at-tunnel">
+                  <div class="miner-emoji" id="village-miner-emoji">👷</div>
+                  <div class="pickaxe-swing" id="pickaxe-swing">⛏️</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Oyuncu bilgi bandı -->
+          <div class="village-info-bar">
+            <div class="vib-item">
+              <span class="vib-label">Oyuncu</span>
+              <span class="vib-val" id="village-username">Madenci</span>
+            </div>
+            <div class="vib-item">
+              <span class="vib-label">Güç</span>
+              <span class="vib-val accent" id="village-power">0</span>
+            </div>
+            <div class="vib-item">
+              <span class="vib-label">Lig</span>
+              <span class="vib-val gold" id="village-lig">Bronz</span>
+            </div>
+            <div class="vib-item">
+              <span class="vib-label">Sıradaki Ödül</span>
+              <span class="vib-val" id="village-timer">10:00</span>
+            </div>
+          </div>
+
+          <!-- Zemin çizgisi -->
+          <div class="ground-line"></div>
+
+          <!-- Dolaplar alanı -->
+          <div class="cabinets-area">
+            <div class="cabinets-row" id="cabinets-row">
+              <!-- JS tarafından doldurulur -->
+            </div>
+          </div>
+
+          <!-- Zemin zemini -->
+          <div class="cave-floor"></div>
+
         </div>
+      </section>
 
-        <!-- Aktif Madenci Kartı -->
-        <div class="card miner-active-card">
-          <div class="miner-card-label">👷 Aktif Madenci</div>
-          <div class="miner-avatar-big" id="home-miner-avatar">👷</div>
-          <div class="miner-name-big" id="home-miner-name">Beyza</div>
-          <div class="miner-coeff" id="home-miner-coeff">Katsayı: ×2</div>
+      <!-- ===== MARKET ===== -->
+      <section class="page" id="page-market">
+        <div class="page-header">
+          <h2 class="page-title">🛒 Market</h2>
+          <p class="page-subtitle">Sandık al ve şansını dene</p>
         </div>
+        <div class="chests-grid" id="chests-grid"></div>
+      </section>
 
-        <!-- Lig & Geri Sayım -->
-        <div class="card countdown-card">
-          <div class="countdown-label">🏆 Lig Ödülü</div>
-          <div class="countdown-lig" id="countdown-lig-name">Bronz Ligi</div>
-          <div class="countdown-timer" id="countdown-timer">10:00</div>
-          <div class="countdown-info" id="countdown-reward-info">10 Banknot kazanacaksın</div>
-          <div class="countdown-bar-wrap">
-            <div class="countdown-bar" id="countdown-bar"></div>
+      <!-- ===== SIRALAMA ===== -->
+      <section class="page" id="page-leaderboard">
+        <div class="page-header">
+          <h2 class="page-title">🏆 Sıralama</h2>
+        </div>
+        <div class="lb-tabs">
+          <button class="lb-tab active" id="lb-tab-my" data-tab="my">Ligim</button>
+          <button class="lb-tab" id="lb-tab-all" data-tab="all">Genel</button>
+        </div>
+        <div class="leaderboard-list" id="leaderboard-list"></div>
+      </section>
+
+      <!-- ===== ENVANTER ===== -->
+      <section class="page" id="page-inventory">
+        <div class="page-header">
+          <h2 class="page-title">🎒 Envanter</h2>
+          <p class="page-subtitle">Sahip olduğun eşyalar</p>
+        </div>
+        <div class="inventory-summary">
+          <div class="card inv-stat">
+            <div class="inv-stat-label">Eşya Gücü</div>
+            <div class="inv-stat-val" id="inv-total-item-power">0</div>
+          </div>
+          <div class="card inv-stat">
+            <div class="inv-stat-label">Madenci ×</div>
+            <div class="inv-stat-val" id="inv-miner-coeff">×2</div>
+          </div>
+          <div class="card inv-stat highlight">
+            <div class="inv-stat-label">⚡ Final Güç</div>
+            <div class="inv-stat-val" id="inv-final-power">0</div>
           </div>
         </div>
+        <div class="inventory-grid" id="inventory-grid">
+          <div class="inv-empty">Henüz bir eşyan yok. Market'e git!</div>
+        </div>
+      </section>
 
-        <!-- Liga Bilgi -->
-        <div class="card league-info-card">
-          <div class="league-info-title">📊 Lig Bilgisi</div>
-          <div class="league-badges-list" id="league-badges-list">
-            <!-- JS ile doldurulur -->
+      <!-- ===== OYUNLAR ===== -->
+      <section class="page" id="page-games">
+        <div class="games-coming-soon">
+          <div class="games-icon">🎮</div>
+          <h2 class="games-title">Oyunlar</h2>
+          <p class="games-subtitle">Yakında...</p>
+          <div class="games-pickaxe-anim">
+            <span>⛏️</span><span>💎</span><span>⛏️</span>
           </div>
+          <p class="games-desc">Madenlerin derinliklerinden yeni oyunlar geliyor.<br/>En iyi madenci olmaya hazırlan!</p>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ===== KÖY ===== -->
-    <section class="page" id="page-village">
-      <div class="page-header">
-        <h2 class="page-title">🏘️ Köy — Madenciler</h2>
-        <p class="page-subtitle">Madencilerini yönet ve güçlendir</p>
-      </div>
+    </main>
+  </div>
 
-      <div class="active-miner-section">
-        <h3 class="section-title">Aktif Madencin</h3>
-        <div class="active-miner-big-card" id="active-miner-big">
-          <!-- JS doldurur -->
-        </div>
-      </div>
-
-      <div class="miners-section">
-        <h3 class="section-title">Tüm Madenciler</h3>
-        <div class="miners-grid" id="miners-grid">
-          <!-- JS doldurur -->
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== ENVANTER ===== -->
-    <section class="page" id="page-inventory">
-      <div class="page-header">
-        <h2 class="page-title">🎒 Envanter</h2>
-        <p class="page-subtitle">Sahip olduğun eşyalar</p>
-      </div>
-
-      <div class="inventory-summary">
-        <div class="card inv-stat">
-          <div class="inv-stat-label">Toplam Eşya Gücü</div>
-          <div class="inv-stat-val" id="inv-total-item-power">0</div>
-        </div>
-        <div class="card inv-stat">
-          <div class="inv-stat-label">Madenci Katsayısı</div>
-          <div class="inv-stat-val" id="inv-miner-coeff">×2</div>
-        </div>
-        <div class="card inv-stat highlight">
-          <div class="inv-stat-label">⚡ Final Güç</div>
-          <div class="inv-stat-val" id="inv-final-power">0</div>
-        </div>
-      </div>
-
-      <div class="inventory-grid" id="inventory-grid">
-        <div class="inv-empty">Henüz bir eşyan yok. Market'e git ve sandık aç!</div>
-      </div>
-    </section>
-
-    <!-- ===== MARKET ===== -->
-    <section class="page" id="page-market">
-      <div class="page-header">
-        <h2 class="page-title">🛒 Market</h2>
-        <p class="page-subtitle">Sandık al ve şansını dene</p>
-      </div>
-
-      <div class="chests-grid" id="chests-grid">
-        <!-- JS doldurur -->
-      </div>
-
-      <!-- Sandık Açma Modalı -->
-      <div class="chest-modal hidden" id="chest-modal">
-        <div class="chest-modal-overlay" id="chest-modal-overlay"></div>
-        <div class="chest-modal-content">
-          <div class="chest-open-anim" id="chest-open-anim">
-            <div class="chest-glow"></div>
-            <div class="chest-emoji" id="chest-open-emoji">📦</div>
-          </div>
-          <div class="chest-result hidden" id="chest-result">
-            <div class="chest-result-icon" id="chest-result-icon">🎉</div>
-            <div class="chest-result-name" id="chest-result-name">Ödül</div>
-            <div class="chest-result-desc" id="chest-result-desc"></div>
-          </div>
-          <button class="btn-primary chest-close-btn hidden" id="chest-close-btn">Devam Et</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== PROFİL ===== -->
-    <section class="page" id="page-profile">
-      <div class="page-header">
-        <h2 class="page-title">👤 Profil</h2>
-      </div>
-
-      <div class="profile-card-big">
-        <div class="profile-avatar-big" id="profile-avatar-char">R</div>
-        <div class="profile-info">
+  <!-- ===== PROFİL MODAL ===== -->
+  <div class="modal-overlay hidden" id="profile-modal">
+    <div class="modal-box profile-modal-box">
+      <button class="modal-close" id="profile-modal-close">✕</button>
+      <div class="profile-modal-head">
+        <button class="profile-big-avatar" id="profile-big-avatar" title="Avatar Seç">
+          <span id="profile-avatar-display">👷</span>
+          <div class="avatar-change-hint">✏️</div>
+        </button>
+        <div class="profile-modal-info">
           <div class="profile-username" id="profile-username">Madenci</div>
           <div class="profile-email" id="profile-email">—</div>
-          <div class="profile-lig-badge" id="profile-lig-badge">Bronz</div>
+          <div class="lig-badge" id="profile-lig-badge">Bronz</div>
         </div>
       </div>
-
       <div class="profile-stats-grid">
         <div class="card profile-stat-card">
           <div class="pstat-icon">⚡</div>
@@ -260,88 +296,69 @@
         </div>
       </div>
 
+      <!-- Madenci seçimi profil modalında -->
+      <div class="miner-section-profile">
+        <h3 class="section-title-modal">👷 Madenciler</h3>
+        <div class="miners-grid-modal" id="miners-grid-modal"></div>
+      </div>
+
       <button class="btn-danger" id="btn-logout">🚪 Çıkış Yap</button>
-    </section>
-
-    <!-- ===== SIRALAMA ===== -->
-    <section class="page" id="page-leaderboard">
-      <div class="page-header">
-        <h2 class="page-title">🏆 Sıralama</h2>
-      </div>
-
-      <div class="lb-tabs">
-        <button class="lb-tab active" id="lb-tab-my" data-tab="my">Ligim</button>
-        <button class="lb-tab" id="lb-tab-all" data-tab="all">Genel</button>
-      </div>
-
-      <div class="leaderboard-list" id="leaderboard-list">
-        <!-- JS doldurur -->
-      </div>
-    </section>
-
-    <!-- ===== OYUNLAR ===== -->
-    <section class="page" id="page-games">
-      <div class="games-coming-soon">
-        <div class="games-icon">🎮</div>
-        <h2 class="games-title">Oyunlar</h2>
-        <p class="games-subtitle">Yakında...</p>
-        <div class="games-pickaxe-anim">
-          <span>⛏️</span>
-          <span>💎</span>
-          <span>⛏️</span>
-        </div>
-        <p class="games-desc">Madenlerin derinliklerinden yeni oyunlar geliyor.<br/>En iyi madenci olmaya hazırlan!</p>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Alt Navigasyon -->
-  <nav class="bottom-nav" id="bottom-nav">
-    <button class="nav-btn active" data-page="home" id="nav-home">
-      <span class="nav-icon">🏠</span>
-      <span class="nav-label">Ana Sayfa</span>
-    </button>
-    <button class="nav-btn" data-page="village" id="nav-village">
-      <span class="nav-icon">🏘️</span>
-      <span class="nav-label">Köy</span>
-    </button>
-    <button class="nav-btn" data-page="inventory" id="nav-inventory">
-      <span class="nav-icon">🎒</span>
-      <span class="nav-label">Envanter</span>
-    </button>
-    <button class="nav-btn" data-page="market" id="nav-market">
-      <span class="nav-icon">🛒</span>
-      <span class="nav-label">Market</span>
-    </button>
-    <button class="nav-btn" data-page="leaderboard" id="nav-leaderboard">
-      <span class="nav-icon">🏆</span>
-      <span class="nav-label">Sıralama</span>
-    </button>
-    <button class="nav-btn" data-page="games" id="nav-games">
-      <span class="nav-icon">🎮</span>
-      <span class="nav-label">Oyunlar</span>
-    </button>
-    <button class="nav-btn" data-page="profile" id="nav-profile">
-      <span class="nav-icon">👤</span>
-      <span class="nav-label">Profil</span>
-    </button>
-  </nav>
-
-</div>
-
-<!-- ===== LİG ÖDÜLÜ BİLDİRİMİ ===== -->
-<div class="league-reward-overlay hidden" id="league-reward-overlay">
-  <div class="league-reward-box">
-    <div class="coin-rain" id="coin-rain"></div>
-    <div class="reward-title">🏆 Lig Ödülü!</div>
-    <div class="reward-amount" id="reward-amount-display">+10 Banknot</div>
-    <div class="reward-lig" id="reward-lig-display">Bronz Ligi</div>
-    <button class="btn-primary" id="reward-close-btn">Harika! 🎉</button>
+    </div>
   </div>
-</div>
 
-<!-- ===== TOAST BİLDİRİM ===== -->
+  <!-- ===== AVATAR SEÇİCİ MODAL ===== -->
+  <div class="modal-overlay hidden" id="avatar-modal">
+    <div class="modal-box avatar-modal-box">
+      <button class="modal-close" id="avatar-modal-close">✕</button>
+      <h2 class="modal-title">Avatar Seç</h2>
+      <div class="avatar-grid" id="avatar-grid"></div>
+    </div>
+  </div>
+
+  <!-- ===== SANDIK AÇMA MODAL ===== -->
+  <div class="modal-overlay hidden" id="chest-modal">
+    <div class="modal-box chest-modal-box">
+      <div class="chest-open-anim" id="chest-open-anim">
+        <div class="chest-glow"></div>
+        <div class="chest-emoji-anim" id="chest-open-emoji">📦</div>
+      </div>
+      <div class="chest-result hidden" id="chest-result">
+        <div class="chest-result-icon" id="chest-result-icon">🎉</div>
+        <div class="chest-result-name" id="chest-result-name">Ödül</div>
+        <div class="chest-result-desc" id="chest-result-desc"></div>
+      </div>
+      <button class="btn-primary chest-close-btn hidden" id="chest-close-btn">Devam Et 🎉</button>
+    </div>
+  </div>
+
+  <!-- ===== DOLAP DETAIL MODAL ===== -->
+  <div class="modal-overlay hidden" id="cabinet-modal">
+    <div class="modal-box cabinet-modal-box">
+      <button class="modal-close" id="cabinet-modal-close">✕</button>
+      <div class="cabinet-modal-header">
+        <span class="cabinet-modal-icon" id="cabinet-modal-icon">🗄️</span>
+        <h2 class="cabinet-modal-title" id="cabinet-modal-title">Alet Dolabı</h2>
+      </div>
+      <div class="cabinet-interior" id="cabinet-interior">
+        <!-- İçerik JS ile doldurulur -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LİG ÖDÜLÜ BİLDİRİMİ ===== -->
+  <div class="modal-overlay league-reward-overlay hidden" id="league-reward-overlay">
+    <div class="league-reward-box">
+      <div class="coin-rain" id="coin-rain"></div>
+      <div class="reward-title">🏆 Lig Ödülü!</div>
+      <div class="reward-amount" id="reward-amount-display">+10 Banknot</div>
+      <div class="reward-lig" id="reward-lig-display">Bronz Ligi</div>
+      <button class="btn-primary" id="reward-close-btn">Harika! 🎉</button>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<!-- ===== TOAST ===== -->
 <div class="toast-container" id="toast-container"></div>
 
 <script src="app.js"></script>
