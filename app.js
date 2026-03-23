@@ -1,6 +1,13 @@
-const { useState, useEffect, useRef, useMemo } = React;
+/* ===================================================
+   ReisZa — Madencilik Oyunu
+   app.js — Firebase, Oyun Mantığı, UI Kontrolleri
+   =================================================== */
 
-// --- FIREBASE BAĞLANTISI ---
+"use strict";
+
+// ============================================================
+// 1. FİREBASE YAPILANDIRMASI
+// ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyDuKLuoePZ6mNsKhQBGXumxMwF0UKTQvc8",
   authDomain: "oyun-75056.firebaseapp.com",
@@ -12,701 +19,1178 @@ const firebaseConfig = {
   measurementId: "G-J9RKPSVT8B"
 };
 
-// Uygulamayı Başlat
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-} else {
-  firebase.app();
+// Firebase'i başlat
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ============================================================
+// 2. OYun VERİLERİ & SABİTLER
+// ============================================================
+
+// Lig sistemi — dağıtım miktarları (Banknot)
+const LIGLER = [
+  { ad: "Bronz",   renk: "--bronz",   odul: 10  },
+  { ad: "Gümüş",   renk: "--gumus",   odul: 20  },
+  { ad: "Altın",   renk: "--altin-lig", odul: 40 },
+  { ad: "Kristal", renk: "--kristal", odul: 80  },
+  { ad: "Çöp",     renk: "--cop",     odul: 160 }
+];
+
+// Madenciler — güç katsayıları ve satın alma maliyetleri
+const MADENCILER = [
+  { id: "Beyza",  emoji: "👩‍🌾", katsayi: 2,  maliyet: 0,   birim: "baslangic", aciklama: "Varsayılan madenci" },
+  { id: "Zehra",  emoji: "👩‍🔧", katsayi: 4,  maliyet: 50,  birim: "banknot",   aciklama: "İkinci kademe madenci" },
+  { id: "Ayşe",   emoji: "👷‍♀️", katsayi: 6,  maliyet: 200, birim: "banknot",   aciklama: "Orta seviye madenci" },
+  { id: "Mehmet", emoji: "👷",   katsayi: 8,  maliyet: 20,  birim: "altin",     aciklama: "Güçlü madenci" },
+  { id: "Ali",    emoji: "⛏️",   katsayi: 10, maliyet: 80,  birim: "altin",     aciklama: "Efsanevi madenci" }
+];
+
+// Eşyalar — güç puanları (5'er artarak)
+const ESYALAR = [
+  { id: "su_pompasi",     ad: "Su Pompası",        emoji: "💧", guc: 5  },
+  { id: "sapka",           ad: "Şapka",             emoji: "🎩", guc: 10 },
+  { id: "sincap",          ad: "Sincap",            emoji: "🐿️", guc: 15 },
+  { id: "boru",            ad: "Boru",              emoji: "🔧", guc: 20 },
+  { id: "fener",           ad: "Fener",             emoji: "🔦", guc: 25 },
+  { id: "kask",            ad: "Kask",              emoji: "⛑️", guc: 30 },
+  { id: "satil",           ad: "Satıl",             emoji: "🪣", guc: 35 },
+  { id: "tahta",           ad: "Tahta",             emoji: "🪵", guc: 40 },
+  { id: "silikon_tabancasi", ad: "Silikon Tabancası", emoji: "🔫", guc: 45 },
+  { id: "gozluk",          ad: "Gözlük",            emoji: "🥽", guc: 50 },
+  { id: "vinc",            ad: "Vinç",              emoji: "🏗️", guc: 55 },
+  { id: "kepce",           ad: "Kepçe",             emoji: "🦾", guc: 60 },
+  { id: "tir",             ad: "Tır",               emoji: "🚛", guc: 65 }
+];
+
+// Sandıklar — ağırlıklı rastgele içerik havuzu
+const SANDIKLAR = [
+  {
+    id: "sandik",
+    ad: "Sandık",
+    emoji: "📦",
+    cssClass: "wooden",
+    maliyet: 100,
+    birim: "kurus",
+    birimIcon: "🪙",
+    aciklama: "Düşük seviye eşyalar ve az Kuruş içerir.",
+    havuz: [
+      { tip: "esya", deger: "su_pompasi",  agirlik: 35 },
+      { tip: "esya", deger: "sapka",        agirlik: 25 },
+      { tip: "esya", deger: "sincap",       agirlik: 15 },
+      { tip: "kurus", deger: 50,            agirlik: 20 },
+      { tip: "kurus", deger: 20,            agirlik: 5  }
+    ]
+  },
+  {
+    id: "demir_sandik",
+    ad: "Demir Sandık",
+    emoji: "🗃️",
+    cssClass: "iron",
+    maliyet: 300,
+    birim: "kurus",
+    birimIcon: "🪙",
+    aciklama: "Orta kademe eşyalar ve Banknot kazanma şansı.",
+    havuz: [
+      { tip: "esya", deger: "boru",    agirlik: 20 },
+      { tip: "esya", deger: "fener",   agirlik: 20 },
+      { tip: "esya", deger: "kask",    agirlik: 15 },
+      { tip: "esya", deger: "sapka",   agirlik: 15 },
+      { tip: "banknot", deger: 5,      agirlik: 20 },
+      { tip: "banknot", deger: 10,     agirlik: 10 }
+    ]
+  },
+  {
+    id: "celik_sandik",
+    ad: "Çelik Sandık",
+    emoji: "🔒",
+    cssClass: "steel",
+    maliyet: 50,
+    birim: "banknot",
+    birimIcon: "💵",
+    aciklama: "İyi eşyalar ve Banknot ödülleri içerir.",
+    havuz: [
+      { tip: "esya", deger: "satil",    agirlik: 18 },
+      { tip: "esya", deger: "tahta",    agirlik: 18 },
+      { tip: "esya", deger: "gozluk",   agirlik: 10 },
+      { tip: "esya", deger: "vinc",     agirlik: 8  },
+      { tip: "banknot", deger: 20,      agirlik: 25 },
+      { tip: "banknot", deger: 40,      agirlik: 15 },
+      { tip: "kurus",   deger: 500,     agirlik: 6  }
+    ]
+  },
+  {
+    id: "mucevher_sandik",
+    ad: "Mücevher Sandık",
+    emoji: "💎",
+    cssClass: "jewel",
+    maliyet: 200,
+    birim: "banknot",
+    birimIcon: "💵",
+    aciklama: "Nadir eşyalar ve Altın kazanma şansı!",
+    havuz: [
+      { tip: "esya", deger: "silikon_tabancasi", agirlik: 15 },
+      { tip: "esya", deger: "vinc",              agirlik: 15 },
+      { tip: "esya", deger: "kepce",             agirlik: 12 },
+      { tip: "esya", deger: "tir",               agirlik: 8  },
+      { tip: "altin",   deger: 1,                agirlik: 20 },
+      { tip: "altin",   deger: 3,                agirlik: 10 },
+      { tip: "banknot", deger: 100,              agirlik: 20 }
+    ]
+  },
+  {
+    id: "bor_sandigi",
+    ad: "Bor Sandığı",
+    emoji: "🌟",
+    cssClass: "bor",
+    maliyet: 5,
+    birim: "altin",
+    birimIcon: "🥇",
+    aciklama: "En nadir eşyalar + bonus ödüller! Efsane kalite.",
+    havuz: [
+      { tip: "esya", deger: "tir",               agirlik: 20 },
+      { tip: "esya", deger: "kepce",             agirlik: 18 },
+      { tip: "esya", deger: "vinc",              agirlik: 15 },
+      { tip: "esya", deger: "silikon_tabancasi", agirlik: 12 },
+      { tip: "altin",   deger: 5,                agirlik: 18 },
+      { tip: "altin",   deger: 10,               agirlik: 10 },
+      { tip: "banknot", deger: 500,              agirlik: 7  }
+    ]
+  }
+];
+
+// Lig ödülü aralığı (ms cinsinden) — 10 dakika
+const LIG_ODULU_ARALIK_MS = 10 * 60 * 1000;
+
+// ============================================================
+// 3. GLOBAL DURUM
+// ============================================================
+let mevcutKullanici = null;   // Firebase Auth kullanıcısı
+let kullaniciVerisi = null;   // Firestore'dan gelen belge
+let ligCountdownInterval = null; // Geri sayım interval'i
+let firestoreUnsubscribe = null; // Canlı dinleme iptal fonksiyonu
+let aktifSayfa = "home";
+
+// ============================================================
+// 4. YARDIMCI FONKSİYONLAR
+// ============================================================
+
+/**
+ * Ağırlıklı listeden rastgele eleman seçer.
+ * @param {Array} havuz - { deger, agirlik } dizisi
+ * @returns Seçilen eleman
+ */
+function agirlikliRastgele(havuz) {
+  const toplam = havuz.reduce((t, h) => t + h.agirlik, 0);
+  let r = Math.random() * toplam;
+  for (const item of havuz) {
+    r -= item.agirlik;
+    if (r <= 0) return item;
+  }
+  return havuz[havuz.length - 1];
 }
 
-const auth = firebase.auth();
-const dbRef = firebase.database();
+/**
+ * Eşya id'sinden eşya objesini döndürür.
+ */
+function esyaBul(id) {
+  return ESYALAR.find(e => e.id === id) || null;
+}
 
-// Firebase Object'ini Array'e çevirme yardımcısı
-const toArray = (obj) => {
-  if (!obj) return [];
-  return Object.keys(obj).map(key => ({ id: key, ...obj[key] }));
-};
+/**
+ * Madenci id'sinden madenci objesini döndürür.
+ */
+function madenciBul(id) {
+  return MADENCILER.find(m => m.id === id) || null;
+}
 
-// --- KİMLİK DOĞRULAMA (Arayüz 1) ---
-const LoginRegister = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState('student');
-  const [form, setForm] = useState({ username: '', password: '', name: '', email: '', grade: '9', branch: '', score: '' });
+/**
+ * Güç hesapla: Madenci katsayısı × Tüm eşyaların güç toplamı
+ */
+function gucHesapla(veri) {
+  const madenci = madenciBul(veri.madenci);
+  const katsayi = madenci ? madenci.katsayi : 2;
+  const esyaToplam = (veri.esyalar || []).reduce((t, esyaId) => {
+    const e = esyaBul(esyaId);
+    return t + (e ? e.guc : 0);
+  }, 0);
+  return katsayi * esyaToplam;
+}
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (isLogin) {
-      auth.signInWithEmailAndPassword(form.email, form.password)
-        .catch(err => alert('Giriş Hatası: ' + err.message));
-    } else {
-      auth.createUserWithEmailAndPassword(form.email, form.password)
-        .then(cred => {
-          // Kullanıcı profilini veritabanına kaydet
-          const profile = {
-            name: form.name,
-            username: form.username,
-            email: form.email,
-            role: role,
-            avatar: `https://i.pravatar.cc/150?u=${cred.user.uid}`,
-            grade: form.grade || "",
-            branch: form.branch || "",
-            score: parseFloat(form.score) || 0,
-            bio: 'Okula yeni katıldı!',
-            timestamp: Date.now()
-          };
-          return dbRef.ref('users/' + cred.user.uid).set(profile);
-        })
-        .catch(err => alert('Kayıt Hatası: ' + err.message));
-    }
+/**
+ * Toast bildirimi gösterir
+ */
+function toast(mesaj, tip = "info", sure = 3000) {
+  const container = document.getElementById("toast-container");
+  const ikonMap = { success: "✅", error: "❌", info: "⛏️", gold: "🥇" };
+  const t = document.createElement("div");
+  t.className = `toast ${tip}`;
+  t.innerHTML = `<span>${ikonMap[tip] || "ℹ️"}</span><span>${mesaj}</span>`;
+  container.appendChild(t);
+  setTimeout(() => { t.remove(); }, sure);
+}
+
+/**
+ * Ligden lig objesini döndürür
+ */
+function ligBul(ligAdi) {
+  return LIGLER.find(l => l.ad === ligAdi) || LIGLER[0];
+}
+
+/**
+ * Sayıyı kısalt (1000 → 1K, 1000000 → 1M)
+ */
+function formatSayi(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
+  return String(n);
+}
+
+// ============================================================
+// 5. FİRESTORE İŞLEMLERİ
+// ============================================================
+
+/**
+ * Kullanıcı verisini Firestore'a kaydet (güncelle)
+ */
+async function veriGuncelle(uid, data) {
+  try {
+    await db.collection("kullanicilar").doc(uid).update(data);
+  } catch (e) {
+    console.error("Veri güncelleme hatası:", e);
+    throw e;
+  }
+}
+
+/**
+ * Yeni kullanıcı belgesi oluştur
+ */
+async function kullaniciBelgesiOlustur(uid, email, username) {
+  const now = firebase.firestore.Timestamp.now();
+  const yeniVeri = {
+    uid,
+    email,
+    username,
+    lig: "Bronz",
+    altin: 0,
+    banknot: 10,
+    kurus: 0,
+    madenci: "Beyza",
+    esyalar: [],
+    guc: 0,
+    sonOdul: now,
+    kayitTarihi: now
   };
+  await db.collection("kullanicilar").doc(uid).set(yeniVeri);
+  return yeniVeri;
+}
 
-  return (
-    <div className="auth-wrapper">
-      <div className="auth-card glass-panel animate-slide-up">
-        <div className="auth-header">
-          <h1 className="auth-title">EduConnect</h1>
-          <p className="auth-subtitle">Okulunun Sosyal Ağına {isLogin ? 'Giriş Yap' : 'Katıl'}</p>
-        </div>
-        
-        <div className="auth-tabs">
-          <div className={`auth-tab ${isLogin ? 'active' : ''}`} onClick={() => setIsLogin(true)}>Giriş Yap</div>
-          <div className={`auth-tab ${!isLogin ? 'active' : ''}`} onClick={() => setIsLogin(false)}>Kayıt Ol</div>
-        </div>
+/**
+ * Kullanıcı verisini gerçek zamanlı dinle
+ */
+function kullaniciyiDinle(uid) {
+  // Önceki dinlemeyi iptal et
+  if (firestoreUnsubscribe) firestoreUnsubscribe();
 
-        <form onSubmit={handleSubmit}>
-          {!isLogin && (
-            <div className="form-group mb-4">
-               <label className="form-label">Kayıt Tipi</label>
-               <select className="form-control" value={role} onChange={e => setRole(e.target.value)}>
-                 <option value="student">Öğrenci</option>
-                 <option value="teacher">Öğretmen</option>
-               </select>
-            </div>
-          )}
-
-          {!isLogin && (
-            <>
-              <div className="form-group">
-                <input className="form-control" placeholder="Ad Soyad" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-              </div>
-              <div className="form-group">
-                <input className="form-control" placeholder="Kullanıcı Adı" required value={form.username} onChange={e => setForm({...form, username: e.target.value})} />
-              </div>
-            </>
-          )}
-
-          <div className="form-group">
-            <input className="form-control" type="email" placeholder="E-posta" required value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
-          </div>
-          <div className="form-group">
-            <input className="form-control" type="password" placeholder="Şifre" required minLength="6" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
-          </div>
-
-          {!isLogin && role === 'student' && (
-            <>
-              <div className="form-group mt-2">
-                <select className="form-control" value={form.grade} onChange={e => setForm({...form, grade: e.target.value})}>
-                  <option value="9">9. Sınıf</option>
-                  <option value="10">10. Sınıf</option>
-                  <option value="11">11. Sınıf</option>
-                  <option value="12">12. Sınıf</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <input className="form-control" type="number" step="0.1" placeholder="Ortalama Sınav Neti" value={form.score} onChange={e => setForm({...form, score: parseFloat(e.target.value)})} />
-              </div>
-            </>
-          )}
-
-          {!isLogin && role === 'teacher' && (
-            <div className="form-group mt-2">
-               <input className="form-control" placeholder="Branş (Fizik, Mat..)" required value={form.branch} onChange={e => setForm({...form, branch: e.target.value})} />
-            </div>
-          )}
-
-          {isLogin && (
-            <div className="flex-row justify-between mb-4 mt-2" style={{fontSize:'0.85rem'}}>
-              <label className="flex-row gap-2" style={{color:'var(--text-muted)'}}><input type="checkbox"/> Beni Hatırla</label>
-              <a href="#" className="text-primary" onClick={()=>{
-                 if(!form.email) return alert('Lütfen e-posta adresinizi yazın.');
-                 auth.sendPasswordResetEmail(form.email).then(()=>alert('Sıfırlama linki gönderildi!'));
-              }}>Şifremi Unuttum</a>
-            </div>
-          )}
-
-          <button type="submit" className="btn btn-primary w-100 mt-4">
-            {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// --- HİKAYE GÖSTERİCİ MODAL ---
-const StoryViewer = ({ stories, initialIndex, onClose, currentUser }) => {
-  const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    // Hikaye görüntülendi olarak işaretle
-    const story = stories[currentIndex];
-    if (story && story.userId !== currentUser.id) {
-       dbRef.ref(`stories/${story.id}/seenBy/${currentUser.id}`).set(true);
-    }
-
-    const timer = setInterval(() => {
-      setProgress(p => {
-        if (p >= 100) {
-          if (currentIndex < stories.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-            return 0;
-          } else {
-            onClose();
-            return 100;
-          }
-        }
-        return p + 2; // yaklaşık 5 saniye
-      });
-    }, 100);
-    return () => clearInterval(timer);
-  }, [currentIndex, stories.length]);
-
-  if (!stories[currentIndex]) return null;
-
-  const story = stories[currentIndex];
-  const isOwner = story.userId === currentUser.id;
-  const seenCount = story.seenBy ? Object.keys(story.seenBy).length : 0;
-
-  return (
-    <div className="modal-overlay">
-      <div className="story-viewer">
-        <div className="story-progress-container">
-          {stories.map((s, i) => (
-             <div key={s.id} className="story-progress-bar">
-               <div className="story-progress-fill" style={{ width: i < currentIndex ? '100%' : i === currentIndex ? `${progress}%` : '0%' }}></div>
-             </div>
-          ))}
-        </div>
-        <div className="story-header-overlay">
-           <div className="story-user">
-             <img src={story.userAvatar} className="avatar avatar-sm" />
-             <span>{isOwner ? 'Sen' : story.userName}</span>
-           </div>
-           <button onClick={onClose} style={{color:'white', fontSize:'1.2rem'}}><i className="fas fa-times"></i></button>
-        </div>
-        <div className="story-content">
-          <img src={story.image} alt="Story" />
-          <h3 style={{position:'absolute', color:'white', textShadow:'0 2px 4px rgba(0,0,0,0.8)', textAlign:'center', padding:'1rem'}}>{story.text}</h3>
-        </div>
-        
-        <div className="story-nav-area story-nav-left" onClick={() => {if(currentIndex>0){setCurrentIndex(idx=>idx-1); setProgress(0);}}}></div>
-        <div className="story-nav-area story-nav-right" onClick={() => {if(currentIndex<stories.length-1){setCurrentIndex(idx=>idx+1); setProgress(0);}else{onClose()}}}></div>
-
-        {!isOwner && (
-          <div className="story-reply relative">
-            <input type="text" placeholder="Yanıt gönder... (Yakında)" onClick={e=>e.stopPropagation()} />
-          </div>
-        )}
-        {isOwner && (
-          <div className="story-reply text-center" style={{color:'white', fontSize:'0.9rem'}}>
-             <i className="fas fa-eye"></i> {seenCount} Görüntülenme
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// --- ANA UYGULAMA BİLEŞENİ ---
-const MainApp = ({ currentUser }) => {
-  const [activeTab, setActiveTab] = useState('sosyalles'); // sosyalles, okul, sinav, projeler
-  const [activeMenu, setActiveMenu] = useState('feed'); // feed, chat, rank
-  const [dropdownProfile, setDropdownProfile] = useState(false);
-  const [dropdownHamburger, setDropdownHamburger] = useState(false);
-  
-  const [viewingStoryIndex, setViewingStoryIndex] = useState(null);
-  const [targetProfile, setTargetProfile] = useState(null); 
-
-  // --- Veritabanı State'leri ---
-  const [users, setUsers] = useState({});
-  const [posts, setPosts] = useState([]);
-  const [stories, setStories] = useState([]);
-  const [chatMessages, setChatMessages] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Firebase Realtime Listener'lar
-  useEffect(() => {
-    // Tüm kullanıcıları dinle
-    const usersRef = dbRef.ref('users');
-    usersRef.on('value', snap => setUsers(snap.val() || {}));
-
-    // Gönderileri dinle
-    const postsRef = dbRef.ref('posts');
-    postsRef.on('value', snap => {
-      const pArr = toArray(snap.val()).sort((a,b) => b.timestamp - a.timestamp); // Yeni en üste
-      setPosts(pArr);
-    });
-
-    // Hikayeleri dinle 
-    const storiesRef = dbRef.ref('stories');
-    storiesRef.on('value', snap => {
-      // Sadece son 24 saati göster
-      const now = Date.now();
-      const sArr = toArray(snap.val())
-        .filter(s => now - s.timestamp < 24 * 3600000)
-        .sort((a,b) => a.timestamp - b.timestamp);
-      setStories(sArr);
-    });
-
-    // Chat mesajlarını dinle
-    const chatRef = dbRef.ref('chat');
-    chatRef.on('value', snap => {
-      const cArr = toArray(snap.val()).sort((a,b) => a.timestamp - b.timestamp); // Eskiler üstte, yeni en altta
-      setChatMessages(cArr);
-    });
-
-    return () => {
-      usersRef.off(); postsRef.off(); storiesRef.off(); chatRef.off();
-    };
-  }, []);
-
-  // --- Kullanıcı Profil Bilgileri Helper ---
-  const getFullUser = (uid) => {
-    return users[uid] ? { id: uid, ...users[uid] } : { id: uid, name: 'Bilinmeyen', avatar: 'https://i.pravatar.cc/150' };
-  };
-
-  const myFollowings = currentUser.following ? Object.keys(currentUser.following) : [];
-
-  // Görünür Hikayeler (Sadece Takip Ettiğim Kişiler + Ben)
-  const visibleStories = stories.filter(s => s.userId === currentUser.id || myFollowings.includes(s.userId)).map(s => {
-    const u = getFullUser(s.userId);
-    return { ...s, userAvatar: u.avatar, userName: u.name };
-  });
-
-  // --- Aksiyon Fonksiyonları ---
-  const sendPost = (e) => {
-    e.preventDefault();
-    const text = e.target.postText.value;
-    if(!text.trim()) return;
-    
-    dbRef.ref('posts').push({
-      userId: currentUser.id,
-      content: text,
-      timestamp: Date.now()
-    });
-    e.target.reset();
-  };
-
-  const toggleLike = (postId, postLikes) => {
-    const isLiked = postLikes && postLikes[currentUser.id];
-    if (isLiked) {
-      dbRef.ref(`posts/${postId}/likes/${currentUser.id}`).remove();
-    } else {
-      dbRef.ref(`posts/${postId}/likes/${currentUser.id}`).set(true);
-    }
-  };
-
-  const addComment = (e, postId) => {
-    e.preventDefault();
-    const text = e.target.commentText.value;
-    if(!text.trim()) return;
-    
-    dbRef.ref(`posts/${postId}/comments`).push({
-      userId: currentUser.id,
-      text: text,
-      timestamp: Date.now()
-    });
-    e.target.reset();
-  };
-
-  const sendChatMessage = (e) => {
-    e.preventDefault();
-    const text = e.target.chatText.value;
-    if(!text.trim()) return;
-
-    dbRef.ref('chat').push({
-      userId: currentUser.id,
-      text: text,
-      timestamp: Date.now()
-    });
-    e.target.reset();
-  };
-
-  const addRandomStory = () => {
-    const testImages = [
-      'https://picsum.photos/400/800?random=101', 'https://picsum.photos/400/800?random=102', 
-      'https://picsum.photos/400/800?random=103', 'https://picsum.photos/400/800?random=104'
-    ];
-    dbRef.ref('stories').push({
-      userId: currentUser.id,
-      image: testImages[Math.floor(Math.random()*testImages.length)],
-      text: 'Bugün harika bir gün!',
-      timestamp: Date.now()
-    });
-  };
-
-  const toggleFollow = (targetId) => {
-    const isFollowing = myFollowings.includes(targetId);
-    if (isFollowing) {
-      dbRef.ref(`users/${currentUser.id}/following/${targetId}`).remove();
-      dbRef.ref(`users/${targetId}/followers/${currentUser.id}`).remove();
-    } else {
-      dbRef.ref(`users/${currentUser.id}/following/${targetId}`).set(true);
-      dbRef.ref(`users/${targetId}/followers/${currentUser.id}`).set(true);
-    }
-  };
-
-  const deletePost = (postId) => {
-    if(confirm('Paylaşımı silmek istediğinize emin misiniz?')) {
-      dbRef.ref(`posts/${postId}`).remove();
-    }
-  };
-
-  // --- Yardımcı DOM referansları
-  const chatMessagesEndRef = useRef(null);
-  useEffect(() => {
-    if (activeMenu === 'chat') {
-      chatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [chatMessages, activeMenu]);
-
-  return (
-    <div className="app-container">
-      {/* ÜST NAVİGASYON */}
-      <nav className="navbar glass-panel" style={{borderRadius:0, borderBottom:'1px solid var(--border-color)'}}>
-        <div className="nav-left relative">
-           <div className="profile-dropdown-trigger" onClick={() => setDropdownProfile(!dropdownProfile)}>
-             <img src={currentUser.avatar} alt="Profile" className="avatar" />
-             <span style={{fontWeight:600}} className="d-none d-md-block">{currentUser.name}</span>
-             <i className="fas fa-chevron-down" style={{fontSize:'0.8rem', color:'var(--text-muted)'}}></i>
-           </div>
-           
-           <div className={`dropdown-menu ${dropdownProfile ? 'show' : ''}`} style={{left:0, right:'auto'}}>
-             <a className="dropdown-item" onClick={()=>{setTargetProfile(currentUser); setDropdownProfile(false);}}><i className="fas fa-user-circle"></i> Profili Görüntüle</a>
-             <div className="dropdown-divider"></div>
-             <a className="dropdown-item" style={{color:'var(--danger-color)'}} onClick={() => auth.signOut()}><i className="fas fa-sign-out-alt"></i> Çıkış Yap</a>
-           </div>
-        </div>
-
-        <div className="nav-center">
-           <button className={`nav-tab ${activeTab === 'sosyalles' ? 'active' : ''}`} onClick={()=>{setActiveTab('sosyalles'); setActiveMenu('feed');}}><i className="fas fa-fire"></i> <span className="d-none d-md-inline">Sosyalleş</span></button>
-           <button className={`nav-tab ${activeTab === 'okul' ? 'active' : ''}`} onClick={()=>setActiveTab('okul')}><i className="fas fa-school"></i> <span className="d-none d-md-inline">Okulum</span></button>
-           <button className={`nav-tab ${activeTab === 'sinav' ? 'active' : ''}`} onClick={()=>setActiveTab('sinav')}><i className="fas fa-file-alt"></i> <span className="d-none d-md-inline">Deneme Çöz</span></button>
-           <button className={`nav-tab ${activeTab === 'projeler' ? 'active' : ''}`} onClick={()=>setActiveTab('projeler')}><i className="fas fa-lightbulb"></i> <span className="d-none d-md-inline">Projeler</span></button>
-        </div>
-
-        <div className="nav-right relative">
-           <button className="btn btn-circle btn-ghost" onClick={() => setDropdownHamburger(!dropdownHamburger)}>
-             <i className="fas fa-bars" style={{fontSize:'1.2rem'}}></i>
-           </button>
-           <div className={`dropdown-menu ${dropdownHamburger ? 'show' : ''}`}>
-             <a className="dropdown-item" onClick={()=>{setActiveTab('sosyalles'); setActiveMenu('chat'); setDropdownHamburger(false);}}><i className="fas fa-comments text-success"></i> 💬 Genel Chat</a>
-             <a className="dropdown-item" onClick={()=>{setActiveTab('sosyalles'); setActiveMenu('rank'); setDropdownHamburger(false);}}><i className="fas fa-trophy text-warning"></i> 🏆 Sıralamam</a>
-           </div>
-        </div>
-      </nav>
-
-      {/* ANA İÇERİK IZGARASI */}
-      <div className="main-content">
-        
-        {/* SOL SİDEBAR - HİKAYELER */}
-        <aside className="left-sidebar">
-          <div className="glass-panel story-section">
-            <div className="story-header" title="Sadece takip ettiklerini görebilirsin">
-              Hikayeler 
-            </div>
-            <div className="story-scroll-container">
-              {/* Hikaye Ekle */}
-              <div className="story-item" onClick={addRandomStory}>
-                <div className="story-ring add-story"><i className="fas fa-plus"></i></div>
-                <div className="story-info">
-                  <div className="name">Hikaye Ekle</div>
-                  <div className="time">Fotoğraf çek</div>
-                </div>
-              </div>
-
-              {/* Hikayeler Döngüsü */}
-              {visibleStories.map((s, idx) => {
-                const ringStyle = (s.seenBy && s.seenBy[currentUser.id]) ? 'story-ring seen' : 'story-ring';
-                return (
-                  <div className="story-item" key={s.id} onClick={() => setViewingStoryIndex(idx)}>
-                    <div className={ringStyle}><img src={s.userAvatar} /></div>
-                    <div className="story-info">
-                      <div className="name">{s.userName}</div>
-                      <div className="time">{new Date(s.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </aside>
-
-        {/* ORTA ALAN - İÇERİK */}
-        <main className="feed-area">
-          {activeMenu === 'feed' && activeTab === 'sosyalles' && (
-            <div className="feed-container animate-fade-in">
-              {/* POST OLUŞTUR */}
-              <div className="glass-panel create-post">
-                <form onSubmit={sendPost}>
-                  <div className="create-post-top">
-                    <img src={currentUser.avatar} className="avatar" />
-                    <textarea name="postText" className="create-post-input" placeholder={`${currentUser.name}, kampüste neler oluyor?`} required></textarea>
-                  </div>
-                  <div className="create-post-actions">
-                     <div className="flex-row gap-2"></div>
-                     <button type="submit" className="btn btn-primary btn-sm">Paylaş</button>
-                  </div>
-                </form>
-              </div>
-
-              {/* POSTLAR */}
-              {posts.map(p => {
-                const postUser = getFullUser(p.userId);
-                const iLikeThis = p.likes && p.likes[currentUser.id];
-                const likeCount = p.likes ? Object.keys(p.likes).length : 0;
-                const comments = toArray(p.comments);
-
-                return (
-                  <div className="glass-panel post-card animate-slide-up" key={p.id}>
-                    <div className="post-header">
-                      <div className="post-user cursor-pointer" onClick={()=>setTargetProfile(postUser)}>
-                        <img src={postUser.avatar} className="avatar" />
-                        <div className="post-user-info">
-                          <div className="name">{postUser.name} <span className={`role-badge ${postUser.role === 'teacher'?'teacher':''}`}>{postUser.role==='teacher'?'Öğretmen':`${postUser.grade}. Sınıf`}</span></div>
-                          <div className="meta">@{postUser.username} • {new Date(p.timestamp).toLocaleDateString()} {new Date(p.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
-                        </div>
-                      </div>
-                      {p.userId === currentUser.id && (
-                         <button className="btn btn-ghost btn-circle" onClick={()=>deletePost(p.id)} title="Sil"><i className="fas fa-trash text-danger"></i></button>
-                      )}
-                    </div>
-                    <div className="post-content">{p.content}</div>
-                    
-                    <div className="post-stats mt-3">
-                      <span>{likeCount} Beğeni</span>
-                      <span>{comments.length} Yorum</span>
-                    </div>
-                    
-                    <div className="post-actions mt-2 pb-2" style={{borderBottom:'1px solid var(--border-color)'}}>
-                      <button className={`post-action ${iLikeThis ? 'liked' : ''}`} onClick={()=>toggleLike(p.id, p.likes)}>
-                         <i className="fas fa-heart"></i> Beğen
-                      </button>
-                      <button className="post-action"><i className="fas fa-comment"></i> Yorum Yap</button>
-                    </div>
-
-                    {/* YORUMLAR */}
-                    <div className="comment-list">
-                      {comments.map(c => {
-                         const cUser = getFullUser(c.userId);
-                         return (
-                           <div className="comment-item" key={c.id}>
-                              <img src={cUser.avatar} className="avatar avatar-sm" />
-                              <div className="comment-bubble">
-                                 <div className="name">{cUser.name}</div>
-                                 <div className="text">{c.text}</div>
-                              </div>
-                           </div>
-                         );
-                      })}
-                    </div>
-
-                    {/* Yorum Ekle */}
-                    <form className="comments-section" onSubmit={(e)=>addComment(e, p.id)}>
-                      <img src={currentUser.avatar} className="avatar avatar-sm"/>
-                      <div className="comment-input-wrapper">
-                         <input type="text" name="commentText" className="comment-input" placeholder="Yorum yaz..." required/>
-                         <button type="submit" className="comment-send-btn"><i className="fas fa-paper-plane"></i></button>
-                      </div>
-                    </form>
-
-                  </div>
-                );
-              })}
-              {posts.length === 0 && <div className="text-center text-muted mt-4">Henüz gönderi yok, ilk paylaşan sen ol!</div>}
-            </div>
-          )}
-
-          {activeMenu === 'chat' && activeTab === 'sosyalles' && (
-             <div className="glass-panel p-4 animate-fade-in" style={{height:'70vh', display:'flex', flexDirection:'column'}}>
-                <h2 className="mb-4"><i className="fas fa-comments text-success"></i> Okul Genel Chat</h2>
-                
-                <div style={{flex:1, background:'var(--bg-body)', borderRadius:'var(--radius-lg)', padding:'1rem', overflowY:'auto'}}>
-                  {chatMessages.length === 0 ? <p className="text-center text-muted mt-4">Henüz mesaj yok</p> : null}
-                  {chatMessages.map(msg => {
-                     const isMe = msg.userId === currentUser.id;
-                     const msgUser = getFullUser(msg.userId);
-                     return (
-                        <div key={msg.id} className="flex-row gap-2 mb-3" style={{flexDirection: isMe ? 'row-reverse' : 'row', alignItems:'flex-end'}}>
-                           <img src={msgUser.avatar} className="avatar avatar-sm" title={msgUser.name}/>
-                           <div className="glass-panel p-2" style={{
-                              borderRadius: isMe ? '1rem 1rem 0 1rem' : '1rem 1rem 1rem 0',
-                              background: isMe ? 'var(--primary-color)' : 'var(--bg-surface)',
-                              color: isMe ? 'white' : 'var(--text-main)',
-                              maxWidth: '75%'
-                           }}>
-                             {!isMe && <div style={{fontWeight:'bold', fontSize:'0.75rem', color:'var(--secondary-color)', marginBottom:'0.2rem'}}>{msgUser.name}</div>}
-                             <div style={{fontSize:'0.95rem'}}>{msg.text}</div>
-                           </div>
-                        </div>
-                     )
-                  })}
-                  <div ref={chatMessagesEndRef} />
-                </div>
-
-                <form className="flex-row gap-2 mt-3" onSubmit={sendChatMessage}>
-                  <input type="text" name="chatText" className="form-control" style={{borderRadius:'var(--radius-full)'}} placeholder="Sınıfa veya okula mesaj gönder..." required autoComplete="off" />
-                  <button type="submit" className="btn btn-primary btn-circle"><i className="fas fa-paper-plane"></i></button>
-                </form>
-             </div>
-          )}
-        </main>
-
-        {/* SAĞ SİDEBAR - SIRALAMAM & ARAMA */}
-        <aside className="right-sidebar">
-           <div className="glass-panel search-widget animate-slide-up">
-              <div className="search-input-wrap">
-                 <i className="fas fa-search"></i>
-                 <input type="text" className="search-input" placeholder="İsimle kullanıcı ara..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} />
-              </div>
-           </div>
-
-           <div className="glass-panel rank-widget animate-slide-up" style={{animationDelay:'0.1s'}}>
-              <div className="rank-widget-header">
-                <span className="flex-row gap-2"><i className="fas fa-trophy text-warning"></i> Net Sıralaması</span>
-              </div>
-              <div className="rank-list">
-                {Object.keys(users)
-                  .map(uid => ({ id: uid, ...users[uid] }))
-                  .filter(u => u.role === 'student')
-                  .filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase()) || u.username.toLowerCase().includes(searchQuery.toLowerCase()))
-                  .sort((a,b) => (b.score || 0) - (a.score || 0))
-                  .slice(0, 10)
-                  .map((u, i) => (
-                    <div className="rank-item cursor-pointer" key={u.id} onClick={()=>setTargetProfile(u)}>
-                       <div className="rank-number">{i+1}</div>
-                       <img src={u.avatar} className="avatar avatar-sm"/>
-                       <div className="rank-user-info">
-                          <div className="name">{u.name}</div>
-                          <div className="score">{(u.score||0).toFixed(1)} Net</div>
-                       </div>
-                    </div>
-                ))}
-              </div>
-           </div>
-        </aside>
-
-      </div>
-
-      {/* Profil Görüntüleme Modalı */}
-      {targetProfile && (
-        <div className="modal-overlay" onClick={()=>setTargetProfile(null)}>
-           <div className="profile-modal animate-slide-up" onClick={e=>e.stopPropagation()}>
-              <div className="profile-modal-header">
-                 <div className="close-modal-btn" onClick={()=>setTargetProfile(null)}><i className="fas fa-times"></i></div>
-              </div>
-              <div className="profile-modal-body">
-                 <img src={targetProfile.avatar} className="profile-modal-avatar"/>
-                 <h2 className="mt-3">{targetProfile.name}</h2>
-                 <p className="text-muted">@{targetProfile.username} {targetProfile.role==='teacher' ? `• ${targetProfile.branch} Öğretmen` : `• ${targetProfile.grade}. Sınıf`}</p>
-                 <p className="mt-2" style={{fontStyle:'italic', color:'var(--text-light)'}}>"{targetProfile.bio}"</p>
-                 
-                 <div className="profile-stats-bar">
-                    <div className="profile-stat-item">
-                       <span className="profile-stat-number">{targetProfile.followers ? Object.keys(targetProfile.followers).length : 0}</span>
-                       <span className="profile-stat-label">Takipçi</span>
-                    </div>
-                    <div className="profile-stat-item">
-                       <span className="profile-stat-number">{targetProfile.following ? Object.keys(targetProfile.following).length : 0}</span>
-                       <span className="profile-stat-label">Takip Edilen</span>
-                    </div>
-                    {targetProfile.role === 'student' && (
-                      <div className="profile-stat-item">
-                         <span className="profile-stat-number text-primary">{targetProfile.score || 0}</span>
-                         <span className="profile-stat-label">Ort. Net</span>
-                      </div>
-                    )}
-                 </div>
-
-                 <div className="flex-row justify-center gap-2 mt-4">
-                    {targetProfile.id !== currentUser.id && (
-                      <>
-                        <button className={`btn ${myFollowings.includes(targetProfile.id) ? 'btn-outline' : 'btn-primary'}`} 
-                                onClick={() => toggleFollow(targetProfile.id)}>
-                             <i className="fas fa-user-plus"></i> {myFollowings.includes(targetProfile.id) ? 'Takipten Çık' : 'Takip Et'}
-                        </button>
-                        <button className="btn btn-outline" onClick={()=>alert('Kişisel mesajlaşma yakında eklenecek!')}><i className="fas fa-envelope"></i> Mesaj</button>
-                      </>
-                    )}
-                 </div>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* Story Viewer (Tam Ekran) */}
-      {viewingStoryIndex !== null && (
-        <StoryViewer 
-           stories={visibleStories} 
-           initialIndex={viewingStoryIndex} 
-           onClose={() => setViewingStoryIndex(null)} 
-           currentUser={currentUser}
-        />
-      )}
-
-      {/* Sabit Destek Butonu */}
-      <div className="support-fab" title="Destek / Yardım" onClick={()=>alert('Destek ekibine ulaşıyorsunuz...')}>
-        <i className="fas fa-headset"></i>
-      </div>
-    </div>
-  );
-};
-
-
-// --- APP Ana Başlatıcı ---
-const App = () => {
-  const [currentUserObj, setCurrentUserObj] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Firebase Auth State Tracker
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      if (user) {
-        // Oturum açık, profili çek
-        const userRef = dbRef.ref('users/' + user.uid);
-        userRef.on('value', snap => {
-          if (snap.exists()) {
-            setCurrentUserObj({ id: user.uid, ...snap.val() });
-          } else {
-            console.error('Kayıtlı profil verisi bulunamadı!');
-          }
-          setLoading(false);
-        });
-        
-        return () => userRef.off();
-      } else {
-        // Oturum kapalı
-        setCurrentUserObj(null);
-        setLoading(false);
+  firestoreUnsubscribe = db.collection("kullanicilar").doc(uid)
+    .onSnapshot(snap => {
+      if (snap.exists) {
+        kullaniciVerisi = snap.data();
+        uiGuncelle();
       }
+    }, err => {
+      console.error("Dinleme hatası:", err);
     });
-    return () => unsubscribe();
-  }, []);
+}
 
-  if (loading) return <div style={{color:'white', textAlign:'center', marginTop:'20%'}}>Yükleniyor...</div>;
+// ============================================================
+// 6. KİMLİK DOĞRULAMA (AUTH)
+// ============================================================
 
-  return (
-    <>
-      {!currentUserObj ? (
-        <LoginRegister />
-      ) : (
-        <MainApp currentUser={currentUserObj} />
-      )}
-    </>
-  );
-};
+// Auth durumu değişince çalışır
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    // Giriş yapıldı
+    mevcutKullanici = user;
+    const snap = await db.collection("kullanicilar").doc(user.uid).get();
+    if (!snap.exists) {
+      // Belge yoksa oluştur (Google ile girişte)
+      kullaniciVerisi = await kullaniciBelgesiOlustur(user.uid, user.email, user.displayName || "Madenci");
+    } else {
+      kullaniciVerisi = snap.data();
+    }
+    kullaniciyiDinle(user.uid);
+    authEkranGizle();
+    ligOduluKontrol();
+    ligGeriSayimBaslat();
+    authPartikullerDurdur();
+  } else {
+    // Çıkış yapıldı
+    mevcutKullanici = null;
+    kullaniciVerisi = null;
+    if (firestoreUnsubscribe) firestoreUnsubscribe();
+    if (ligCountdownInterval) clearInterval(ligCountdownInterval);
+    authEkranGoster();
+    authPartikullerBaslat();
+  }
+});
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
+// Giriş yap
+document.getElementById("btn-login").addEventListener("click", async () => {
+  const email = document.getElementById("login-email").value.trim();
+  const pass = document.getElementById("login-password").value;
+  const errEl = document.getElementById("login-error");
+  errEl.textContent = "";
+
+  if (!email || !pass) { errEl.textContent = "E-posta ve şifre gerekli."; return; }
+
+  try {
+    document.getElementById("btn-login").textContent = "⏳ Giriliyor...";
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch (e) {
+    errEl.textContent = "Giriş başarısız: " + turkceleFirebaseHata(e.code);
+    document.getElementById("btn-login").textContent = "⛏️ Madene Gir";
+  }
+});
+
+// Kayıt ol
+document.getElementById("btn-register").addEventListener("click", async () => {
+  const username = document.getElementById("reg-username").value.trim();
+  const email = document.getElementById("reg-email").value.trim();
+  const pass = document.getElementById("reg-password").value;
+  const errEl = document.getElementById("register-error");
+  errEl.textContent = "";
+
+  if (!username || !email || !pass) { errEl.textContent = "Tüm alanları doldur."; return; }
+  if (username.length < 3) { errEl.textContent = "Kullanıcı adı en az 3 karakter olmalı."; return; }
+  if (pass.length < 6) { errEl.textContent = "Şifre en az 6 karakter olmalı."; return; }
+
+  try {
+    document.getElementById("btn-register").textContent = "⏳ Kaydediliyor...";
+    const kred = await auth.createUserWithEmailAndPassword(email, pass);
+    await kullaniciBelgesiOlustur(kred.user.uid, email, username);
+    toast("Hoş geldin, " + username + "! 🎉", "success");
+  } catch (e) {
+    errEl.textContent = turkceleFirebaseHata(e.code);
+    document.getElementById("btn-register").textContent = "🪙 Madenci Ol";
+  }
+});
+
+// Çıkış yap
+document.getElementById("btn-logout").addEventListener("click", async () => {
+  await auth.signOut();
+  toast("Güvenle çıkış yapıldı.", "info");
+});
+
+// Form geçişleri
+document.getElementById("show-register").addEventListener("click", () => {
+  document.getElementById("login-form").classList.add("hidden");
+  document.getElementById("register-form").classList.remove("hidden");
+});
+document.getElementById("show-login").addEventListener("click", () => {
+  document.getElementById("register-form").classList.add("hidden");
+  document.getElementById("login-form").classList.remove("hidden");
+});
+
+// Firebase hata kodlarını Türkçeleştir
+function turkceleFirebaseHata(kod) {
+  const hatalar = {
+    "auth/user-not-found": "Bu e-posta ile kayıtlı kullanıcı yok.",
+    "auth/wrong-password": "Yanlış şifre.",
+    "auth/email-already-in-use": "Bu e-posta zaten kayıtlı.",
+    "auth/invalid-email": "Geçersiz e-posta adresi.",
+    "auth/weak-password": "Şifre çok zayıf.",
+    "auth/network-request-failed": "Ağ bağlantısı hatası.",
+    "auth/too-many-requests": "Çok fazla deneme. Lütfen bekle.",
+    "auth/invalid-credential": "Geçersiz kimlik bilgisi. Şifreni kontrol et."
+  };
+  return hatalar[kod] || "Bilinmeyen hata: " + kod;
+}
+
+// ============================================================
+// 7. AUTH EKRANI & PARTİKÜLLER
+// ============================================================
+
+function authEkranGizle() {
+  document.getElementById("auth-screen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+}
+
+function authEkranGoster() {
+  document.getElementById("auth-screen").classList.remove("hidden");
+  document.getElementById("app").classList.add("hidden");
+}
+
+// Partiküller (auth ekranı arka planı)
+let authParticleInterval = null;
+
+function authPartikullerBaslat() {
+  const container = document.getElementById("auth-particles");
+  container.innerHTML = "";
+  // 30 adet partiküll oluştur
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement("div");
+    p.className = "auth-particle";
+    p.style.left = Math.random() * 100 + "%";
+    p.style.setProperty("--dur", (Math.random() * 8 + 5) + "s");
+    p.style.setProperty("--delay", (Math.random() * 8) + "s");
+    // Rastgele renk: gold / accent / kurus
+    const renkler = ["#f5c842", "#e87c2a", "#a0a0b0", "#4caf82"];
+    p.style.background = renkler[Math.floor(Math.random() * renkler.length)];
+    p.style.width = (Math.random() * 5 + 2) + "px";
+    p.style.height = p.style.width;
+    container.appendChild(p);
+  }
+}
+
+function authPartikullerDurdur() {
+  const container = document.getElementById("auth-particles");
+  container.innerHTML = "";
+}
+
+// ============================================================
+// 8. UI GÜNCELLEME — ANA FONKSİYON
+// ============================================================
+
+function uiGuncelle() {
+  if (!kullaniciVerisi) return;
+  const v = kullaniciVerisi;
+
+  // Güncelle: Topbar
+  document.getElementById("val-altin").textContent = formatSayi(v.altin || 0);
+  document.getElementById("val-banknot").textContent = formatSayi(v.banknot || 0);
+  document.getElementById("val-kurus").textContent = formatSayi(v.kurus || 0);
+
+  const ligAdiBadge = document.getElementById("topbar-lig");
+  ligAdiBadge.textContent = v.lig;
+  ligAdiBadge.className = "lig-badge " + v.lig;
+
+  const avatar = document.getElementById("topbar-avatar");
+  avatar.textContent = (v.username || "M").charAt(0).toUpperCase();
+
+  // Aktif sayfayı yenile
+  switch (aktifSayfa) {
+    case "home":       anaSayfaGuncelle(); break;
+    case "village":    koyGuncelle(); break;
+    case "inventory":  envanterGuncelle(); break;
+    case "market":     marketGuncelle(); break;
+    case "profile":    profilGuncelle(); break;
+    case "leaderboard": siralamaSayfaGuncelle(); break;
+  }
+}
+
+// ============================================================
+// 9. ANASAYFA
+// ============================================================
+
+function anaSayfaGuncelle() {
+  if (!kullaniciVerisi) return;
+  const v = kullaniciVerisi;
+
+  // Hoş geldin
+  document.getElementById("home-welcome").textContent =
+    "Hoş geldin, " + (v.username || "Madenci") + "!";
+
+  // Güç
+  const guc = gucHesapla(v);
+  document.getElementById("home-guc").textContent = formatSayi(guc);
+
+  // Güç formülü
+  const madenci = madenciBul(v.madenci);
+  const esyaToplam = (v.esyalar || []).reduce((t, id) => {
+    const e = esyaBul(id);
+    return t + (e ? e.guc : 0);
+  }, 0);
+  if (esyaToplam > 0 && madenci) {
+    document.getElementById("home-formula").textContent =
+      `${madenci.id} (×${madenci.katsayi}) × ${esyaToplam} eşya gücü = ${guc}`;
+  } else {
+    document.getElementById("home-formula").textContent = "Eşya yokken güç hesaplanamaz.";
+  }
+
+  // Aktif madenci
+  if (madenci) {
+    document.getElementById("home-miner-avatar").textContent = madenci.emoji;
+    document.getElementById("home-miner-name").textContent = madenci.id;
+    document.getElementById("home-miner-coeff").textContent = `Katsayı: ×${madenci.katsayi}`;
+  }
+
+  // Lig & geri sayım info
+  const lig = ligBul(v.lig);
+  document.getElementById("countdown-lig-name").textContent = v.lig + " Ligi";
+  document.getElementById("countdown-reward-info").textContent =
+    `${lig.odul} Banknot kazanacaksın`;
+
+  // Lig listesi
+  const listEl = document.getElementById("league-badges-list");
+  listEl.innerHTML = "";
+  LIGLER.forEach(l => {
+    const row = document.createElement("div");
+    row.className = "league-badge-row" + (l.ad === v.lig ? " active-lig" : "");
+    row.innerHTML = `
+      <span class="lb-name" style="color: var(${l.renk})">${l.ad}</span>
+      <span class="lb-reward">+${l.odul} Banknot / 10dk</span>
+    `;
+    listEl.appendChild(row);
+  });
+}
+
+// ============================================================
+// 10. LİG ÖDÜLÜ SİSTEMİ
+// ============================================================
+
+let geriSayimKalan = 0;
+const TOPLAM_SURE = LIG_ODULU_ARALIK_MS;
+
+/**
+ * Ligdeki oyuncular arasında ödülü dağıt.
+ * Kendi payını hesapla ve güncelle.
+ */
+async function ligOduluDagit(ligOdulMiktari) {
+  if (!mevcutKullanici || !kullaniciVerisi) return;
+
+  try {
+    // Aynı ligdeki oyuncuları çek, güce göre sırala
+    const snapshot = await db.collection("kullanicilar")
+      .where("lig", "==", kullaniciVerisi.lig)
+      .get();
+
+    const oyuncular = snapshot.docs.map(d => d.data());
+    const toplamGuc = oyuncular.reduce((t, o) => t + (o.guc || 0), 0);
+
+    let kisiselOdul = 0;
+    if (toplamGuc === 0) {
+      // Güç yoksa eşit paylaşım
+      kisiselOdul = Math.floor(ligOdulMiktari / Math.max(oyuncular.length, 1));
+    } else {
+      const kendi = oyuncular.find(o => o.uid === mevcutKullanici.uid);
+      const kendiGuc = kendi ? (kendi.guc || 0) : 0;
+      kisiselOdul = Math.floor((kendiGuc / toplamGuc) * ligOdulMiktari);
+    }
+
+    // Minimum 1 banknot garanti
+    kisiselOdul = Math.max(kisiselOdul, 1);
+
+    const now = firebase.firestore.Timestamp.now();
+    await veriGuncelle(mevcutKullanici.uid, {
+      banknot: firebase.firestore.FieldValue.increment(kisiselOdul),
+      sonOdul: now
+    });
+
+    // Bildirim göster
+    ligOduluBildirimGoster(kisiselOdul, kullaniciVerisi.lig);
+
+  } catch (e) {
+    console.error("Lig ödülü dağıtım hatası:", e);
+  }
+}
+
+/**
+ * Sayfa yüklendiğinde veya kullanıcı girince ödül zamanını kontrol et.
+ * Kaçırılmış ödül varsa hemen ver.
+ */
+async function ligOduluKontrol() {
+  if (!kullaniciVerisi) return;
+
+  const sonOdul = kullaniciVerisi.sonOdul;
+  if (!sonOdul) return;
+
+  const gecen = Date.now() - sonOdul.toMillis();
+  if (gecen >= LIG_ODULU_ARALIK_MS) {
+    // Ödül zamanı geçmiş, hemen ver
+    const lig = ligBul(kullaniciVerisi.lig);
+    await ligOduluDagit(lig.odul);
+  }
+}
+
+/**
+ * Her saniye güncellenen geri sayım
+ */
+function ligGeriSayimBaslat() {
+  if (ligCountdownInterval) clearInterval(ligCountdownInterval);
+
+  function geriSayimGuncelle() {
+    if (!kullaniciVerisi) return;
+
+    const sonOdul = kullaniciVerisi.sonOdul;
+    if (!sonOdul) return;
+
+    const gecen = Date.now() - sonOdul.toMillis();
+    const kalan = LIG_ODULU_ARALIK_MS - gecen;
+
+    if (kalan <= 0) {
+      // Ödül zamanı geldi
+      const lig = ligBul(kullaniciVerisi.lig);
+      ligOduluDagit(lig.odul);
+      // sonOdul Firestore'da güncelleneceği için dinleyici halledecek
+      return;
+    }
+
+    geriSayimKalan = kalan;
+
+    const dakika = Math.floor(kalan / 60000);
+    const saniye = Math.floor((kalan % 60000) / 1000);
+    const formatli = String(dakika).padStart(2, "0") + ":" + String(saniye).padStart(2, "0");
+
+    const timerEl = document.getElementById("countdown-timer");
+    const barEl = document.getElementById("countdown-bar");
+
+    if (timerEl) timerEl.textContent = formatli;
+    if (barEl) {
+      const yuzde = (kalan / TOPLAM_SURE) * 100;
+      barEl.style.width = yuzde + "%";
+    }
+  }
+
+  ligCountdownInterval = setInterval(geriSayimGuncelle, 1000);
+  geriSayimGuncelle(); // Hemen çalıştır
+}
+
+/**
+ * Animasyonlu lig ödülü bildirimi
+ */
+function ligOduluBildirimGoster(miktar, ligAdi) {
+  const overlay = document.getElementById("league-reward-overlay");
+  const amountEl = document.getElementById("reward-amount-display");
+  const ligEl = document.getElementById("reward-lig-display");
+  const coinRain = document.getElementById("coin-rain");
+
+  amountEl.textContent = "+" + miktar + " Banknot";
+  ligEl.textContent = ligAdi + " Ligi";
+
+  // Coin yağmuru oluştur
+  coinRain.innerHTML = "";
+  for (let i = 0; i < 20; i++) {
+    const coin = document.createElement("span");
+    coin.className = "falling-coin";
+    coin.textContent = "💵";
+    coin.style.left = Math.random() * 100 + "%";
+    coin.style.setProperty("--dur", (Math.random() * 1.5 + 0.8) + "s");
+    coin.style.setProperty("--delay", (Math.random() * 1.5) + "s");
+    coinRain.appendChild(coin);
+  }
+
+  overlay.classList.remove("hidden");
+  toast(`🏆 Lig ödülü! +${miktar} Banknot kazandın!`, "gold", 4000);
+}
+
+document.getElementById("reward-close-btn").addEventListener("click", () => {
+  document.getElementById("league-reward-overlay").classList.add("hidden");
+});
+
+// ============================================================
+// 11. KÖY SAYFASI (MADENCİLER)
+// ============================================================
+
+function koyGuncelle() {
+  if (!kullaniciVerisi) return;
+  const v = kullaniciVerisi;
+
+  // Aktif madenci büyük kartı
+  const madenci = madenciBul(v.madenci);
+  const activeBig = document.getElementById("active-miner-big");
+  if (madenci && activeBig) {
+    activeBig.innerHTML = `
+      <div class="active-miner-emoji">${madenci.emoji}</div>
+      <div class="active-miner-info">
+        <div class="active-miner-title">⚡ Aktif Madenci</div>
+        <div class="active-miner-name-big">${madenci.id}</div>
+        <div style="color: var(--text-dim); font-size:0.85rem; margin-top:4px;">${madenci.aciklama}</div>
+        <div class="active-miner-coeff-badge">×${madenci.katsayi} Katsayı</div>
+      </div>
+    `;
+  }
+
+  // Madenciler grid
+  const grid = document.getElementById("miners-grid");
+  grid.innerHTML = "";
+
+  MADENCILER.forEach(m => {
+    const isActive = v.madenci === m.id;
+    // Sahip olunan madenciler: aktif madenci + daha önce satın alınanlar
+    // Basit kural: katsayısı aktif madenciden düşük olanlar zaten "sahip olunan" sayılır
+    const aktifMadenci = madenciBul(v.madenci);
+    const isOwned = isActive || (m.katsayi < (aktifMadenci ? aktifMadenci.katsayi : 2));
+
+    const card = document.createElement("div");
+    card.className = `miner-card ${m.id}${isActive ? " active-miner" : ""}${isOwned ? " owned" : " locked"}`;
+
+    let badge = "";
+    if (isActive) badge = `<div class="miner-card-badge badge-active">✅ Aktif</div>`;
+    else if (isOwned) badge = `<div class="miner-card-badge badge-owned">🔓 Sahipsin</div>`;
+    else badge = `<div class="miner-card-badge badge-locked">🔒 Kilitli</div>`;
+
+    let butonHTML = "";
+    if (isActive) {
+      butonHTML = `<button class="btn-secondary miner-buy-btn" disabled>Aktif Madenci</button>`;
+    } else if (isOwned) {
+      butonHTML = `<button class="btn-banknot miner-buy-btn" onclick="madenciSecile('${m.id}')">⚙️ Seç</button>`;
+    } else {
+      const birimSimge = m.birim === "altin" ? "🥇" : "💵";
+      const birimAdi = m.birim === "altin" ? "Altın" : "Banknot";
+      butonHTML = `<button class="btn-primary miner-buy-btn" onclick="madenciSatinAl('${m.id}')">
+        Satın Al<br>${birimSimge} ${m.maliyet} ${birimAdi}
+      </button>`;
+    }
+
+    card.innerHTML = `
+      <span class="miner-card-emoji">${m.emoji}</span>
+      <div class="miner-card-name">${m.id}</div>
+      <div class="miner-card-coeff">Güç Katsayısı: ×${m.katsayi}</div>
+      ${badge}
+      ${butonHTML}
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/**
+ * Madenci seç (sahip olunuyorsa)
+ */
+async function madenciSecile(madenciId) {
+  if (!mevcutKullanici) return;
+  try {
+    const yeniGuc = gucHesapla({ ...kullaniciVerisi, madenci: madenciId });
+    await veriGuncelle(mevcutKullanici.uid, { madenci: madenciId, guc: yeniGuc });
+    toast(`${madenciId} aktif madenci seçildi! ⛏️`, "success");
+  } catch (e) {
+    toast("Madenci seçilemedi: " + e.message, "error");
+  }
+}
+
+/**
+ * Madenci satın al
+ */
+async function madenciSatinAl(madenciId) {
+  if (!mevcutKullanici || !kullaniciVerisi) return;
+  const m = madenciBul(madenciId);
+  if (!m) return;
+
+  const v = kullaniciVerisi;
+
+  // Bakiye kontrolü
+  if (m.birim === "altin" && v.altin < m.maliyet) {
+    toast(`Yeterli Altın yok! Gerekli: ${m.maliyet} 🥇`, "error"); return;
+  }
+  if (m.birim === "banknot" && v.banknot < m.maliyet) {
+    toast(`Yeterli Banknot yok! Gerekli: ${m.maliyet} 💵`, "error"); return;
+  }
+
+  try {
+    const guncelleme = { madenci: madenciId };
+    if (m.birim === "altin") guncelleme.altin = firebase.firestore.FieldValue.increment(-m.maliyet);
+    if (m.birim === "banknot") guncelleme.banknot = firebase.firestore.FieldValue.increment(-m.maliyet);
+
+    // Güç hesapla
+    const yeniGuc = gucHesapla({ ...v, madenci: madenciId });
+    guncelleme.guc = yeniGuc;
+
+    await veriGuncelle(mevcutKullanici.uid, guncelleme);
+    toast(`${m.id} satın alındı ve aktif edildi! 🎉`, "success");
+  } catch (e) {
+    toast("Satın alma başarısız: " + e.message, "error");
+  }
+}
+
+// ============================================================
+// 12. ENVANTER SAYFASI
+// ============================================================
+
+function envanterGuncelle() {
+  if (!kullaniciVerisi) return;
+  const v = kullaniciVerisi;
+  const esyalar = v.esyalar || [];
+  const madenci = madenciBul(v.madenci);
+  const katsayi = madenci ? madenci.katsayi : 2;
+
+  // Eşya güç toplamı
+  const esyaToplam = esyalar.reduce((t, id) => {
+    const e = esyaBul(id);
+    return t + (e ? e.guc : 0);
+  }, 0);
+
+  const finalGuc = katsayi * esyaToplam;
+
+  document.getElementById("inv-total-item-power").textContent = esyaToplam;
+  document.getElementById("inv-miner-coeff").textContent = `×${katsayi}`;
+  document.getElementById("inv-final-power").textContent = formatSayi(finalGuc);
+
+  const grid = document.getElementById("inventory-grid");
+  grid.innerHTML = "";
+
+  if (esyalar.length === 0) {
+    grid.innerHTML = `<div class="inv-empty">Henüz bir eşyan yok.<br>Market'e git ve sandık aç!</div>`;
+    return;
+  }
+
+  // Eşyaları say (tekrar eden eşyalar için)
+  const esyaSayim = {};
+  esyalar.forEach(id => { esyaSayim[id] = (esyaSayim[id] || 0) + 1; });
+
+  Object.entries(esyaSayim).forEach(([id, adet]) => {
+    const e = esyaBul(id);
+    if (!e) return;
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.innerHTML = `
+      <span class="item-card-emoji">${e.emoji}</span>
+      <div class="item-card-name">${e.ad}${adet > 1 ? ` (×${adet})` : ""}</div>
+      <div class="item-card-power">⚡ ${e.guc}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ============================================================
+// 13. MARKET SAYFASI & SANDIK SİSTEMİ
+// ============================================================
+
+function marketGuncelle() {
+  const grid = document.getElementById("chests-grid");
+  grid.innerHTML = "";
+
+  SANDIKLAR.forEach(sandik => {
+    const card = document.createElement("div");
+    card.className = `chest-card ${sandik.cssClass}`;
+
+    // Birim görüntüsü
+    const birimClass = sandik.birim === "altin" ? "gold" :
+                       sandik.birim === "banknot" ? "banknot" : "kurus";
+
+    card.innerHTML = `
+      <div class="chest-header">
+        <div class="chest-emoji">${sandik.emoji}</div>
+        <div class="chest-info">
+          <div class="chest-name">${sandik.ad}</div>
+          <div class="chest-cost ${birimClass}">${sandik.birimIcon} ${sandik.maliyet} ${sandik.birim === "altin" ? "Altın" : sandik.birim === "banknot" ? "Banknot" : "Kuruş"}</div>
+        </div>
+      </div>
+      <div class="chest-contents">
+        <strong>İçerik:</strong> ${sandik.aciklama}
+      </div>
+      <button class="btn-primary chest-buy-btn" onclick="sandikAc('${sandik.id}')">
+        ${sandik.emoji} Aç — ${sandik.birimIcon} ${sandik.maliyet}
+      </button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/**
+ * Sandık açma işlemi
+ */
+async function sandikAc(sandikId) {
+  if (!mevcutKullanici || !kullaniciVerisi) return;
+  const sandik = SANDIKLAR.find(s => s.id === sandikId);
+  if (!sandik) return;
+
+  const v = kullaniciVerisi;
+
+  // Bakiye kontrolü
+  if (sandik.birim === "altin" && v.altin < sandik.maliyet) {
+    toast(`Yeterli Altın yok! Gerekli: ${sandik.maliyet} 🥇`, "error"); return;
+  }
+  if (sandik.birim === "banknot" && v.banknot < sandik.maliyet) {
+    toast(`Yeterli Banknot yok! Gerekli: ${sandik.maliyet} 💵`, "error"); return;
+  }
+  if (sandik.birim === "kurus" && v.kurus < sandik.maliyet) {
+    toast(`Yeterli Kuruş yok! Gerekli: ${sandik.maliyet} 🪙`, "error"); return;
+  }
+
+  // Modalı aç
+  sandikModalAc(sandik.emoji);
+
+  // Ödülü belirle
+  const kazanim = agirlikliRastgele(sandik.havuz);
+
+  // Kısa gecikme sonra sonucu göster (animasyon için)
+  setTimeout(async () => {
+    let guncelleme = {};
+
+    // Ödeme
+    if (sandik.birim === "altin")   guncelleme.altin   = firebase.firestore.FieldValue.increment(-sandik.maliyet);
+    if (sandik.birim === "banknot") guncelleme.banknot = firebase.firestore.FieldValue.increment(-sandik.maliyet);
+    if (sandik.birim === "kurus")   guncelleme.kurus   = firebase.firestore.FieldValue.increment(-sandik.maliyet);
+
+    let sonucIkon = "🎁";
+    let sonucAd = "";
+    let sonucAciklama = "";
+    let isDuplicate = false;
+
+    if (kazanim.tip === "esya") {
+      const esya = esyaBul(kazanim.deger);
+      const mevcutEsyalar = v.esyalar || [];
+
+      if (mevcutEsyalar.includes(kazanim.deger)) {
+        // Duplicate — eşya gücü kadar kuruş ver
+        isDuplicate = true;
+        guncelleme.kurus = firebase.firestore.FieldValue.increment(esya.guc);
+        sonucIkon = "🪙";
+        sonucAd = "Tekrar " + esya.ad;
+        sonucAciklama = `Zaten sahipsin! +${esya.guc} Kuruş aldın.`;
+      } else {
+        // Yeni eşya ekle
+        guncelleme.esyalar = firebase.firestore.FieldValue.arrayUnion(kazanim.deger);
+        // Güç yeniden hesapla
+        const yeniEsyalar = [...mevcutEsyalar, kazanim.deger];
+        const yeniGuc = gucHesapla({ ...v, esyalar: yeniEsyalar });
+        guncelleme.guc = yeniGuc;
+        sonucIkon = esya.emoji;
+        sonucAd = esya.ad;
+        sonucAciklama = `Yeni eşya! +${esya.guc} güç puanı.`;
+      }
+    } else if (kazanim.tip === "altin") {
+      guncelleme.altin = firebase.firestore.FieldValue.increment(kazanim.deger);
+      sonucIkon = "🥇";
+      sonucAd = `+${kazanim.deger} Altın`;
+      sonucAciklama = "Değerli kazanım!";
+    } else if (kazanim.tip === "banknot") {
+      guncelleme.banknot = firebase.firestore.FieldValue.increment(kazanim.deger);
+      sonucIkon = "💵";
+      sonucAd = `+${kazanim.deger} Banknot`;
+      sonucAciklama = "İyi kazanım!";
+    } else if (kazanim.tip === "kurus") {
+      guncelleme.kurus = firebase.firestore.FieldValue.increment(kazanim.deger);
+      sonucIkon = "🪙";
+      sonucAd = `+${kazanim.deger} Kuruş`;
+      sonucAciklama = "Biraz Kuruş kazandın.";
+    }
+
+    try {
+      await veriGuncelle(mevcutKullanici.uid, guncelleme);
+      sandikSonucGoster(sonucIkon, sonucAd, sonucAciklama);
+    } catch (e) {
+      toast("Sandık açma hatası: " + e.message, "error");
+      sandikModalKapat();
+    }
+  }, 1200);
+}
+
+function sandikModalAc(emoji) {
+  const modal = document.getElementById("chest-modal");
+  const animEl = document.getElementById("chest-open-emoji");
+  const resultEl = document.getElementById("chest-result");
+  const closeBtn = document.getElementById("chest-close-btn");
+
+  animEl.textContent = emoji;
+  animEl.className = "chest-emoji-anim";
+  resultEl.classList.add("hidden");
+  closeBtn.classList.add("hidden");
+  document.getElementById("chest-open-anim").style.display = "block";
+  modal.classList.remove("hidden");
+}
+
+function sandikSonucGoster(ikon, ad, aciklama) {
+  const animDiv = document.getElementById("chest-open-anim");
+  const resultEl = document.getElementById("chest-result");
+  const closeBtn = document.getElementById("chest-close-btn");
+
+  // Patlama efekti
+  animDiv.style.display = "none";
+  document.getElementById("chest-result-icon").textContent = ikon;
+  document.getElementById("chest-result-name").textContent = ad;
+  document.getElementById("chest-result-desc").textContent = aciklama;
+
+  resultEl.classList.remove("hidden");
+  closeBtn.classList.remove("hidden");
+}
+
+function sandikModalKapat() {
+  document.getElementById("chest-modal").classList.add("hidden");
+  document.getElementById("chest-open-anim").style.display = "block";
+}
+
+document.getElementById("chest-close-btn").addEventListener("click", sandikModalKapat);
+document.getElementById("chest-modal-overlay").addEventListener("click", sandikModalKapat);
+
+// ============================================================
+// 14. PROFİL SAYFASI
+// ============================================================
+
+async function profilGuncelle() {
+  if (!kullaniciVerisi) return;
+  const v = kullaniciVerisi;
+
+  const ilkHarf = (v.username || "M").charAt(0).toUpperCase();
+  document.getElementById("profile-avatar-char").textContent = ilkHarf;
+  document.getElementById("profile-username").textContent = v.username || "Madenci";
+  document.getElementById("profile-email").textContent = v.email || "—";
+
+  const ligBadge = document.getElementById("profile-lig-badge");
+  ligBadge.textContent = v.lig;
+  ligBadge.className = "profile-lig-badge lig-badge " + v.lig;
+
+  document.getElementById("pstat-guc").textContent = formatSayi(v.guc || 0);
+  document.getElementById("pstat-madenci").textContent = v.madenci || "Beyza";
+
+  // Lig sırası ve genel sıra (async)
+  try {
+    // Lig sırası
+    const ligSnap = await db.collection("kullanicilar")
+      .where("lig", "==", v.lig)
+      .orderBy("guc", "desc")
+      .get();
+
+    const ligOyuncular = ligSnap.docs.map(d => d.id);
+    const ligSira = ligOyuncular.indexOf(mevcutKullanici.uid) + 1;
+    document.getElementById("pstat-lig-rank").textContent = ligSira > 0 ? `#${ligSira}` : "—";
+
+    // Genel sıra
+    const genelSnap = await db.collection("kullanicilar")
+      .orderBy("guc", "desc")
+      .get();
+
+    const genelOyuncular = genelSnap.docs.map(d => d.id);
+    const genelSira = genelOyuncular.indexOf(mevcutKullanici.uid) + 1;
+    document.getElementById("pstat-global-rank").textContent = genelSira > 0 ? `#${genelSira}` : "—";
+
+  } catch (e) {
+    console.error("Sıralama çekme hatası:", e);
+  }
+}
+
+// ============================================================
+// 15. SIRALAMA (LEADERBOARD)
+// ============================================================
+
+let aktifLbTab = "my"; // "my" veya "all"
+
+document.getElementById("lb-tab-my").addEventListener("click", () => {
+  aktifLbTab = "my";
+  document.getElementById("lb-tab-my").classList.add("active");
+  document.getElementById("lb-tab-all").classList.remove("active");
+  siralamaYukle();
+});
+
+document.getElementById("lb-tab-all").addEventListener("click", () => {
+  aktifLbTab = "all";
+  document.getElementById("lb-tab-all").classList.add("active");
+  document.getElementById("lb-tab-my").classList.remove("active");
+  siralamaYukle();
+});
+
+async function siralamaYukle() {
+  if (!kullaniciVerisi) return;
+
+  const listEl = document.getElementById("leaderboard-list");
+  listEl.innerHTML = `<div class="loading-spinner"><div class="spinner"></div> Yükleniyor...</div>`;
+
+  try {
+    let sorgu;
+    if (aktifLbTab === "my") {
+      sorgu = db.collection("kullanicilar")
+        .where("lig", "==", kullaniciVerisi.lig)
+        .orderBy("guc", "desc")
+        .limit(50);
+    } else {
+      sorgu = db.collection("kullanicilar")
+        .orderBy("guc", "desc")
+        .limit(50);
+    }
+
+    const snap = await sorgu.get();
+    listEl.innerHTML = "";
+
+    if (snap.empty) {
+      listEl.innerHTML = `<div class="inv-empty">Henüz kayıtlı oyuncu yok.</div>`;
+      return;
+    }
+
+    snap.docs.forEach((doc, idx) => {
+      const o = doc.data();
+      const sira = idx + 1;
+      const benim = doc.id === mevcutKullanici.uid;
+
+      const row = document.createElement("div");
+      row.className = "lb-row" + (benim ? " me" : "");
+
+      let siraClass = "";
+      if (sira === 1) siraClass = "top1";
+      else if (sira === 2) siraClass = "top2";
+      else if (sira === 3) siraClass = "top3";
+
+      const siraSimge = sira === 1 ? "🥇" : sira === 2 ? "🥈" : sira === 3 ? "🥉" : `#${sira}`;
+
+      row.innerHTML = `
+        <div class="lb-rank ${siraClass}">${siraSimge}</div>
+        <div class="lb-avatar">${(o.username || "?").charAt(0).toUpperCase()}</div>
+        <div class="lb-info">
+          <div class="lb-name">${o.username || "Bilinmeyen"}${benim ? " (Sen)" : ""}</div>
+          <div class="lb-lig">${o.lig || "Bronz"}</div>
+        </div>
+        <div class="lb-power">⚡ ${formatSayi(o.guc || 0)}</div>
+      `;
+      listEl.appendChild(row);
+    });
+  } catch (e) {
+    listEl.innerHTML = `<div class="inv-empty">Sıralama yüklenemedi. Firestore indeksi gerekebilir.</div>`;
+    console.error("Sıralama hatası:", e);
+  }
+}
+
+function siralamaSayfaGuncelle() {
+  siralamaYukle();
+}
+
+// ============================================================
+// 16. NAVİGASYON
+// ============================================================
+
+document.getElementById("bottom-nav").addEventListener("click", (e) => {
+  const btn = e.target.closest(".nav-btn");
+  if (!btn) return;
+  const sayfa = btn.dataset.page;
+  if (!sayfa) return;
+
+  sayfayaGit(sayfa);
+});
+
+function sayfayaGit(sayfa) {
+  // Aktif sayfayı kaldır
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+
+  // Yeni sayfayı aktif et
+  const pageEl = document.getElementById("page-" + sayfa);
+  const navEl = document.getElementById("nav-" + sayfa);
+  if (pageEl) pageEl.classList.add("active");
+  if (navEl) navEl.classList.add("active");
+
+  aktifSayfa = sayfa;
+
+  // Sayfa yükle
+  switch (sayfa) {
+    case "home":       anaSayfaGuncelle(); break;
+    case "village":    koyGuncelle(); break;
+    case "inventory":  envanterGuncelle(); break;
+    case "market":     marketGuncelle(); break;
+    case "profile":    profilGuncelle(); break;
+    case "leaderboard": siralamaSayfaGuncelle(); break;
+  }
+
+  // Scroll to top
+  document.getElementById("main-content").scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ============================================================
+// 17. GLOBAL FONKSIYON HALE GETİR (HTML onclick için)
+// ============================================================
+window.madenciSatinAl = madenciSatinAl;
+window.madenciSecile = madenciSecile;
+window.sandikAc = sandikAc;
+
+// ============================================================
+// 18. BAŞLATMA
+// ============================================================
+
+// Auth partiküllerini başlat (sayfa ilk yüklendiğinde)
+authPartikullerBaslat();
+
+// Market sayfasını başlangıçta yükle (içerik statik)
+// (kullanıcı giriş yaptığında zaten marketGuncelle çağrılacak)
+
+console.log(
+  "%c⛏️ ReisZa%c — Madencilik Oyunu Başlatıldı",
+  "color: #f5c842; font-size: 20px; font-weight: bold; font-family: serif;",
+  "color: #e87c2a; font-size: 14px;"
+);
