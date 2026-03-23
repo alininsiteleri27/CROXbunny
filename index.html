@@ -112,6 +112,10 @@
         <span class="sidebar-icon">💰</span>
         <span class="sidebar-label">Finans</span>
       </button>
+      <button class="sidebar-btn" data-page="admin" id="snav-admin" style="display:none;border-color:rgba(230,50,50,.4);color:#e05050">
+        <span class="sidebar-icon">🛡️</span>
+        <span class="sidebar-label">Admin</span>
+      </button>
       <!-- Spacer -->
       <div class="sidebar-spacer"></div>
       <!-- Sol panel: güç + sayaç + üretim -->
@@ -360,6 +364,91 @@
 
       </section>
 
+      <!-- ===== ADMİN PANEL ===== -->
+      <section class="page" id="page-admin">
+        <div class="admin-panel">
+          <div class="admin-panel-header">
+            <h2 class="admin-panel-title">🗡️ Admin Paneli</h2>
+            <p class="admin-panel-sub">ReisZa yönetim konsolu — <span style="color:var(--gold)">admin@reisza.com</span></p>
+          </div>
+
+          <!-- Sekmeler -->
+          <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="ozet">📊 Özet</button>
+            <button class="admin-tab" data-tab="kullanicilar">👥 Kullanıcılar</button>
+            <button class="admin-tab" data-tab="duyurular">📢 Duyurular</button>
+            <button class="admin-tab" data-tab="raporlar">📋 Raporlar</button>
+            <button class="admin-tab" data-tab="ayarlar">⚙️ Ayarlar</button>
+          </div>
+
+          <!-- Özet Tab -->
+          <div class="admin-tab-content" id="admin-tab-ozet">
+            <div class="admin-stat-grid">
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon">👥</div>
+                <div class="admin-stat-val" id="admin-stat-kullanici">...</div>
+                <div class="admin-stat-label">Toplam Kullanıcı</div>
+              </div>
+              <div class="admin-stat-card danger">
+                <div class="admin-stat-icon">🚫</div>
+                <div class="admin-stat-val" id="admin-stat-banli">...</div>
+                <div class="admin-stat-label">Banlı Kullanıcı</div>
+              </div>
+              <div class="admin-stat-card warn">
+                <div class="admin-stat-icon">📋</div>
+                <div class="admin-stat-val" id="admin-stat-rapor">...</div>
+                <div class="admin-stat-label">Toplam Rapor</div>
+              </div>
+              <div class="admin-stat-card info">
+                <div class="admin-stat-icon">🔧</div>
+                <div class="admin-stat-val" id="admin-bakim-durum">🟢 Kapalı</div>
+                <div class="admin-stat-label">Bakım Modu</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kullanıcılar Tab -->
+          <div class="admin-tab-content hidden" id="admin-tab-kullanicilar">
+            <div class="admin-search-wrap">
+              <input type="text" id="admin-kullanici-ara" class="admin-search-input" placeholder="🔍 Kullanıcı ara (ad veya e-posta)..." />
+            </div>
+            <div id="admin-kullanici-listesi"></div>
+          </div>
+
+          <!-- Duyurular Tab -->
+          <div class="admin-tab-content hidden" id="admin-tab-duyurular">
+            <div class="admin-form-section">
+              <div class="admin-form-label">📢 Yeni Duyuru Yayınla</div>
+              <textarea id="admin-duyuru-text" class="admin-textarea" rows="4" placeholder="Tüm kullanıcılara gönderilecek duyuru metnini yaz..."></textarea>
+              <button class="btn-primary" style="margin-top:10px" onclick="duyuruYayinla()">📢 Tüm Kullanıcılara Gönder</button>
+            </div>
+            <div class="admin-form-label" style="margin:16px 0 8px">📜 Geçmiş Duyurular</div>
+            <div id="admin-duyuru-listesi"></div>
+          </div>
+
+          <!-- Raporlar Tab -->
+          <div class="admin-tab-content hidden" id="admin-tab-raporlar">
+            <div id="admin-rapor-listesi"></div>
+          </div>
+
+          <!-- Ayarlar Tab -->
+          <div class="admin-tab-content hidden" id="admin-tab-ayarlar">
+            <div class="admin-ayar-card">
+              <div class="admin-ayar-title">🔧 Bakım Modu</div>
+              <p class="admin-ayar-desc">Aktif olduğunda kullanıcılar siteye giremez. Admin etkidemez.</p>
+              <div class="admin-ayar-row">
+                <span id="admin-bakim-durum2" class="admin-bakim-durum-lbl">🟢 Sistem Çalışıyor</span>
+                <button class="btn-danger" id="admin-bakim-btn" onclick="bakimModuToggle()">🔴 Bakım Moduna Al</button>
+              </div>
+            </div>
+            <div class="admin-ayar-card">
+              <div class="admin-ayar-title">🔑 Admin Hesabı</div>
+              <p class="admin-ayar-desc">E-posta: <b>admin@reisza.com</b><br>Şifre: <b>ReisZa2026!</b><br><small style="color:var(--text-dim)">Sisteme ilk girişten önce bu bilgilerle kayıt ol!</small></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -521,6 +610,107 @@
   </div>
 
 </div><!-- #app -->
+
+<!-- ===== ADMİN KULLANICI YÖNETİM MODALİ ===== -->
+<div class="modal-overlay hidden" id="admin-kullanici-modal">
+  <div class="modal-box admin-km-box">
+    <button class="modal-close" id="admin-kullanici-modal-close">✕</button>
+    <h2 class="modal-title">⚙️ Kullanıcı Yönet</h2>
+
+    <!-- Bilgi Başlığı -->
+    <div class="akm-header">
+      <span class="akm-avatar-big" id="akm-avatar">👷</span>
+      <div class="akm-header-info">
+        <div class="akm-uname" id="akm-username">—</div>
+        <div class="akm-email" id="akm-email">—</div>
+        <div class="akm-durum" id="akm-durum">✅ Aktif</div>
+        <div class="akm-uid-txt">UID: <span id="akm-uid" style="font-size:.65rem;color:var(--text-dim)"></span></div>
+      </div>
+    </div>
+    <div class="akm-stats">
+      <span>⚡ <b id="akm-guc">0</b></span>
+      <span>🥇 <b id="akm-altin">0</b></span>
+      <span>💵 <b id="akm-banknot">0</b></span>
+      <span>🪙 <b id="akm-kurus">0</b></span>
+      <span>🏆 <b id="akm-lig">Bronz</b></span>
+    </div>
+    <div class="akm-tarih-row">
+      Kayıt: <span id="akm-kayit">—</span> &nbsp;|&nbsp; Son Aktif: <span id="akm-son-aktif">—</span>
+    </div>
+
+    <!-- Ban -->
+    <div class="akm-section">
+      <div class="akm-section-title">🚫 Ban İşlemi</div>
+      <div class="akm-row">
+        <input type="text" id="akm-ban-sebep" class="akm-input" placeholder="Ban sebebi (boş bırakılırsa kural ihlali)" />
+        <button class="btn-danger" id="akm-ban-btn" style="white-space:nowrap">🚫 Banla</button>
+      </div>
+    </div>
+
+    <!-- Nick Değiştir -->
+    <div class="akm-section">
+      <div class="akm-section-title">✏️ Nick Değiştir</div>
+      <div class="akm-row">
+        <input type="text" id="akm-nick-input" class="akm-input" placeholder="Yeni kullanıcı adı" />
+        <button class="btn-secondary" id="akm-nick-btn">✏️ Kaydet</button>
+      </div>
+    </div>
+
+    <!-- Puan Ekle/Çıkar -->
+    <div class="akm-section">
+      <div class="akm-section-title">💰 Puan Ekle / Çıkar</div>
+      <div class="akm-row" style="flex-wrap:wrap;gap:6px">
+        <select id="akm-puan-islem" class="akm-select">
+          <option value="ekle">➕ Ekle</option>
+          <option value="cikar">➖ Çıkar</option>
+        </select>
+        <select id="akm-puan-tip" class="akm-select">
+          <option value="altin">🥇 Altın</option>
+          <option value="banknot">💵 Banknot</option>
+          <option value="kurus">🪙 Kuruş</option>
+        </select>
+        <input type="number" id="akm-puan-miktar" class="akm-input" placeholder="Miktar" style="width:90px" />
+        <button class="btn-primary" id="akm-puan-btn">✅ Uygula</button>
+      </div>
+    </div>
+
+    <!-- Item Ekle/Çıkar -->
+    <div class="akm-section">
+      <div class="akm-section-title">🎒 Item Ekle / Çıkar</div>
+      <div class="akm-row" style="flex-wrap:wrap;gap:6px">
+        <select id="akm-item-secim" class="akm-select" style="flex:1;min-width:160px">
+          <option value="">— Item Seç —</option>
+        </select>
+        <button class="btn-primary" id="akm-item-ekle-btn">➕ Ekle</button>
+        <button class="btn-danger" id="akm-item-cikar-btn">➖ Çıkar</button>
+      </div>
+    </div>
+
+    <!-- Özel Uyarı -->
+    <div class="akm-section">
+      <div class="akm-section-title">⚠️ Özel Uyarı Gönder</div>
+      <textarea id="akm-uyari-mesaj" class="admin-textarea" rows="3" placeholder="Kullanıcıya gizli uyarı mesajını yaz..."></textarea>
+      <button class="btn-danger" id="akm-uyari-btn" style="margin-top:8px;width:100%">⚠️ Uyarı Gönder</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BİLDİRİM / DUYURU OVERLAY ===== -->
+<div class="modal-overlay bildirim-overlay hidden" id="bildirim-overlay">
+  <div class="bildirim-box">
+    <div class="bildirim-tip" id="bildirim-tip">📢 Duyuru</div>
+    <div class="bildirim-mesaj" id="bildirim-mesaj">—</div>
+    <button class="btn-primary bildirim-anladim-btn" id="bildirim-anladim">✅ Anladım</button>
+  </div>
+</div>
+
+<!-- ===== BAKIM MODU EKRANI ===== -->
+<div class="bakim-ekrani hidden" id="bakim-ekrani">
+  <div class="bakim-icon">🔧</div>
+  <h1 class="bakim-title">Bakım Modu</h1>
+  <p class="bakim-sub">ReisZa şu an bakımda. Kısa süre sonra geri döneceğiz!</p>
+  <div class="bakim-anim">⛏️ &nbsp; 🪨 &nbsp; ⛏️</div>
+</div>
 
 <!-- ===== TOAST ===== -->
 <div class="toast-container" id="toast-container"></div>
