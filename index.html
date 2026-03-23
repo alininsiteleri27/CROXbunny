@@ -108,6 +108,10 @@
         <span class="sidebar-icon">🎮</span>
         <span class="sidebar-label">Oyunlar</span>
       </button>
+      <button class="sidebar-btn" data-page="finans" id="snav-finans">
+        <span class="sidebar-icon">💰</span>
+        <span class="sidebar-label">Finans</span>
+      </button>
       <!-- Spacer -->
       <div class="sidebar-spacer"></div>
       <!-- Sol panel: güç + sayaç + üretim -->
@@ -291,6 +295,69 @@
           </div>
           <p class="games-desc">Madenlerin derinliklerinden yeni oyunlar geliyor.<br/>En iyi madenci olmaya hazırlan!</p>
         </div>
+      </section>
+
+      <!-- ===== FİNANS ===== -->
+      <section class="page" id="page-finans">
+        <div class="page-header">
+          <h2 class="page-title">💰 Finans</h2>
+          <p class="page-subtitle">Altınlarını gerçek paraya çevir</p>
+        </div>
+
+        <!-- Portföy Kartı -->
+        <div class="finans-portfolyo-card">
+          <div class="finans-portfolyo-label">🏆 Toplam Portföy Değeri</div>
+          <div class="finans-portfolyo-val" id="finans-portfolyo">≈ 0.00 ₺</div>
+          <div class="finans-portfolyo-sub">Algısal değer — güncel kura göre</div>
+        </div>
+
+        <!-- Para Birimleri Grid -->
+        <div class="finans-grid">
+          <div class="finans-card gold">
+            <div class="finans-card-icon">🥇</div>
+            <div class="finans-card-label">Mevcut Altın</div>
+            <div class="finans-card-val" id="finans-altin-deger">0 🥇</div>
+            <div class="finans-card-sub" id="finans-tl-deger">≈ 0.00 ₺</div>
+          </div>
+          <div class="finans-card banknot">
+            <div class="finans-card-icon">💵</div>
+            <div class="finans-card-label">Mevcut Banknot</div>
+            <div class="finans-card-val" id="finans-banknot-deger">0 💵</div>
+            <div class="finans-card-sub">Oyun içi para birimi</div>
+          </div>
+        </div>
+
+        <!-- Tahmini Saatlik Kazanç -->
+        <div class="finans-section-title">⏳ Tahmini Saatlik Kazanç</div>
+        <div class="finans-saatlik-card">
+          <div class="finans-saatlik-val" id="finans-saatlik">🥇 +0 Altın &nbsp;|&nbsp; 💵 +0 Banknot</div>
+          <div class="finans-saatlik-sub">Mevcut lig + üretim tercihine göre 6 lig ödülü</div>
+        </div>
+
+        <!-- Kur Bilgisi -->
+        <div class="finans-section-title">📊 Para Kurları</div>
+        <div class="finans-kur-grid">
+          <div class="finans-kur-row">
+            <span class="finans-kur-icon">🥇</span>
+            <span class="finans-kur-text">1 Altın = 100 Banknot = 1.000 Kuruş</span>
+          </div>
+          <div class="finans-kur-row highlight">
+            <span class="finans-kur-icon">💸</span>
+            <span class="finans-kur-text">1.000 Altın = 5 ₺ (Oyun içi sabit kur)</span>
+          </div>
+          <div class="finans-kur-row">
+            <span class="finans-kur-icon">🟢</span>
+            <span class="finans-kur-text">Minimum çekim: 1.000 Altın = 5 ₺</span>
+          </div>
+          <div class="finans-kur-row">
+            <span class="finans-kur-icon">🕒</span>
+            <span class="finans-kur-text">Çekim işlemi: 3-5 iş günü</span>
+          </div>
+        </div>
+
+        <!-- Çekim Butonu -->
+        <button class="btn-primary finans-cekim-btn" onclick="alert('🚧 Çekim sistemi yakında aktif olacak!')">&#x1F4E4; Altın Çek — Yakında!</button>
+
       </section>
 
     </main>
