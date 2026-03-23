@@ -67,6 +67,7 @@ input{font-family:'Nunito',sans-serif}
 .stat-pill.gold{background:rgba(245,200,66,.1);border-color:rgba(245,200,66,.25);color:var(--gold)}
 .stat-pill.banknot{background:rgba(76,175,130,.1);border-color:rgba(76,175,130,.25);color:var(--banknot)}
 .stat-pill.kurus{background:rgba(160,160,176,.1);border-color:rgba(160,160,176,.25);color:var(--kurus)}
+.stat-pill.kur-pill{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);padding:4px 8px;font-size:.6rem;cursor:help}
 .stat-val{min-width:18px;text-align:center}
 .profile-topbtn{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--surface2),var(--surface3));border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;transition:transform .2s,box-shadow .2s;box-shadow:0 0 14px rgba(232,124,42,.2)}
 .profile-topbtn:hover{transform:scale(1.1);box-shadow:0 0 24px rgba(232,124,42,.4)}
