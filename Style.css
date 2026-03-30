@@ -1,0 +1,462 @@
+/* ─── TEMEL DEĞİŞKENLER ──────────────────────────────── */
+:root {
+  --bg: #0d0f14;
+  --bg2: #151820;
+  --bg3: #1e2230;
+  --card: #1a1d28;
+  --card2: #222638;
+  --border: #2a2f45;
+  --accent: #f0a500;
+  --accent2: #ff6b35;
+  --green: #2ecc71;
+  --red: #e74c3c;
+  --blue: #3498db;
+  --text: #e8eaf0;
+  --text2: #8890aa;
+  --text3: #555e7a;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+body.light-mode {
+  --bg: #f0f2f8;
+  --bg2: #e4e8f4;
+  --bg3: #d8ddf0;
+  --card: #ffffff;
+  --card2: #f5f7ff;
+  --border: #d0d5e8;
+  --text: #1a1d28;
+  --text2: #555e7a;
+  --text3: #8890aa;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Rajdhani', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* ─── SPLASH ─────────────────────────────────────────── */
+#splash {
+  position: fixed; inset: 0; z-index: 999;
+  background: radial-gradient(ellipse at center, #1e2230 0%, #0d0f14 70%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px;
+}
+.splash-logo { font-size: 80px; animation: bounce 1s infinite alternate; }
+.splash-title {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 42px; font-weight: 900;
+  background: linear-gradient(135deg, #f0a500, #ff6b35);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: 6px;
+}
+.splash-sub { color: var(--text2); font-size: 16px; letter-spacing: 3px; }
+.splash-bar {
+  margin-top: 32px; width: 200px; height: 4px;
+  background: var(--border); border-radius: 4px; overflow: hidden;
+}
+.splash-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, #f0a500, #ff6b35);
+  border-radius: 4px;
+  animation: fillBar 2s ease forwards;
+}
+@keyframes fillBar { to { width: 100%; } }
+@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+
+/* ─── LAYOUT ─────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+#header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 18px; color: #fff;
+}
+.header-name { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 16px; }
+.header-level { font-size: 12px; color: var(--accent); font-weight: 600; }
+.banknot-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--card); border: 1px solid var(--accent);
+  border-radius: 20px; padding: 6px 14px;
+}
+.banknot-icon { font-size: 16px; }
+#headerBanknot { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 15px; color: var(--accent); }
+
+#screens {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding-bottom: 80px;
+  scrollbar-width: none;
+}
+#screens::-webkit-scrollbar { display: none; }
+
+.screen { display: none; padding: 16px; animation: fadeIn 0.3s ease; }
+.screen.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.screen-header {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 22px; font-weight: 900;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--accent);
+  color: var(--accent);
+}
+
+/* ─── ANA EKRAN ──────────────────────────────────────── */
+.home-top {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-bottom: 20px;
+}
+.power-card, .banknot-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px; text-align: center;
+}
+.power-card { border-top: 3px solid var(--blue); }
+.banknot-card { border-top: 3px solid var(--accent); }
+.power-label, .banknot-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.power-value { font-family: 'Exo 2', sans-serif; font-size: 28px; font-weight: 900; color: var(--blue); }
+.power-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.banknot-value { font-family: 'Exo 2', sans-serif; font-size: 28px; font-weight: 900; color: var(--accent); }
+.collect-btn {
+  margin-top: 8px; width: 100%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: 8px;
+  color: #fff; font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 13px;
+  padding: 8px; cursor: pointer;
+  transition: transform 0.1s, opacity 0.1s;
+}
+.collect-btn:active { transform: scale(0.96); opacity: 0.9; }
+
+.section-title {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--text2); margin-bottom: 12px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+/* ─── MADENCİ KARTLARI ───────────────────────────────── */
+.miners-grid { display: flex; flex-direction: column; gap: 12px; }
+
+.miner-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex; align-items: center; gap: 14px;
+  position: relative; overflow: hidden;
+  transition: transform 0.2s;
+}
+.miner-card:active { transform: scale(0.98); }
+.miner-card.locked { opacity: 0.6; }
+.miner-card.active-miner { border-color: var(--accent); }
+.miner-card.active-miner::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(240,165,0,0.08), transparent);
+  pointer-events: none;
+}
+
+.miner-avatar {
+  width: 64px; height: 64px; border-radius: 14px;
+  background: var(--bg3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; flex-shrink: 0;
+  position: relative;
+}
+.miner-avatar.animated { animation: minerWork 1s steps(2) infinite; }
+@keyframes minerWork {
+  0% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg) translateY(-2px); }
+  100% { transform: rotate(-5deg); }
+}
+.miner-working-badge {
+  position: absolute; top: -4px; right: -4px;
+  background: var(--green); color: #fff;
+  font-size: 8px; padding: 2px 5px;
+  border-radius: 6px; font-weight: 700;
+}
+
+.miner-info { flex: 1; }
+.miner-name { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 17px; }
+.miner-ratio { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.miner-earn { font-size: 12px; color: var(--accent); margin-top: 4px; font-weight: 600; }
+
+.miner-right { text-align: right; }
+.miner-power { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 20px; color: var(--blue); }
+.miner-power-label { font-size: 10px; color: var(--text3); }
+.miner-unlock-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: 8px;
+  color: #fff; font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 12px;
+  padding: 6px 14px; cursor: pointer;
+  margin-top: 4px;
+}
+.miner-locked-text { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ─── MAĞAZA ─────────────────────────────────────────── */
+.shop-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.shop-tab {
+  flex: 1; padding: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text2);
+  font-family: 'Exo 2', sans-serif; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.shop-tab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; border-color: transparent;
+}
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.shop-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px;
+  text-align: center; cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.shop-item:active { transform: scale(0.96); }
+.shop-item:hover { border-color: var(--accent); }
+.shop-item-icon { font-size: 40px; margin-bottom: 8px; }
+.shop-item-name { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 14px; }
+.shop-item-power { font-size: 12px; color: var(--blue); margin-top: 4px; }
+.shop-item-price {
+  margin-top: 10px;
+  background: var(--bg3); border-radius: 8px;
+  padding: 6px; font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 14px; color: var(--accent);
+}
+
+/* ─── LİDERLİK ───────────────────────────────────────── */
+.search-box { margin-bottom: 16px; }
+.search-box input {
+  width: 100%; padding: 12px 16px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'Rajdhani', sans-serif; font-size: 15px;
+  outline: none;
+}
+.search-box input:focus { border-color: var(--accent); }
+
+.leader-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 16px;
+  margin-bottom: 8px; cursor: pointer;
+  transition: transform 0.15s;
+}
+.leader-item:active { transform: scale(0.98); }
+.leader-rank {
+  font-family: 'Exo 2', sans-serif; font-weight: 900;
+  font-size: 20px; min-width: 36px; text-align: center;
+}
+.rank-1 { color: gold; }
+.rank-2 { color: silver; }
+.rank-3 { color: #cd7f32; }
+.leader-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--bg3);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+}
+.leader-info { flex: 1; }
+.leader-name { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 15px; }
+.leader-power { font-size: 12px; color: var(--text2); }
+.leader-banknot { font-family: 'Exo 2', sans-serif; font-weight: 700; color: var(--accent); font-size: 14px; }
+
+/* ─── ÇARK ───────────────────────────────────────────── */
+.wheel-container { display: flex; flex-direction: column; align-items: center; margin: 20px 0; position: relative; }
+.wheel-pointer { font-size: 28px; color: var(--accent); margin-bottom: -8px; z-index: 2; }
+#wheelCanvas { border-radius: 50%; box-shadow: 0 0 40px rgba(240,165,0,0.3); }
+.wheel-status { text-align: center; margin: 12px 0; font-size: 15px; color: var(--text2); min-height: 22px; }
+.spin-btn {
+  width: 100%; max-width: 300px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: var(--radius-sm);
+  color: #fff; font-family: 'Exo 2', sans-serif;
+  font-weight: 900; font-size: 20px; letter-spacing: 2px;
+  padding: 16px; cursor: pointer;
+  display: block; margin: 0 auto;
+  transition: transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(240,165,0,0.4);
+}
+.spin-btn:active { transform: scale(0.97); }
+.spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.wheel-prizes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
+.prize-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 12px;
+  font-size: 13px; display: flex; align-items: center; gap: 8px;
+}
+
+/* ─── AYARLAR ────────────────────────────────────────── */
+.settings-list { display: flex; flex-direction: column; gap: 16px; }
+.settings-section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.settings-section-title {
+  font-family: 'Exo 2', sans-serif; font-weight: 700;
+  font-size: 12px; color: var(--text2);
+  text-transform: uppercase; letter-spacing: 1px;
+  padding: 10px 16px;
+  background: var(--bg3);
+}
+.setting-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 15px;
+}
+.setting-item.clickable { cursor: pointer; }
+.setting-item.clickable:active { background: var(--bg3); }
+.arrow { color: var(--text3); font-size: 20px; }
+
+/* Toggle switch */
+.toggle { position: relative; display: inline-block; width: 48px; height: 26px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0;
+  background: var(--border); border-radius: 26px;
+  cursor: pointer; transition: 0.3s;
+}
+.slider:before {
+  content: ''; position: absolute;
+  height: 20px; width: 20px; left: 3px; bottom: 3px;
+  background: white; border-radius: 50%; transition: 0.3s;
+}
+input:checked + .slider { background: var(--accent); }
+input:checked + .slider:before { transform: translateX(22px); }
+
+.crypto-rates { padding: 4px 0; }
+.crypto-rate-item {
+  display: flex; justify-content: space-between;
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  font-size: 14px;
+}
+.crypto-name { color: var(--text2); }
+.crypto-value { font-weight: 700; color: var(--green); }
+
+/* ─── ALT MENÜ ───────────────────────────────────────── */
+#bottomNav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  z-index: 10;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 8px 4px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); transition: color 0.2s;
+  position: relative;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-btn.active::before {
+  content: '';
+  position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
+  background: var(--accent); border-radius: 2px;
+}
+.nav-icon { font-size: 22px; }
+.nav-label { font-size: 10px; margin-top: 2px; font-weight: 600; letter-spacing: 0.5px; }
+
+/* ─── MODAL ──────────────────────────────────────────── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 24px 20px 32px;
+  width: 100%; max-height: 85vh; overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: none; opacity: 1; } }
+.modal-title {
+  font-family: 'Exo 2', sans-serif; font-weight: 900;
+  font-size: 20px; margin-bottom: 16px; color: var(--accent);
+}
+.modal-body { font-size: 14px; line-height: 1.7; color: var(--text2); }
+.modal-body p { margin-bottom: 10px; }
+.modal-body strong { color: var(--text); }
+.modal-close {
+  width: 100%; margin-top: 20px; padding: 14px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'Exo 2', sans-serif; font-weight: 700;
+  font-size: 15px; cursor: pointer;
+}
+
+/* ─── TOAST ──────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 24px; padding: 10px 20px;
+  font-size: 14px; font-weight: 600;
+  opacity: 0; transition: opacity 0.3s; z-index: 200;
+  pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+/* ─── GİRİŞ FORMLARI ─────────────────────────────────── */
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+.form-group input, .form-group select {
+  width: 100%; padding: 12px 14px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'Rajdhani', sans-serif; font-size: 15px;
+  outline: none;
+}
+.form-group input:focus { border-color: var(--accent); }
+.form-submit {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: var(--radius-sm);
+  color: #fff; font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 16px; cursor: pointer;
+  margin-top: 8px;
+}
+.form-submit:active { opacity: 0.9; }
+
+/* ─── PROFİL KARTI ───────────────────────────────────── */
+.profile-card {
+  background: var(--bg3); border-radius: var(--radius);
+  padding: 20px; text-align: center; margin-bottom: 16px;
+}
+.profile-avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; margin: 0 auto 12px;
+}
+.profile-name { font-family: 'Exo 2', sans-serif; font-weight: 900; font-size: 22px; }
+.profile-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 14px; }
+.profile-stat { background: var(--card); border-radius: 10px; padding: 10px 6px; text-align: center; }
+.profile-stat-val { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 18px; color: var(--accent); }
+.profile-stat-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; }
