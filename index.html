@@ -1,194 +1,742 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Madenci Oyunu</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⛏️ Kömür Madeni - Mining Game</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- Oyun Varlıkları -->
+  <script src="items.js"></script>
 </head>
-<body class="dark-mode">
+<body>
 
-<!-- SPLASH SCREEN -->
-<div id="splash">
-  <div class="splash-logo">⛏️</div>
-  <div class="splash-title">MADENCİ</div>
-  <div class="splash-sub">Kaz • Kazan • Çek</div>
-  <div class="splash-bar"><div class="splash-fill"></div></div>
+<!-- =================== YÜKLEME =================== -->
+<div id="loading-screen">
+  <div class="loading-icon">⛏️</div>
+  <div style="font-family:'Oswald',sans-serif;font-size:24px;letter-spacing:4px;color:var(--amber)">YÜKLENIYOR</div>
+  <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-secondary)">Maden hazırlanıyor...</div>
 </div>
 
-<!-- ANA UYGULAMA -->
-<div id="app" style="display:none">
-
-  <!-- HEADER -->
-  <header id="header">
-    <div class="header-left">
-      <div class="avatar" id="userAvatar">M</div>
-      <div class="header-info">
-        <div class="header-name" id="headerName">Madenci</div>
-        <div class="header-level" id="headerLevel">⚡ Güç: 0</div>
-      </div>
+<!-- =================== AUTH EKRANI =================== -->
+<div id="auth-screen" style="display:none">
+  <div class="auth-bg"></div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="logo-icon">⛏️</span>
+      <h1>KÖMÜR MADENİ</h1>
+      <p>// MINING PLATFORM v1.0 //</p>
     </div>
-    <div class="header-right">
-      <div class="banknot-badge">
-        <span class="banknot-icon">💵</span>
-        <span id="headerBanknot">0</span>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login" onclick="switchTab('login')">GİRİŞ</button>
+      <button class="auth-tab" data-tab="register" onclick="switchTab('register')">KAYIT</button>
+    </div>
+
+    <!-- Giriş Formu -->
+    <div id="login-form">
+      <div id="login-error" class="auth-error"></div>
+      <div class="form-group">
+        <label>KULLANICI ADI</label>
+        <input type="text" id="login-user" placeholder="kullanici_adi" maxlength="20" autocomplete="username">
       </div>
+      <div class="form-group">
+        <label>ŞİFRE</label>
+        <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <button class="btn-primary" onclick="doLogin()">⛏️ GİRİŞ YAP</button>
+    </div>
+
+    <!-- Kayıt Formu -->
+    <div id="register-form" style="display:none">
+      <div id="register-error" class="auth-error"></div>
+      <div class="form-group">
+        <label>KULLANICI ADI</label>
+        <input type="text" id="reg-user" placeholder="kullanici_adi (max 20)" maxlength="20" autocomplete="username">
+        <div class="hint">Harf, rakam ve _ kullanabilirsiniz</div>
+      </div>
+      <div class="form-group">
+        <label>ŞİFRE</label>
+        <input type="password" id="reg-pass" placeholder="Min 8 karakter" autocomplete="new-password">
+        <div class="hint">En az 8 karakter, 1 büyük harf, 1 rakam</div>
+      </div>
+      <div class="form-group">
+        <label>ŞİFRE TEKRAR</label>
+        <input type="password" id="reg-confirm" placeholder="Şifreyi tekrar girin" autocomplete="new-password"
+          onkeydown="if(event.key==='Enter') doRegister()">
+      </div>
+      <button class="btn-primary" onclick="doRegister()">🚀 KAYIT OL</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== OYUN EKRANI =================== -->
+<div id="game-screen" style="display:none">
+
+  <!-- Sol Kenar Çubuğu -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">⛏️</div>
+
+    <button class="nav-btn active" data-screen="mine" onclick="navTo('mine')">
+      <span class="nav-icon">🏔️</span>
+      <span>MADEN</span>
+    </button>
+    <button class="nav-btn" data-screen="profile" onclick="navTo('profile')">
+      <span class="nav-icon">👤</span>
+      <span>PROFİL</span>
+    </button>
+    <button class="nav-btn" data-screen="shop" onclick="navTo('shop')">
+      <span class="nav-icon">🛒</span>
+      <span>MAĞAZA</span>
+    </button>
+    <button class="nav-btn" data-screen="rank" onclick="navTo('rank')">
+      <span class="nav-icon">🏆</span>
+      <span>LİG</span>
+    </button>
+    <button class="nav-btn" data-screen="game" onclick="navTo('game')">
+      <span class="nav-icon">🎮</span>
+      <span>OYUN</span>
+    </button>
+    <button class="nav-btn" data-screen="settings" onclick="navTo('settings')">
+      <span class="nav-icon">⚙️</span>
+      <span>AYAR</span>
+    </button>
+  </aside>
+
+  <!-- Üst Çubuk -->
+  <header class="topbar">
+    <div class="currency-chip kmr">
+      <span class="icon">🪨</span>
+      <span class="value" id="hud-kmr">0</span>
+      <span style="font-size:10px;color:var(--text-dim)">KMR</span>
+    </div>
+    <div class="currency-chip banknot">
+      <span class="icon">💵</span>
+      <span class="value" id="hud-banknot">0</span>
+      <span style="font-size:10px;color:var(--text-dim)">BANKNOT</span>
+    </div>
+    <div class="currency-chip cheque">
+      <span class="icon">💎</span>
+      <span class="value" id="hud-cheque">0</span>
+      <span style="font-size:10px;color:var(--text-dim)">ÇEKİP</span>
+    </div>
+    <div class="topbar-right">
+      <div class="power-display" id="power-display">⚡ 0 PH</div>
+      <div class="league-badge" id="league-badge">⛏️ Çırak</div>
     </div>
   </header>
 
-  <!-- EKRANLAR -->
-  <div id="screens">
+  <!-- Ana İçerik -->
+  <main class="main-content">
 
-    <!-- ANA EKRAN -->
-    <div class="screen active" id="screen-home">
-      <div class="home-top">
-        <div class="power-card">
-          <div class="power-label">Toplam Güç</div>
-          <div class="power-value" id="totalPower">0</div>
-          <div class="power-sub">/ dakika üretim</div>
-        </div>
-        <div class="banknot-card">
-          <div class="banknot-label">💵 Banknot</div>
-          <div class="banknot-value" id="banknotValue">0</div>
-          <button class="collect-btn" id="collectBtn" onclick="collectBanknot()">TOPLA</button>
-        </div>
+    <!-- ===== MADEN EKRANI ===== -->
+    <div id="mine-screen" class="screen active">
+      <div class="mine-header">
+        <h2>⛏️ MADEN MAĞARASI</h2>
+        <p style="color:var(--text-secondary);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px;margin-top:4px">
+          Kömür kazan, servet yap!
+        </p>
       </div>
 
-      <!-- MADENCİLER ALANI -->
-      <div class="section-title">⛏️ Madencilerim</div>
-      <div class="miners-grid" id="minersGrid">
-        <!-- JS ile doldurulacak -->
+      <!-- Mağara Animasyonu -->
+      <div class="cave-scene" onclick="enterCave()">
+        <div class="cave-bg"></div>
+        <div class="cave-stalactites"></div>
+        <div class="cave-sparks"></div>
+        <div class="cave-rocks"></div>
+        <div class="cave-miner" id="cave-miner">⛏️</div>
+        <div class="cave-info">
+          <div class="rate" id="cave-rate">0 KMR/SA</div>
+          <div class="label">SAATLİK KAZANÇ</div>
+        </div>
+        <button class="cave-enter-btn">🔦 MAĞARAYA GİR</button>
+      </div>
+
+      <!-- Sahip Olunan Madenciler -->
+      <div style="font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:3px;color:var(--amber);border-bottom:1px solid var(--coal-light);padding-bottom:12px;margin-bottom:20px;text-transform:uppercase;">
+        ⛏️ Madencilerim
+      </div>
+      <div class="miners-grid" id="mine-miners-grid"></div>
+
+      <!-- Dönüşüm Paneli -->
+      <div class="convert-panel">
+        <h3>💱 Para Dönüştürme</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap">
+          <div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--kmr);margin-bottom:10px;">
+              🪨 KMR → 💵 BANKNOT (1000 KMR = 1 Banknot)
+            </div>
+            <div class="convert-row">
+              <input type="number" id="convert-kmr-amount" placeholder="KMR miktarı" min="1000" step="1000" oninput="previewKmr()">
+              <span class="convert-result" id="kmr-preview">= 0 Banknot</span>
+            </div>
+            <button class="btn-convert" onclick="convertKmrToBanknot()">DÖNÜŞTÜR</button>
+          </div>
+          <div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--banknot);margin-bottom:10px;">
+              💵 BANKNOT → 💎 ÇEKİP (10000 Banknot = 1 Çekip)
+            </div>
+            <div class="convert-row">
+              <input type="number" id="convert-banknot-amount" placeholder="Banknot miktarı" min="10000" step="10000" oninput="previewBanknot()">
+              <span class="convert-result" id="banknot-preview">= 0 Çekip</span>
+            </div>
+            <button class="btn-convert" style="background:linear-gradient(135deg,var(--cheque),#880E4F)" onclick="convertBanknotToCheque()">DÖNÜŞTÜR</button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- MAĞAZA -->
-    <div class="screen" id="screen-shop">
-      <div class="screen-header">🛒 Mağaza</div>
-      <div class="shop-tabs">
-        <button class="shop-tab active" onclick="switchShopTab('items')">Eşyalar</button>
-        <button class="shop-tab" onclick="switchShopTab('miners')">Madenciler</button>
+    <!-- ===== PROFİL EKRANI ===== -->
+    <div id="profile-screen" class="screen">
+      <div class="profile-header">
+        <span class="profile-avatar">👷</span>
+        <div class="profile-username" id="prof-username">-</div>
+        <div id="prof-league" style="color:var(--text-secondary);font-family:'Share Tech Mono',monospace;font-size:13px;margin-top:4px"></div>
+        <div style="font-size:28px;color:var(--amber);font-family:'Share Tech Mono',monospace;font-weight:700;margin-top:8px" id="prof-power">0 PH</div>
+        <div class="profile-stats-grid">
+          <div class="profile-stat"><div class="value" id="prof-banknot">0</div><div class="label">💵 BANKNOT</div></div>
+          <div class="profile-stat"><div class="value" id="prof-kmr">0</div><div class="label">🪨 KMR</div></div>
+          <div class="profile-stat"><div class="value" id="prof-cheque">0</div><div class="label">💎 ÇEKİP</div></div>
+          <div class="profile-stat"><div class="value" id="prof-miners">0/5</div><div class="label">⛏️ MADENCİ</div></div>
+          <div class="profile-stat"><div class="value" id="prof-items">0</div><div class="label">🎒 EŞYA</div></div>
+          <div class="profile-stat"><div class="value" id="prof-joindate">-</div><div class="label">📅 KATILIM</div></div>
+        </div>
       </div>
-      <div id="shopItems" class="shop-grid"></div>
-      <div id="shopMiners" class="shop-grid" style="display:none"></div>
-    </div>
 
-    <!-- LİDERLİK -->
-    <div class="screen" id="screen-leaderboard">
-      <div class="screen-header">🏆 Liderlik</div>
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Kullanıcı adı ara..." oninput="searchUser()" />
+      <!-- Günlük Görevler -->
+      <div class="tasks-card">
+        <div style="font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:3px;color:var(--amber);text-transform:uppercase;margin-bottom:16px;">
+          🎯 Günlük Görevler
+        </div>
+        <div id="daily-tasks-list"></div>
       </div>
-      <div id="leaderboardList"></div>
-      <div id="searchResult" style="display:none"></div>
-    </div>
 
-    <!-- ÇARK -->
-    <div class="screen" id="screen-wheel">
-      <div class="screen-header">🎡 Günlük Çark</div>
-      <div class="wheel-container">
-        <div class="wheel-pointer">▼</div>
-        <canvas id="wheelCanvas" width="300" height="300"></canvas>
+      <!-- Başarımlar -->
+      <div class="tasks-card" style="margin-bottom:24px">
+        <div style="font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:3px;color:var(--amber);text-transform:uppercase;margin-bottom:16px;">
+          🏆 Başarımlar
+        </div>
+        <div class="achievements-grid" id="achievements-grid"></div>
       </div>
-      <div id="wheelStatus" class="wheel-status"></div>
-      <button class="spin-btn" id="spinBtn" onclick="spinWheel()">ÇEVİR!</button>
-      <div class="wheel-prizes" id="wheelPrizes"></div>
-    </div>
 
-    <!-- AYARLAR -->
-    <div class="screen" id="screen-settings">
-      <div class="screen-header">⚙️ Ayarlar</div>
-      <div class="settings-list">
-
-        <div class="settings-section">
-          <div class="settings-section-title">Görünüm</div>
-          <div class="setting-item">
-            <span>🌙 Karanlık Mod</span>
-            <label class="toggle">
-              <input type="checkbox" id="darkModeToggle" checked onchange="toggleDarkMode()">
-              <span class="slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <div class="settings-section-title">Hesap</div>
-          <div class="setting-item clickable" onclick="showChangePassword()">
-            <span>🔑 Şifre Değiştir</span>
-            <span class="arrow">›</span>
-          </div>
-          <div class="setting-item clickable" onclick="showWithdraw()">
-            <span>💸 Para Çek</span>
-            <span class="arrow">›</span>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <div class="settings-section-title">Destek</div>
-          <div class="setting-item clickable" onclick="showHowToPlay()">
-            <span>📖 Nasıl Oynanır?</span>
-            <span class="arrow">›</span>
-          </div>
-          <div class="setting-item clickable" onclick="showAbout()">
-            <span>ℹ️ Hakkında</span>
-            <span class="arrow">›</span>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <div class="settings-section-title">Kripto Değerleri</div>
-          <div id="cryptoRates" class="crypto-rates"></div>
-        </div>
-
+      <!-- Eşya Envanteri -->
+      <div class="items-shelf">
+        <div class="shelf-title">🎒 Eşya Envanteri</div>
+        <div class="shelf-grid" id="items-shelf-grid"></div>
       </div>
     </div>
 
+    <!-- ===== MAĞAZA EKRANI ===== -->
+    <div id="shop-screen" class="screen">
+      <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--amber);text-shadow:var(--glow-amber);margin-bottom:24px;text-transform:uppercase;">
+        🛒 MAĞAZA
+      </div>
+
+      <!-- Kutular -->
+      <div class="shop-section-title">📦 Gizemli Kutular</div>
+      <div class="boxes-grid" id="shop-boxes-grid"></div>
+
+      <!-- Madenciler -->
+      <div class="shop-section-title" style="margin-top:40px">⛏️ Madenciler</div>
+      <div class="shop-miners-grid" id="shop-miners-grid"></div>
+
+      <!-- Kutu İçerikleri Tablosu -->
+      <div class="shop-section-title" style="margin-top:40px">📊 Kutu Oranları</div>
+      <div style="background:var(--bg-card);border:1px solid var(--coal-light);border-radius:16px;padding:24px;overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:13px;">
+          <thead>
+            <tr style="color:var(--amber);text-align:left;">
+              <th style="padding:10px 16px;border-bottom:1px solid var(--coal-light);">KUTU</th>
+              <th style="padding:10px 16px;border-bottom:1px solid var(--coal-light);">FİYAT</th>
+              <th style="padding:10px 16px;border-bottom:1px solid var(--coal-light);">EŞYA %</th>
+              <th style="padding:10px 16px;border-bottom:1px solid var(--coal-light);">KMR %</th>
+              <th style="padding:10px 16px;border-bottom:1px solid var(--coal-light);">BANKNOT %</th>
+              <th style="padding:10px 16px;border-bottom:1px solid var(--coal-light);">ÇEKİP %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="color:var(--text-secondary)">
+              <td style="padding:10px 16px">📦 Ahşap</td>
+              <td style="padding:10px 16px;color:var(--banknot)">500 💵</td>
+              <td style="padding:10px 16px;color:var(--common)">%25 (Sıradan)</td>
+              <td style="padding:10px 16px;color:var(--kmr)">%50</td>
+              <td style="padding:10px 16px;color:var(--banknot)">%25</td>
+              <td style="padding:10px 16px;color:var(--text-dim)">-</td>
+            </tr>
+            <tr style="color:var(--text-secondary)">
+              <td style="padding:10px 16px">🗃️ Demir</td>
+              <td style="padding:10px 16px;color:var(--banknot)">2.000 💵</td>
+              <td style="padding:10px 16px;color:var(--uncommon)">%45 (Sıradan-Nadir)</td>
+              <td style="padding:10px 16px;color:var(--kmr)">%30</td>
+              <td style="padding:10px 16px;color:var(--banknot)">%25</td>
+              <td style="padding:10px 16px;color:var(--text-dim)">-</td>
+            </tr>
+            <tr style="color:var(--text-secondary)">
+              <td style="padding:10px 16px">🏆 Altın</td>
+              <td style="padding:10px 16px;color:var(--banknot)">8.000 💵</td>
+              <td style="padding:10px 16px;color:var(--epic)">%50 (Nadir-Epik)</td>
+              <td style="padding:10px 16px;color:var(--kmr)">%20</td>
+              <td style="padding:10px 16px;color:var(--banknot)">%20</td>
+              <td style="padding:10px 16px;color:var(--cheque)">%10</td>
+            </tr>
+            <tr style="color:var(--text-secondary)">
+              <td style="padding:10px 16px">💠 Efsane</td>
+              <td style="padding:10px 16px;color:var(--cheque)">3 💎</td>
+              <td style="padding:10px 16px;color:var(--legendary)">%65 (Epik-Mitolojik)</td>
+              <td style="padding:10px 16px;color:var(--kmr)">-</td>
+              <td style="padding:10px 16px;color:var(--banknot)">%15</td>
+              <td style="padding:10px 16px;color:var(--cheque)">%20</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Nadirlik Tablosu -->
+      <div class="shop-section-title" style="margin-top:32px">🎯 Nadirlik Seviyeleri</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
+        <div style="background:var(--bg-card);border:1px solid var(--common);border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px">⚪</div>
+          <div class="rarity-badge rarity-common" style="width:100%;margin:0 0 6px">SIRADAN</div>
+          <div style="font-size:11px;color:var(--text-secondary);font-family:'Share Tech Mono',monospace">2 - 10 PH</div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--uncommon);border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px">🟢</div>
+          <div class="rarity-badge rarity-uncommon" style="width:100%;margin:0 0 6px">NADİR</div>
+          <div style="font-size:11px;color:var(--text-secondary);font-family:'Share Tech Mono',monospace">13 - 28 PH</div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--rare);border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px">🔵</div>
+          <div class="rarity-badge rarity-rare" style="width:100%;margin:0 0 6px">EPİK</div>
+          <div style="font-size:11px;color:var(--text-secondary);font-family:'Share Tech Mono',monospace">32 - 58 PH</div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--epic);border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px">🟣</div>
+          <div class="rarity-badge rarity-epic" style="width:100%;margin:0 0 6px">SÜPER</div>
+          <div style="font-size:11px;color:var(--text-secondary);font-family:'Share Tech Mono',monospace">63 - 82 PH</div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--legendary);border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px">🟠</div>
+          <div class="rarity-badge rarity-legendary" style="width:100%;margin:0 0 6px">EFSANE</div>
+          <div style="font-size:11px;color:var(--text-secondary);font-family:'Share Tech Mono',monospace">92 - 120 PH</div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--mythic);border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px">🔴</div>
+          <div class="rarity-badge rarity-mythic" style="width:100%;margin:0 0 6px">MİTOLOJİK</div>
+          <div style="font-size:11px;color:var(--text-secondary);font-family:'Share Tech Mono',monospace">160 - 200 PH</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== LİG SIRALAMASI ===== -->
+    <div id="rank-screen" class="screen">
+      <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--amber);text-shadow:var(--glow-amber);margin-bottom:8px;text-transform:uppercase;">
+        🏆 LİG SIRALAMASI
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-secondary);margin-bottom:24px">
+        Her 20 dakikada bir güce orantılı ödül dağıtılır
+      </div>
+      <div id="league-timer" class="league-timer" style="margin-bottom:16px;font-size:14px"></div>
+
+      <!-- Ödül Bilgisi -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">
+        <div style="background:rgba(121,85,72,0.15);border:1px solid #795548;border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:28px;margin-bottom:6px">⛏️</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:2px;color:#795548">ÇIRAK LİGİ</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--cheque);margin-top:4px">10 💎</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px">20 dakikada</div>
+        </div>
+        <div style="background:rgba(96,125,139,0.15);border:1px solid #607D8B;border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:28px;margin-bottom:6px">🥈</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:2px;color:#607D8B">AMATÖR LİGİ</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--cheque);margin-top:4px">100 💎</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px">20 dakikada</div>
+        </div>
+        <div style="background:rgba(255,215,0,0.1);border:1px solid var(--gold);border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:28px;margin-bottom:6px">🏆</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:2px;color:var(--gold)">USTA LİGİ</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--cheque);margin-top:4px">500 💎</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px">20 dakikada</div>
+        </div>
+      </div>
+
+      <!-- Lig Tabları -->
+      <div class="leaderboard-tabs">
+        <button class="league-tab active" data-league="cirak" onclick="switchLeagueTab('cirak')" style="color:#795548;border-color:#795548;background:rgba(121,85,72,0.2)">
+          ⛏️ Çırak Ligi<br><small style="font-size:10px;letter-spacing:1px">0 - 99 PH</small>
+        </button>
+        <button class="league-tab" data-league="amator" onclick="switchLeagueTab('amator')">
+          🥈 Amatör Ligi<br><small style="font-size:10px;letter-spacing:1px">100 - 499 PH</small>
+        </button>
+        <button class="league-tab" data-league="usta" onclick="switchLeagueTab('usta')">
+          🏆 Usta Ligi<br><small style="font-size:10px;letter-spacing:1px">500+ PH</small>
+        </button>
+      </div>
+
+      <div class="leaderboard-list" id="leaderboard-list"></div>
+    </div>
+
+    <!-- ===== OYUN EKRANI (Ek Mini Oyunlar) ===== -->
+    <div id="game-screen-tab" class="screen" id="game-screen">
+      <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--amber);text-shadow:var(--glow-amber);margin-bottom:24px;text-transform:uppercase;">
+        🎮 BONUS OYUNLAR
+      </div>
+
+      <!-- Kazı Kazan -->
+      <div style="background:var(--bg-card);border:1px solid var(--coal-light);border-radius:16px;padding:32px;text-align:center;margin-bottom:20px">
+        <div style="font-size:48px;margin-bottom:12px">🎰</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:20px;letter-spacing:3px;color:var(--amber);margin-bottom:8px">KAZIM KAZIM</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text-secondary);margin-bottom:20px">
+          500 KMR harca, büyük ödül kazan!
+        </div>
+        <div id="scratch-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto 20px"></div>
+        <button class="btn-primary" onclick="playScratch()" style="width:auto;padding:12px 32px">
+          🎯 OYNA (500 KMR)
+        </button>
+        <div id="scratch-result" style="margin-top:16px;font-family:'Share Tech Mono',monospace;font-size:14px"></div>
+      </div>
+
+      <!-- Çark -->
+      <div style="background:var(--bg-card);border:1px solid var(--coal-light);border-radius:16px;padding:32px;text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">🎡</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:20px;letter-spacing:3px;color:var(--amber);margin-bottom:8px">ŞANS ÇARKI</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text-secondary);margin-bottom:8px">
+          Her gün 1 ücretsiz çevirme hakkın var!
+        </div>
+        <div id="wheel-container" style="position:relative;width:240px;height:240px;margin:0 auto 20px">
+          <canvas id="wheel-canvas" width="240" height="240"></canvas>
+          <div id="wheel-pointer" style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:24px">▼</div>
+        </div>
+        <button class="btn-primary" onclick="spinWheel()" id="wheel-btn" style="width:auto;padding:12px 32px">
+          🎡 ÇEVİR (Ücretsiz)
+        </button>
+        <div id="wheel-result" style="margin-top:16px;font-family:'Share Tech Mono',monospace;font-size:14px"></div>
+      </div>
+    </div>
+
+    <!-- ===== AYARLAR EKRANI ===== -->
+    <div id="settings-screen" class="screen">
+      <div style="font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--amber);text-shadow:var(--glow-amber);margin-bottom:24px;text-transform:uppercase;">
+        ⚙️ AYARLAR
+      </div>
+
+      <!-- Hesap Bilgileri -->
+      <div class="settings-card">
+        <h3>👤 Hesap Bilgileri</h3>
+        <div class="setting-row">
+          <span class="setting-label">Kullanıcı Adı</span>
+          <span class="setting-value" id="settings-username">-</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Katılım Tarihi</span>
+          <span class="setting-value" id="settings-joindate">-</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Madenci Sayısı</span>
+          <span class="setting-value" id="settings-miners">0</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Eşya Sayısı</span>
+          <span class="setting-value" id="settings-items">0</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Açılan Kutu</span>
+          <span class="setting-value" id="settings-boxes">0</span>
+        </div>
+      </div>
+
+      <!-- Dönüşüm Bilgisi -->
+      <div class="settings-card">
+        <h3>💱 Para Dönüşüm Oranları</h3>
+        <div class="setting-row">
+          <span class="setting-label">🪨 KMR → 💵 Banknot</span>
+          <span class="setting-value" style="color:var(--kmr)">1.000 KMR = 1 Banknot</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">💵 Banknot → 💎 Çekip</span>
+          <span class="setting-value" style="color:var(--banknot)">10.000 Banknot = 1 Çekip</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Max Offline Kazanç</span>
+          <span class="setting-value">8 Saat</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Lig Ödül Süresi</span>
+          <span class="setting-value">Her 20 Dakika</span>
+        </div>
+      </div>
+
+      <!-- Madenci Tablosu -->
+      <div class="settings-card">
+        <h3>⛏️ Madenci Bilgileri</h3>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:12px">
+            <thead>
+              <tr style="color:var(--amber)">
+                <th style="padding:8px;text-align:left;border-bottom:1px solid var(--coal-light)">MADENCİ</th>
+                <th style="padding:8px;border-bottom:1px solid var(--coal-light)">FİYAT</th>
+                <th style="padding:8px;border-bottom:1px solid var(--coal-light)">SAATLİK</th>
+                <th style="padding:8px;border-bottom:1px solid var(--coal-light)">ÇARPAN</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="color:var(--text-secondary)">
+                <td style="padding:8px">👴 Mehmet Dayı</td>
+                <td style="padding:8px;text-align:center;color:var(--banknot)">10.000</td>
+                <td style="padding:8px;text-align:center;color:var(--kmr)">100 KMR</td>
+                <td style="padding:8px;text-align:center;color:var(--amber)">x2</td>
+              </tr>
+              <tr style="color:var(--text-secondary)">
+                <td style="padding:8px">🧔 Şemsi Dayı</td>
+                <td style="padding:8px;text-align:center;color:var(--banknot)">20.000</td>
+                <td style="padding:8px;text-align:center;color:var(--kmr)">250 KMR</td>
+                <td style="padding:8px;text-align:center;color:var(--amber)">x4</td>
+              </tr>
+              <tr style="color:var(--text-secondary)">
+                <td style="padding:8px">👩‍🦱 Kübra Teyze</td>
+                <td style="padding:8px;text-align:center;color:var(--banknot)">50.000</td>
+                <td style="padding:8px;text-align:center;color:var(--kmr)">750 KMR</td>
+                <td style="padding:8px;text-align:center;color:var(--amber)">x6</td>
+              </tr>
+              <tr style="color:var(--text-secondary)">
+                <td style="padding:8px">👵 Beyza Nene</td>
+                <td style="padding:8px;text-align:center;color:var(--banknot)">100.000</td>
+                <td style="padding:8px;text-align:center;color:var(--kmr)">2.000 KMR</td>
+                <td style="padding:8px;text-align:center;color:var(--amber)">x8</td>
+              </tr>
+              <tr style="color:var(--text-secondary)">
+                <td style="padding:8px">👷 Ali Usta</td>
+                <td style="padding:8px;text-align:center;color:var(--banknot)">250.000</td>
+                <td style="padding:8px;text-align:center;color:var(--kmr)">5.000 KMR</td>
+                <td style="padding:8px;text-align:center;color:var(--amber)">x10</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Çıkış -->
+      <div class="settings-card" style="text-align:center">
+        <h3>🚪 Hesap İşlemleri</h3>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;font-family:'Share Tech Mono',monospace">
+          Çıkış yapsan da madencilerin çalışmaya devam eder!
+        </p>
+        <button class="btn-danger" onclick="doLogout()">🚪 ÇIKIŞ YAP</button>
+      </div>
+    </div>
+
+  </main><!-- /main-content -->
+</div><!-- /game-screen -->
+
+<!-- =================== KUTU AÇMA MODALİ =================== -->
+<div id="box-modal" class="modal-overlay">
+  <div class="modal-box">
+    <button onclick="closeBoxModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer">✕</button>
+    <h3 id="box-modal-title">Kutu Açılıyor...</h3>
+    <div class="box-open-anim" id="modal-box-anim">
+      <div class="box-3d" id="modal-box-icon">📦</div>
+    </div>
+    <div class="reward-reveal" id="reward-reveal">
+      <span class="reward-icon" id="reward-icon">🎁</span>
+      <div class="rarity-badge rarity-common" id="reward-rarity">SIRADAN</div>
+      <div class="reward-name" id="reward-name">Ödül</div>
+      <div class="reward-ph" id="reward-ph"></div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:24px">
+      <button class="btn-primary" id="btn-open-confirm" onclick="confirmBoxOpen()" style="width:auto;padding:12px 32px">
+        🎲 AÇ!
+      </button>
+      <button class="btn-primary" id="btn-collect" onclick="collectBoxReward()" style="display:none;width:auto;padding:12px 32px;background:linear-gradient(135deg,var(--kmr),#2E7D32)">
+        ✅ TOPLA
+      </button>
+    </div>
   </div>
-
-  <!-- ALT MENÜ -->
-  <nav id="bottomNav">
-    <button class="nav-btn active" onclick="switchScreen('home')" id="nav-home">
-      <span class="nav-icon">⛏️</span>
-      <span class="nav-label">Ana</span>
-    </button>
-    <button class="nav-btn" onclick="switchScreen('shop')" id="nav-shop">
-      <span class="nav-icon">🛒</span>
-      <span class="nav-label">Mağaza</span>
-    </button>
-    <button class="nav-btn" onclick="switchScreen('leaderboard')" id="nav-leaderboard">
-      <span class="nav-icon">🏆</span>
-      <span class="nav-label">Sıralama</span>
-    </button>
-    <button class="nav-btn" onclick="switchScreen('wheel')" id="nav-wheel">
-      <span class="nav-icon">🎡</span>
-      <span class="nav-label">Çark</span>
-    </button>
-    <button class="nav-btn" onclick="switchScreen('settings')" id="nav-settings">
-      <span class="nav-icon">⚙️</span>
-      <span class="nav-label">Ayarlar</span>
-    </button>
-  </nav>
-
 </div>
 
-<!-- MODAL -->
-<div id="modal" class="modal-overlay" onclick="closeModal()">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-title" id="modalTitle"></div>
-    <div class="modal-body" id="modalBody"></div>
-    <button class="modal-close" onclick="closeModal()">Kapat</button>
-  </div>
+<!-- =================== TOAST BİLDİRİM =================== -->
+<div class="toast" id="toast">
+  <span class="t-icon" id="toast-icon">ℹ️</span>
+  <span id="toast-msg">Bildirim</span>
 </div>
 
-<!-- TOAST -->
-<div id="toast" class="toast"></div>
+<!-- =================== OYUN LOGLARI =================== -->
+<script>
+// Mini oyun - Kazı Kazan
+const SCRATCH_PRIZES = [
+  { icon: '🪨', label: '500 KMR', reward: { type: 'kmr', amount: 500 } },
+  { icon: '🪨', label: '1K KMR', reward: { type: 'kmr', amount: 1000 } },
+  { icon: '💵', label: '5 Banknot', reward: { type: 'banknot', amount: 5 } },
+  { icon: '💵', label: '2 Banknot', reward: { type: 'banknot', amount: 2 } },
+  { icon: '💎', label: '1 Çekip', reward: { type: 'cheque', amount: 1 } },
+  { icon: '💥', label: 'KAYBETTIN', reward: null },
+];
 
-<script src="firebase-config.js"></script>
-<script src="game.js"></script>
+window.playScratch = function() {
+  if (!userData) return;
+  if ((userData.kmr || 0) < 500) return showToast('Yeterli KMR yok! 500 KMR gerekli.', 'error');
+
+  userData.kmr -= 500;
+
+  const container = document.getElementById('scratch-cards');
+  const result = document.getElementById('scratch-result');
+  container.innerHTML = '';
+  result.textContent = '';
+
+  // 3 kart seç
+  const cards = [];
+  for (let i = 0; i < 3; i++) {
+    cards.push(SCRATCH_PRIZES[Math.floor(Math.random() * SCRATCH_PRIZES.length)]);
+  }
+
+  // Kazanma kontrolü: 2 eşleşme = kazan
+  let winner = null;
+  for (let i = 0; i < 3; i++) {
+    for (let j = i + 1; j < 3; j++) {
+      if (cards[i].label === cards[j].label && cards[i].reward) {
+        winner = cards[i].reward;
+        break;
+      }
+    }
+    if (winner) break;
+  }
+
+  // Kartları göster (animasyonla)
+  cards.forEach((card, idx) => {
+    const div = document.createElement('div');
+    div.style.cssText = `background:var(--bg-deep);border:1px solid var(--coal-light);border-radius:10px;padding:16px;text-align:center;animation:cardIn 0.3s ${idx * 0.1}s both`;
+    div.innerHTML = `<div style="font-size:32px">${card.icon}</div><div style="font-size:11px;font-family:'Share Tech Mono',monospace;margin-top:4px;color:var(--text-secondary)">${card.label}</div>`;
+    container.appendChild(div);
+  });
+
+  setTimeout(() => {
+    if (winner) {
+      if (winner.type === 'kmr') userData.kmr = (userData.kmr || 0) + winner.amount;
+      else if (winner.type === 'banknot') userData.banknot = (userData.banknot || 0) + winner.amount;
+      else if (winner.type === 'cheque') userData.cheque = (userData.cheque || 0) + winner.amount;
+      result.innerHTML = `<span style="color:var(--kmr)">🎉 KAZANDIN! ${cards.find(c => c.reward === winner)?.label}</span>`;
+      showToast('🎰 Kazandın! ' + cards.find(c => c.reward === winner)?.label, 'success');
+    } else {
+      result.innerHTML = `<span style="color:var(--cheque)">😢 Şans yok! Tekrar dene.</span>`;
+    }
+    saveUserData();
+    renderTopbar();
+  }, 500);
+};
+
+// Şans Çarkı
+const WHEEL_PRIZES = [
+  { label: '2K KMR', color: '#4CAF50', reward: { type: 'kmr', amount: 2000 } },
+  { label: '500 KMR', color: '#388E3C', reward: { type: 'kmr', amount: 500 } },
+  { label: '5 Banknot', color: '#2196F3', reward: { type: 'banknot', amount: 5 } },
+  { label: '10K KMR', color: '#FF9800', reward: { type: 'kmr', amount: 10000 } },
+  { label: '1 Banknot', color: '#1976D2', reward: { type: 'banknot', amount: 1 } },
+  { label: '1 Çekip', color: '#E91E63', reward: { type: 'cheque', amount: 1 } },
+  { label: '3K KMR', color: '#66BB6A', reward: { type: 'kmr', amount: 3000 } },
+  { label: '😢 Boş', color: '#37474F', reward: null },
+];
+
+let wheelSpinning = false;
+let wheelAngle = 0;
+
+function drawWheel() {
+  const canvas = document.getElementById('wheel-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cx = 120, cy = 120, r = 110;
+  const slice = (2 * Math.PI) / WHEEL_PRIZES.length;
+
+  ctx.clearRect(0, 0, 240, 240);
+
+  WHEEL_PRIZES.forEach((p, i) => {
+    const startAngle = wheelAngle + i * slice;
+    const endAngle = startAngle + slice;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(startAngle + slice / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px Rajdhani';
+    ctx.fillText(p.label, r - 10, 4);
+    ctx.restore();
+  });
+
+  // Merkez
+  ctx.beginPath();
+  ctx.arc(cx, cy, 16, 0, 2 * Math.PI);
+  ctx.fillStyle = '#FF8C00';
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+window.spinWheel = function() {
+  if (!userData) return;
+  if (wheelSpinning) return;
+
+  // Günlük kontrol
+  const today = getTodayStr();
+  if (userData.lastWheelSpin === today) {
+    return showToast('Bugünlük çevirdin! Yarın tekrar gel.', 'info');
+  }
+
+  wheelSpinning = true;
+  document.getElementById('wheel-btn').disabled = true;
+
+  const winIndex = Math.floor(Math.random() * WHEEL_PRIZES.length);
+  const targetAngle = -(2 * Math.PI * 5 + winIndex * (2 * Math.PI / WHEEL_PRIZES.length));
+  const duration = 4000;
+  const start = performance.now();
+  const startAngle = wheelAngle;
+
+  function animate(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    wheelAngle = startAngle + targetAngle * ease;
+    drawWheel();
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      wheelSpinning = false;
+      const prize = WHEEL_PRIZES[winIndex];
+      if (prize.reward) {
+        if (prize.reward.type === 'kmr') userData.kmr = (userData.kmr || 0) + prize.reward.amount;
+        else if (prize.reward.type === 'banknot') userData.banknot = (userData.banknot || 0) + prize.reward.amount;
+        else if (prize.reward.type === 'cheque') userData.cheque = (userData.cheque || 0) + prize.reward.amount;
+        document.getElementById('wheel-result').innerHTML = `<span style="color:var(--kmr)">🎉 ${prize.label} kazandın!</span>`;
+        showToast('🎡 ' + prize.label + ' kazandın!', 'success');
+      } else {
+        document.getElementById('wheel-result').innerHTML = `<span style="color:var(--text-secondary)">😢 Bugün şansın yok!</span>`;
+      }
+      userData.lastWheelSpin = today;
+      document.getElementById('wheel-btn').textContent = '✅ Bugün çevirdin';
+      saveUserData();
+      renderTopbar();
+    }
+  }
+
+  requestAnimationFrame(animate);
+};
+
+// Sayfa yüklendiğinde çarkı çiz
+window.addEventListener('load', () => setTimeout(drawWheel, 500));
+</script>
+
+<script src="app.js"></script>
 </body>
 </html>
