@@ -10,175 +10,245 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div id="app" class="app-shell">
-    <header class="topbar">
-      <div>
-        <h1>AİB • Reisza Mining & League</h1>
-        <p class="muted">Dark Cave Economy • KMR / Banknot / Çekip</p>
-      </div>
-      <div class="right-header">
-        <span id="userBadge" class="badge">Misafir</span>
-        <button id="logoutBtn" class="btn ghost hidden">Çıkış</button>
-      </div>
-    </header>
-
-    <main id="authView" class="card auth-card">
-      <h2>Giriş / Kayıt</h2>
-      <p class="muted">E-posta, kullanıcı adı ve şifre ile devam et.</p>
-      <form id="registerForm" class="grid">
-        <input id="regUsername" type="text" placeholder="Kullanıcı adı" minlength="3" maxlength="24" required />
-        <input id="regEmail" type="email" placeholder="E-posta" required />
-        <input id="regPassword" type="password" placeholder="Şifre (min 6)" minlength="6" required />
-        <button class="btn primary" type="submit">Kayıt Ol</button>
-      </form>
-      <hr />
-      <form id="loginForm" class="grid">
-        <input id="loginEmail" type="email" placeholder="E-posta" required />
-        <input id="loginPassword" type="password" placeholder="Şifre" required />
-        <button class="btn" type="submit">Giriş Yap</button>
-      </form>
-      <p id="authMessage" class="muted"></p>
-    </main>
-
-    <main id="gameView" class="hidden">
-      <section class="wallet card premium-wallet">
-        <div class="wallet-box"><span>KMR</span><strong id="kmrValue">0</strong></div>
-        <div class="wallet-box"><span>Banknot</span><strong id="banknotValue">0</strong></div>
-        <div class="wallet-box"><span>Çekip</span><strong id="cekipValue">0</strong></div>
-        <div class="wallet-box"><span>Toplam PH</span><strong id="phValue">0</strong></div>
-        <div class="chest-row wallet-actions">
-          <button id="convertKmrBtn" class="btn small">1000 KMR → 1 Banknot</button>
-          <button id="convertBanknotBtn" class="btn small">1000 Banknot → 1 Çekip</button>
-        </div>
-      </section>
-
-      <nav class="tabs">
+  <div id="app" class="app-shell game-layout">
+    <aside class="sidebar card hidden" id="leftSidebar">
+      <h3 class="sidebar-title">Reisza</h3>
+      <p class="muted">Maden Navigasyonu</p>
+      <nav class="tabs vertical-tabs">
         <button data-tab="home" class="tab-btn active">Maden Mağarası</button>
         <button data-tab="store" class="tab-btn">Mağaza</button>
         <button data-tab="leaderboard" class="tab-btn">Sıralama</button>
         <button data-tab="finance" class="tab-btn">Finans</button>
         <button data-tab="admin" class="tab-btn hidden" id="adminTabBtn">Admin</button>
       </nav>
+    </aside>
 
-      <section id="tab-home" class="tab-panel card active glow-panel">
-        <div class="row">
-          <h3>Maden Deposu</h3>
-          <button id="collectAllBtn" class="btn primary">Hepsini Topla</button>
+    <section class="main-content">
+      <header class="topbar">
+        <div>
+          <h1>AİB • Reisza Mining & League</h1>
+          <p class="muted">Dark Cave Economy • KMR / Banknot / Çekip</p>
         </div>
-        <div class="stats-line">
-          <p>Birikmiş KMR: <strong id="pendingKmrValue">0</strong></p>
-          <p>Slot: <strong id="slotInfo">0 / 0</strong> <button id="expandCaveBtn" class="btn small">+1 Slot (1 Çekip)</button></p>
+        <div class="right-header">
+          <span id="userBadge" class="badge">Misafir</span>
+          <button id="openProfileBtn" class="btn">Profil</button>
+          <button id="logoutBtn" class="btn ghost hidden">Çıkış</button>
         </div>
-        <div id="minersContainer" class="miners-grid"></div>
-      </section>
+      </header>
 
-      <section id="tab-store" class="tab-panel card">
-        <h3>Madenciler</h3>
-        <div id="minerStore" class="miners-grid"></div>
-        <hr />
-        <h3>Sandıklar</h3>
-        <div class="chest-row">
-          <button id="openBasicChestBtn" class="btn">Sandık Aç (1.000 KMR)</button>
-          <button id="openBombChestBtn" class="btn">Bomba Kutusu Aç (5.000 KMR)</button>
-        </div>
-        <p id="chestResult" class="muted"></p>
-        <hr />
-        <h3>Günlük Vitrin</h3>
-        <div id="dailyShop" class="miners-grid"></div>
-      </section>
-
-      <section id="tab-leaderboard" class="tab-panel card">
-        <h3>Global İlk 100</h3>
-        <table class="table">
-          <thead><tr><th>#</th><th>Kullanıcı</th><th>PH</th><th>Lig</th></tr></thead>
-          <tbody id="leaderboardBody"></tbody>
-        </table>
-      </section>
-
-      <section id="tab-finance" class="tab-panel card">
-        <h3>Para Yatırma Talebi</h3>
-        <form id="depositForm" class="grid">
-          <input id="depositAmount" type="number" min="1" step="0.01" placeholder="Talep edilen Çekip" required />
-          <input id="depositReceiptUrl" type="url" placeholder="Dekont URL (zorunlu)" required />
-          <textarea id="depositNote" placeholder="Not (opsiyonel)"></textarea>
-          <button class="btn" type="submit">Yatırma Talebi Gönder</button>
+      <main id="authView" class="card auth-card">
+        <h2>Giriş / Kayıt</h2>
+        <p class="muted">E-posta, kullanıcı adı ve şifre ile devam et.</p>
+        <form id="registerForm" class="grid">
+          <input id="regUsername" type="text" placeholder="Kullanıcı adı" minlength="3" maxlength="24" required />
+          <input id="regEmail" type="email" placeholder="E-posta" required />
+          <input id="regPassword" type="password" placeholder="Şifre (min 6)" minlength="6" required />
+          <button class="btn primary" type="submit">Kayıt Ol</button>
         </form>
         <hr />
-        <h3>Para Çekme Talebi</h3>
-        <form id="withdrawForm" class="grid">
-          <input id="withdrawAmount" type="number" min="0.1" step="0.1" placeholder="Çekmek istediğin Çekip" required />
-          <input id="withdrawName" type="text" placeholder="Ad Soyad" required />
-          <input id="withdrawIban" type="text" placeholder="IBAN" required />
-          <button class="btn" type="submit">Çekim Talebi Gönder</button>
+        <form id="loginForm" class="grid">
+          <input id="loginEmail" type="email" placeholder="E-posta" required />
+          <input id="loginPassword" type="password" placeholder="Şifre" required />
+          <button class="btn" type="submit">Giriş Yap</button>
         </form>
-        <p id="financeMessage" class="muted"></p>
-      </section>
+        <p id="authMessage" class="muted"></p>
+      </main>
 
-      <section id="tab-admin" class="tab-panel card">
-        <h3>Admin Paneli</h3>
-        <p class="muted">Kullanıcı bakiyesi, ban, eşya ve talep yönetimi</p>
-        <div class="admin-grid">
-          <div>
-            <h4>Kullanıcı İşlemleri</h4>
-            <form id="adminUserActionForm" class="grid">
-              <input id="adminTargetUid" type="text" placeholder="Hedef UID" required />
-              <input id="adminDeltaKmr" type="number" step="1" placeholder="KMR +/-" value="0" />
-              <input id="adminDeltaBanknot" type="number" step="1" placeholder="Banknot +/-" value="0" />
-              <input id="adminDeltaCekip" type="number" step="0.1" placeholder="Çekip +/-" value="0" />
-              <select id="adminBanState">
-                <option value="">Ban durumunu değiştirme</option>
-                <option value="ban">Banla</option>
-                <option value="unban">Ban kaldır</option>
-              </select>
-              <button class="btn" type="submit">Uygula</button>
-            </form>
-            <form id="adminSetRoleForm" class="grid">
-              <input id="adminRoleUid" type="text" placeholder="Admin rolü ver/al UID" required />
-              <select id="adminRoleAction">
-                <option value="grant">Admin Yetkisi Ver</option>
-                <option value="revoke">Admin Yetkisini Al</option>
-              </select>
-              <button class="btn" type="submit">Rol İşlemi</button>
-            </form>
+      <main id="gameView" class="hidden">
+        <section class="wallet card premium-wallet">
+          <div class="wallet-box"><span>KMR</span><strong id="kmrValue">0</strong></div>
+          <div class="wallet-box"><span>Banknot</span><strong id="banknotValue">0</strong></div>
+          <div class="wallet-box"><span>Çekip</span><strong id="cekipValue">0</strong></div>
+          <div class="wallet-box"><span>Toplam PH</span><strong id="phValue">0</strong></div>
+          <div class="chest-row wallet-actions">
+            <button id="convertKmrBtn" class="btn small">1000 KMR → 1 Banknot</button>
+            <button id="convertBanknotBtn" class="btn small">1000 Banknot → 1 Çekip</button>
           </div>
-          <div>
-            <h4>Eşya Ekle / Çıkar</h4>
-            <form id="adminItemActionForm" class="grid">
-              <input id="adminItemUid" type="text" placeholder="Kullanıcı UID" required />
-              <input id="adminItemName" type="text" placeholder="Eşya adı" required />
-              <input id="adminItemPh" type="number" min="1" max="500" placeholder="PH" required />
-              <select id="adminItemAction">
-                <option value="add">Ekle</option>
-                <option value="remove">Çıkar (isim+PH eşleşme)</option>
-              </select>
-              <button class="btn" type="submit">Eşya İşlemi</button>
-            </form>
-            <form id="adminMinerActionForm" class="grid">
-              <input id="adminMinerUid" type="text" placeholder="Madenci işlemi UID" required />
-              <select id="adminMinerType">
-                <option value="kubra">Kübra</option>
-                <option value="beyza">Beyza</option>
-                <option value="mehmet">Mehmet</option>
-                <option value="sevki">Şevki</option>
-                <option value="ali">Ali</option>
-              </select>
-              <select id="adminMinerAction">
-                <option value="add">Madenci Ekle</option>
-                <option value="remove">Son Madenciyi Sil</option>
-              </select>
-              <button class="btn" type="submit">Madenci İşlemi</button>
-            </form>
+        </section>
+
+        <section id="tab-home" class="tab-panel card active glow-panel cave-panel">
+          <div class="row">
+            <h3>Maden Deposu</h3>
+            <button id="collectAllBtn" class="btn primary">Hepsini Topla</button>
           </div>
-        </div>
-        <hr />
-        <h4>Bekleyen Yatırma Talepleri</h4>
-        <div id="adminDepositRequests"></div>
-        <hr />
-        <h4>Bekleyen Çekim Talepleri</h4>
-        <div id="adminWithdrawRequests"></div>
-        <p id="adminMessage" class="muted"></p>
-      </section>
-    </main>
+          <div class="stats-line">
+            <p>Birikmiş KMR: <strong id="pendingKmrValue">0</strong></p>
+            <p>Slot: <strong id="slotInfo">0 / 0</strong> <button id="expandCaveBtn" class="btn small">+1 Slot (1 Çekip)</button></p>
+          </div>
+          <div id="minersContainer" class="miners-grid"></div>
+        </section>
+
+        <section id="tab-store" class="tab-panel card">
+          <h3>Madenciler</h3>
+          <div id="minerStore" class="miners-grid"></div>
+          <hr />
+          <h3>Sandıklar</h3>
+          <div class="chest-showcase">
+            <article class="chest-card basic-chest">
+              <div class="chest-visual"></div>
+              <h4>Standart Sandık</h4>
+              <p>Starter/Epic eşya veya 0.05 Çekip</p>
+              <button id="openBasicChestBtn" class="btn">Sandık Aç (1.000 KMR)</button>
+            </article>
+            <article class="chest-card bomb-chest">
+              <div class="chest-visual"></div>
+              <h4>Bomba Kutusu</h4>
+              <p>Epic/Legendary eşya veya 0.5 Çekip</p>
+              <button id="openBombChestBtn" class="btn">Bomba Kutusu Aç (5.000 KMR)</button>
+            </article>
+          </div>
+          <p id="chestResult" class="muted"></p>
+          <hr />
+          <h3>Günlük Vitrin</h3>
+          <div id="dailyShop" class="miners-grid"></div>
+        </section>
+
+        <section id="tab-leaderboard" class="tab-panel card">
+          <h3>Global İlk 100</h3>
+          <table class="table">
+            <thead><tr><th>#</th><th>Kullanıcı</th><th>PH</th><th>Lig</th></tr></thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </section>
+
+        <section id="tab-finance" class="tab-panel card">
+          <h3>Para Yatırma Talebi</h3>
+          <form id="depositForm" class="grid">
+            <input id="depositAmount" type="number" min="1" step="0.01" placeholder="Talep edilen Çekip" required />
+            <input id="depositReceiptUrl" type="url" placeholder="Dekont URL (zorunlu)" required />
+            <textarea id="depositNote" placeholder="Not (opsiyonel)"></textarea>
+            <button class="btn" type="submit">Yatırma Talebi Gönder</button>
+          </form>
+          <hr />
+          <h3>Para Çekme Talebi</h3>
+          <form id="withdrawForm" class="grid">
+            <input id="withdrawAmount" type="number" min="0.1" step="0.1" placeholder="Çekmek istediğin Çekip" required />
+            <input id="withdrawName" type="text" placeholder="Ad Soyad" required />
+            <input id="withdrawIban" type="text" placeholder="IBAN" required />
+            <button class="btn" type="submit">Çekim Talebi Gönder</button>
+          </form>
+          <p id="financeMessage" class="muted"></p>
+        </section>
+
+        <section id="tab-admin" class="tab-panel card">
+          <h3>Admin Paneli</h3>
+          <p class="muted">Kullanıcı bakiyesi, ban, eşya ve talep yönetimi</p>
+          <div class="admin-grid">
+            <div>
+              <h4>Kullanıcı İşlemleri</h4>
+              <form id="adminUserActionForm" class="grid">
+                <input id="adminTargetUid" type="text" placeholder="Hedef UID" required />
+                <input id="adminDeltaKmr" type="number" step="1" placeholder="KMR +/-" value="0" />
+                <input id="adminDeltaBanknot" type="number" step="1" placeholder="Banknot +/-" value="0" />
+                <input id="adminDeltaCekip" type="number" step="0.1" placeholder="Çekip +/-" value="0" />
+                <select id="adminBanState">
+                  <option value="">Ban durumunu değiştirme</option>
+                  <option value="ban">Banla</option>
+                  <option value="unban">Ban kaldır</option>
+                </select>
+                <button class="btn" type="submit">Uygula</button>
+              </form>
+              <form id="adminSetRoleForm" class="grid">
+                <input id="adminRoleUid" type="text" placeholder="Admin rolü ver/al UID" required />
+                <select id="adminRoleAction">
+                  <option value="grant">Admin Yetkisi Ver</option>
+                  <option value="revoke">Admin Yetkisini Al</option>
+                </select>
+                <button class="btn" type="submit">Rol İşlemi</button>
+              </form>
+            </div>
+            <div>
+              <h4>Eşya Ekle / Çıkar</h4>
+              <form id="adminItemActionForm" class="grid">
+                <input id="adminItemUid" type="text" placeholder="Kullanıcı UID" required />
+                <input id="adminItemName" type="text" placeholder="Eşya adı" required />
+                <input id="adminItemPh" type="number" min="1" max="500" placeholder="PH" required />
+                <select id="adminItemAction">
+                  <option value="add">Ekle</option>
+                  <option value="remove">Çıkar (isim+PH eşleşme)</option>
+                </select>
+                <button class="btn" type="submit">Eşya İşlemi</button>
+              </form>
+              <form id="adminMinerActionForm" class="grid">
+                <input id="adminMinerUid" type="text" placeholder="Madenci işlemi UID" required />
+                <select id="adminMinerType">
+                  <option value="kubra">Kübra</option>
+                  <option value="beyza">Beyza</option>
+                  <option value="mehmet">Mehmet</option>
+                  <option value="sevki">Şevki</option>
+                  <option value="ali">Ali</option>
+                </select>
+                <select id="adminMinerAction">
+                  <option value="add">Madenci Ekle</option>
+                  <option value="remove">Son Madenciyi Sil</option>
+                </select>
+                <button class="btn" type="submit">Madenci İşlemi</button>
+              </form>
+            </div>
+          </div>
+          <hr />
+          <h4>Bekleyen Yatırma Talepleri</h4>
+          <div id="adminDepositRequests"></div>
+          <hr />
+          <h4>Bekleyen Çekim Talepleri</h4>
+          <div id="adminWithdrawRequests"></div>
+          <hr />
+          <h4>Destek Merkezi (DM)</h4>
+          <div class="admin-grid">
+            <div>
+              <div id="adminSupportTickets"></div>
+            </div>
+            <div>
+              <div id="adminSupportMessages" class="support-messages"></div>
+              <form id="adminSupportReplyForm" class="grid">
+                <textarea id="adminSupportReplyText" placeholder="Kullanıcıya cevap yaz..." required></textarea>
+                <div class="chest-row">
+                  <button class="btn" type="submit">Cevap Gönder</button>
+                  <button id="adminCloseTicketBtn" class="btn ghost" type="button">Talebi Kapat</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <p id="adminMessage" class="muted"></p>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <div id="profileModal" class="modal hidden">
+    <div class="modal-card card">
+      <div class="row">
+        <h3>Profil Ayarları</h3>
+        <button id="closeProfileBtn" class="btn small">Kapat</button>
+      </div>
+      <form id="profileForm" class="grid">
+        <input id="profileUsername" type="text" minlength="3" maxlength="24" placeholder="Yeni kullanıcı adı" required />
+        <button class="btn primary" type="submit">Profili Güncelle</button>
+      </form>
+      <p id="profileMessage" class="muted"></p>
+    </div>
+  </div>
+
+  <div id="supportWidget" class="support-widget hidden">
+    <button id="toggleSupportBtn" class="support-toggle btn">Destek</button>
+    <div id="supportPanel" class="support-panel card hidden">
+      <h4>Canlı Destek</h4>
+      <p class="muted">Sorununu yaz, ekip en kısa sürede cevaplasın.</p>
+      <form id="supportForm" class="grid">
+        <input id="supportTitle" type="text" placeholder="Konu" required />
+        <textarea id="supportMessageInput" placeholder="Mesajın" required></textarea>
+        <button class="btn" type="submit">Talep Gönder</button>
+      </form>
+      <hr />
+      <h4>Mesajlarım</h4>
+      <div id="supportTicketsList"></div>
+      <div id="supportMessages" class="support-messages"></div>
+      <form id="supportReplyForm" class="grid">
+        <textarea id="supportReplyInput" placeholder="Açık talebe mesaj yaz..." required></textarea>
+        <button class="btn" type="submit">Mesaj Gönder</button>
+      </form>
+      <p id="supportMessage" class="muted"></p>
+    </div>
   </div>
 
   <script type="module" src="./app.js"></script>
