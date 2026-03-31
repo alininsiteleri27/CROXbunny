@@ -1,328 +1,73 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reisza Mining & League</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REISZA Mining & League</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
-        <!-- Auth Screen -->
-        <div id="auth-screen" class="screen active">
-            <div class="auth-container">
-                <div class="logo">
-                    <div class="logo-icon">⛏️</div>
-                    <h1>REISZA</h1>
-                    <p>Mining & League</p>
-                </div>
-                
-                <div class="auth-tabs">
-                    <button class="auth-tab active" onclick="switchAuthTab('login')">Giriş Yap</button>
-                    <button class="auth-tab" onclick="switchAuthTab('register')">Kayıt Ol</button>
-                </div>
+  <div id="auth-section">
+    <h1>AİB Mining ⛏️</h1>
+    <input type="email" id="email" placeholder="E-posta">
+    <input type="password" id="password" placeholder="Şifre">
+    <button id="login-btn">Giriş</button>
+    <button id="register-btn">Kayıt Ol</button>
+  </div>
 
-                <form id="login-form" class="auth-form">
-                    <input type="email" id="login-email" placeholder="E-posta" required>
-                    <input type="password" id="login-password" placeholder="Şifre" required>
-                    <button type="submit" class="btn-primary">Giriş Yap</button>
-                </form>
+  <div id="game-section" class="hidden">
+    <header>
+      <h2>🪙 KMR: <span id="kmr-balance">0</span> | 💵 Banknot: <span id="banknote-balance">0</span> | 💳 Çekip: <span id="cekip-balance">0</span></h2>
+      <button id="logout-btn">Çıkış</button>
+    </header>
 
-                <form id="register-form" class="auth-form hidden">
-                    <input type="text" id="register-username" placeholder="Kullanıcı Adı" required>
-                    <input type="email" id="register-email" placeholder="E-posta" required>
-                    <input type="password" id="register-password" placeholder="Şifre (min 6 karakter)" required>
-                    <button type="submit" class="btn-primary">Kayıt Ol</button>
-                </form>
-            </div>
-        </div>
+    <nav>
+      <button class="tab-btn" data-tab="home">Maden</button>
+      <button class="tab-btn" data-tab="store">Mağaza</button>
+      <button class="tab-btn" data-tab="leaderboard">Sıralama</button>
+      <button class="tab-btn" data-tab="finance">Finans</button>
+      <button class="tab-btn admin-only" data-tab="admin">Admin Paneli</button>
+    </nav>
 
-        <!-- Main App -->
-        <div id="main-app" class="hidden">
-            <!-- Header -->
-            <header class="app-header">
-                <div class="user-info">
-                    <span id="header-username">@username</span>
-                    <span id="admin-badge" class="admin-badge hidden">ADMIN</span>
-                </div>
-                <div class="currencies">
-                    <div class="currency">
-                        <span class="currency-icon">⚫</span>
-                        <span id="kmr-balance">0</span>
-                        <small>KMR</small>
-                    </div>
-                    <div class="currency">
-                        <span class="currency-icon">💵</span>
-                        <span id="banknote-balance">0</span>
-                        <small>Banknot</small>
-                    </div>
-                    <div class="currency">
-                        <span class="currency-icon">💎</span>
-                        <span id="cekip-balance">0</span>
-                        <small>Çekip</small>
-                    </div>
-                </div>
-                <button onclick="logout()" class="btn-logout">Çıkış</button>
-            </header>
+    <!-- HOME -->
+    <section id="home" class="tab active">
+      <h3>Madencilerim</h3>
+      <div id="miners"></div>
+      <button id="collect-btn">💰 Hepsini Topla</button>
+    </section>
 
-            <!-- Navigation -->
-            <nav class="bottom-nav">
-                <button onclick="navigateTo('mine')" class="nav-btn active" data-page="mine">
-                    <span>⛏️</span>
-                    <small>Maden</small>
-                </button>
-                <button onclick="navigateTo('store')" class="nav-btn" data-page="store">
-                    <span>🛒</span>
-                    <small>Mağaza</small>
-                </button>
-                <button onclick="navigateTo('inventory')" class="nav-btn" data-page="inventory">
-                    <span>🎒</span>
-                    <small>Envanter</small>
-                </button>
-                <button onclick="navigateTo('leaderboard')" class="nav-btn" data-page="leaderboard">
-                    <span>🏆</span>
-                    <small>Sıralama</small>
-                </button>
-                <button onclick="navigateTo('finance')" class="nav-btn" data-page="finance">
-                    <span>💰</span>
-                    <small>Finans</small>
-                </button>
-                <button id="admin-nav-btn" onclick="navigateTo('admin')" class="nav-btn hidden" data-page="admin">
-                    <span>⚙️</span>
-                    <small>Admin</small>
-                </button>
-            </nav>
+    <!-- STORE -->
+    <section id="store" class="tab">
+      <h3>Mağaza</h3>
+      <div id="miners-store"></div>
+      <button id="buy-chest">🎁 Sandık (1000 KMR)</button>
+      <button id="buy-bomb">💣 Bomba Kutusu (5000 KMR)</button>
+    </section>
 
-            <!-- Pages -->
-            <main class="main-content">
-                <!-- Mine Page -->
-                <div id="page-mine" class="page active">
-                    <div class="stats-card">
-                        <h3>Hash Gücü (PH)</h3>
-                        <div class="ph-display">
-                            <span id="total-ph">0</span>
-                            <small>PH</small>
-                        </div>
-                        <div class="league-info">
-                            <span id="current-league">Çırak</span>
-                            <div class="league-progress">
-                                <div id="league-bar" class="progress-bar"></div>
-                            </div>
-                            <small id="next-league">Sıradaki: Amatör</small>
-                        </div>
-                    </div>
+    <!-- LEADERBOARD -->
+    <section id="leaderboard" class="tab">
+      <h3>🏆 Global Sıralama</h3>
+      <ul id="leaderboard-list"></ul>
+    </section>
 
-                    <div class="collect-section">
-                        <div class="kmr-storage">
-                            <div class="storage-header">
-                                <span>Biriken KMR</span>
-                                <span id="stored-kmr">0</span>
-                            </div>
-                            <div class="storage-bar">
-                                <div id="storage-fill" class="storage-fill"></div>
-                            </div>
-                            <small>Max: <span id="max-storage">10000</span> KMR</small>
-                        </div>
-                        <button onclick="collectAllKMR()" class="btn-collect">Hepsini Topla</button>
-                    </div>
+    <!-- FINANCE -->
+    <section id="finance" class="tab">
+      <h3>💱 Finansal İşlemler</h3>
+      <button id="deposit-btn">💸 Para Yatırma Talebi</button>
+      <button id="withdraw-btn">🏦 Para Çekme Talebi</button>
+      <div id="finance-form"></div>
+    </section>
 
-                    <div class="miners-section">
-                        <h3>Madencilerim <span id="miner-slots">0/5</span></h3>
-                        <div id="miners-grid" class="miners-grid">
-                            <!-- Miners will be loaded here -->
-                        </div>
-                        <button onclick="expandMine()" class="btn-expand">
-                            Mağara Genişlet (10 Çekip)
-                        </button>
-                    </div>
-                </div>
+    <!-- ADMIN -->
+    <section id="admin" class="tab">
+      <h3>👑 Admin Paneli</h3>
+      <button id="add-item">Eşya Ekle</button>
+      <button id="ban-user">Kullanıcı Banla</button>
+      <button id="add-balance">Para Ekle</button>
+      <div id="admin-console"></div>
+    </section>
+  </div>
 
-                <!-- Store Page -->
-                <div id="page-store" class="page">
-                    <div class="store-tabs">
-                        <button onclick="switchStoreTab('miners')" class="store-tab active">Madenciler</button>
-                        <button onclick="switchStoreTab('crates')" class="store-tab">Sandıklar</button>
-                        <button onclick="switchStoreTab('daily')" class="store-tab">Günlük</button>
-                    </div>
-
-                    <div id="store-miners" class="store-content active">
-                        <div id="miners-shop" class="shop-grid">
-                            <!-- Miners will be loaded here -->
-                        </div>
-                    </div>
-
-                    <div id="store-crates" class="store-content">
-                        <div class="crate-card" onclick="openCrate('basic')">
-                            <div class="crate-icon">📦</div>
-                            <h4>Sandık</h4>
-                            <p>Starter/Epic Eşya veya 0.05 Çekip</p>
-                            <div class="price">1.000 KMR</div>
-                        </div>
-                        <div class="crate-card" onclick="openCrate('bomb')">
-                            <div class="crate-icon">💣</div>
-                            <h4>Bomba Kutusu</h4>
-                            <p>Epic/Legendary Eşya veya 0.5 Çekip</p>
-                            <div class="price">5.000 KMR</div>
-                        </div>
-                    </div>
-
-                    <div id="store-daily" class="store-content">
-                        <div id="daily-items" class="shop-grid">
-                            <!-- Daily items will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Inventory Page -->
-                <div id="page-inventory" class="page">
-                    <div class="inventory-stats">
-                        <div class="stat-card">
-                            <span>Toplam Eşya</span>
-                            <strong id="total-items">0</strong>
-                        </div>
-                        <div class="stat-card">
-                            <span>Legendary</span>
-                            <strong id="legendary-count">0</strong>
-                        </div>
-                    </div>
-                    <div id="inventory-grid" class="inventory-grid">
-                        <!-- Items will be loaded here -->
-                    </div>
-                </div>
-
-                <!-- Leaderboard Page -->
-                <div id="page-leaderboard" class="page">
-                    <div class="league-tabs">
-                        <button onclick="filterLeaderboard('all')" class="league-tab active">Tümü</button>
-                        <button onclick="filterLeaderboard('cirak')" class="league-tab">Çırak</button>
-                        <button onclick="filterLeaderboard('amatör')" class="league-tab">Amatör</button>
-                        <button onclick="filterLeaderboard('usta')" class="league-tab">Usta</button>
-                    </div>
-                    <div id="leaderboard-list" class="leaderboard-list">
-                        <!-- Leaderboard will be loaded here -->
-                    </div>
-                </div>
-
-                <!-- Finance Page -->
-                <div id="page-finance" class="page">
-                    <div class="finance-tabs">
-                        <button onclick="switchFinanceTab('deposit')" class="finance-tab active">Para Yatır</button>
-                        <button onclick="switchFinanceTab('withdraw')" class="finance-tab">Para Çek</button>
-                    </div>
-
-                    <div id="finance-deposit" class="finance-content active">
-                        <div class="info-card">
-                            <h4>Banka Hesabı</h4>
-                            <p>IBAN: TR12 3456 7890 1234 5678 9012 34</p>
-                            <p>Alıcı: Reisza Mining A.Ş.</p>
-                        </div>
-                        <form onsubmit="submitDeposit(event)" class="finance-form">
-                            <input type="number" id="deposit-amount" placeholder="Miktar (Çekip)" step="0.01" required>
-                            <input type="url" id="deposit-receipt" placeholder="Dekont URL'si" required>
-                            <button type="submit" class="btn-primary">Talep Gönder</button>
-                        </form>
-                        <div id="deposit-history" class="history-list">
-                            <!-- History will be loaded here -->
-                        </div>
-                    </div>
-
-                    <div id="finance-withdraw" class="finance-content">
-                        <form onsubmit="submitWithdraw(event)" class="finance-form">
-                            <input type="number" id="withdraw-amount" placeholder="Miktar (Çekip)" step="0.01" required>
-                            <input type="text" id="withdraw-iban" placeholder="IBAN" required>
-                            <input type="text" id="withdraw-name" placeholder="Ad Soyad" required>
-                            <button type="submit" class="btn-primary">Çekim Talebi</button>
-                        </form>
-                        <div id="withdraw-history" class="history-list">
-                            <!-- History will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Admin Page -->
-                <div id="page-admin" class="page">
-                    <div class="admin-tabs">
-                        <button onclick="switchAdminTab('users')" class="admin-tab active">Kullanıcılar</button>
-                        <button onclick="switchAdminTab('deposits')" class="admin-tab">Yatırımlar</button>
-                        <button onclick="switchAdminTab('withdraws')" class="admin-tab">Çekimler</button>
-                        <button onclick="switchAdminTab('items')" class="admin-tab">Eşya Yönetimi</button>
-                    </div>
-
-                    <div id="admin-users" class="admin-content active">
-                        <input type="text" id="user-search" placeholder="Kullanıcı ara..." onkeyup="searchUsers()">
-                        <div id="admin-users-list" class="admin-list">
-                            <!-- Users will be loaded here -->
-                        </div>
-                    </div>
-
-                    <div id="admin-deposits" class="admin-content">
-                        <div id="admin-deposits-list" class="admin-list">
-                            <!-- Deposits will be loaded here -->
-                        </div>
-                    </div>
-
-                    <div id="admin-withdraws" class="admin-content">
-                        <div id="admin-withdraws-list" class="admin-list">
-                            <!-- Withdraws will be loaded here -->
-                        </div>
-                    </div>
-
-                    <div id="admin-items" class="admin-content">
-                        <button onclick="showAddItemModal()" class="btn-primary">Yeni Eşya Ekle</button>
-                        <div id="admin-items-list" class="admin-list">
-                            <!-- Items will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <!-- Modals -->
-    <div id="modal-overlay" class="modal-overlay hidden" onclick="closeModal()"></div>
-    
-    <div id="crate-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Sandık Açılıyor...</h3>
-            <div class="crate-animation">📦</div>
-            <div id="crate-result" class="crate-result hidden"></div>
-        </div>
-    </div>
-
-    <div id="item-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Eşya Detayı</h3>
-            <div id="item-details"></div>
-        </div>
-    </div>
-
-    <div id="admin-user-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Kullanıcı Yönetimi</h3>
-            <div id="admin-user-details"></div>
-        </div>
-    </div>
-
-    <div id="add-item-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Yeni Eşya Ekle</h3>
-            <form onsubmit="addNewItem(event)">
-                <input type="text" id="new-item-name" placeholder="Eşya Adı" required>
-                <select id="new-item-rarity" required>
-                    <option value="starter">Starter</option>
-                    <option value="epic">Epic</option>
-                    <option value="legendary">Legendary</option>
-                </select>
-                <input type="number" id="new-item-ph" placeholder="PH Değeri" required>
-                <input type="url" id="new-item-image" placeholder="Görsel URL">
-                <button type="submit" class="btn-primary">Ekle</button>
-            </form>
-        </div>
-    </div>
-
-    <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
