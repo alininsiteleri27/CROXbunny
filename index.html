@@ -313,10 +313,9 @@
                 <textarea id="depositNote" placeholder="Dekont URL'i veya ödeme açıklaması" rows="3"></textarea>
               </div>
               <div class="form-group">
-                <label>Dekont Görseli (Opsiyonel)</label>
-                <input type="file" id="depositReceipt" accept="image/*" class="file-input" />
-                <label for="depositReceipt" class="file-label">📎 Görsel Seç</label>
-                <span id="depositFileName" class="file-name"></span>
+                <label>Dekont Görseli URL (Opsiyonel)</label>
+                <input type="url" id="depositReceiptUrl" placeholder="https://imgur.com/dekont-linki" />
+                <p style="font-size:11px;color:var(--text-muted);margin-top:5px;">📌 Dekont görselini <a href="https://imgur.com" target="_blank" style="color:var(--gold)">imgur.com</a>'a yükleyip linkini yapıştır</p>
               </div>
               <button type="submit" class="btn-gold btn-full">Talep Gönder</button>
             </form>
