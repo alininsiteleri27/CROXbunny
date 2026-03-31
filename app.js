@@ -1,10 +1,60 @@
 'use strict';
 
 // ═══════════════════════════════════════════════════════════════
-//  MadenOyunu — Frontend App Logic
+//  MadenOyunu — Firebase Client SDK (GitHub Pages compatible)
 // ═══════════════════════════════════════════════════════════════
+firebase.initializeApp({
+  apiKey: 'AIzaSyDuKLuoePZ6mNsKhQBGXumxMwF0UKTQvc8',
+  authDomain: 'oyun-75056.firebaseapp.com',
+  databaseURL: 'https://oyun-75056-default-rtdb.firebaseio.com',
+  projectId: 'oyun-75056',
+  storageBucket: 'oyun-75056.firebasestorage.app',
+  messagingSenderId: '980660244755',
+  appId: '1:980660244755:web:47889c4b6637ab05cdcae6'
+});
+const fbAuth = firebase.auth();
+const fbDb   = firebase.database();
 
-const API = ''; // same-origin (server.js serves static files)
+// ─── Firebase Helpers ──────────────────────────────────────────
+async function fbGetUser(uid) {
+  const s = await fbDb.ref(`users/${uid}`).once('value');
+  return s.val();
+}
+async function fbUpdateUser(uid, updates) {
+  await fbDb.ref(`users/${uid}`).update(updates);
+}
+async function fbUpdateLeaderboard(uid, username, totalPH, league) {
+  await fbDb.ref(`leaderboard/${uid}`).set({ username, totalPH, league, updatedAt: Date.now() });
+}
+function fbCalcLeague(ph) {
+  if (ph >= 2000) return 'usta';
+  if (ph >= 500)  return 'amator';
+  return 'cirak';
+}
+function fbCalcPH(equipment) {
+  // PH values indexed by item id
+  const PH=[0,2,3,2,3,4,2,3,4,5,5,6,6,7,7,8,8,9,9,10,10,4,5,6,8,10,12,14,15,16,17,18,19,20,20,21,22,22,23,24,25,25,26,27,28,28,29,29,30,13,30,35,38,40,42,44,46,48,50,52,54,56,58,60,62,65,67,68,70,72,74,76,33,78,79,80,90,95,100,105,110,115,120,125,130,135,140,150,155,160,165,168,171,174,177,180,185,188,192,196,200];
+  let total = 0;
+  for (const [id, cnt] of Object.entries(equipment || {})) {
+    total += (PH[parseInt(id)] || 0) * cnt;
+  }
+  return total;
+}
+function fbGenerateReward(boxId) {
+  const r = Math.random() * 100;
+  const pick = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+  const pickArr = (arr) => arr[Math.floor(Math.random()*arr.length)];
+  const common=Array.from({length:25},(_,i)=>i+1),uncommon=Array.from({length:25},(_,i)=>i+26);
+  const rare=Array.from({length:25},(_,i)=>i+51),epic=Array.from({length:12},(_,i)=>i+76);
+  const legendary=Array.from({length:13},(_,i)=>i+88);
+  switch(boxId){
+    case'komur': if(r<70)return{type:'kmr',amount:pick(100,500)}; if(r<90)return{type:'banknot',amount:pick(1,5)}; return{type:'equipment',itemId:pickArr(common)};
+    case'bronz': if(r<40)return{type:'kmr',amount:pick(500,2000)}; if(r<75)return{type:'banknot',amount:pick(5,20)}; if(r<95)return{type:'equipment',itemId:pickArr(common)}; return{type:'equipment',itemId:pickArr(uncommon)};
+    case'gumus': if(r<35)return{type:'banknot',amount:pick(20,100)}; if(r<70)return{type:'equipment',itemId:pickArr(uncommon)}; if(r<95)return{type:'equipment',itemId:pickArr(rare)}; return{type:'equipment',itemId:pickArr(epic)};
+    case'altin': if(r<20)return{type:'banknot',amount:pick(100,500)}; if(r<60)return{type:'equipment',itemId:pickArr(rare)}; if(r<90)return{type:'equipment',itemId:pickArr(epic)}; return{type:'equipment',itemId:pickArr(legendary)};
+    default: return{type:'kmr',amount:100};
+  }
+}
 
 // ─── Equipment Data (100 items) ────────────────────────────────
 const EQUIPMENT = [
@@ -147,8 +197,7 @@ const RARITY_LABEL = { common:'⚪ Common', uncommon:'🟢 Uncommon', rare:'🔵
 
 // ─── State ─────────────────────────────────────────────────────
 let state = {
-  token: localStorage.getItem('maden_token') || null,
-  uid:   null,
+  uid:   localStorage.getItem('maden_uid') || null,
   user:  null,
   currentView: 'cave',
   pendingKmr:  0,
@@ -156,42 +205,25 @@ let state = {
 };
 
 // ─── Init ──────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', async () => {
+window.addEventListener('DOMContentLoaded', () => {
   spawnParticles();
   buildStalactites();
+  if (window.Telegram?.WebApp) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
 
-  // Telegram WebApp init
-  if (window.Telegram?.WebApp) {
-    Telegram.WebApp.ready();
-    Telegram.WebApp.expand();
-  }
-
-  if (state.token) {
-    try {
-      const res = await api('POST', '/api/verify', { token: state.token });
-      if (res.success) {
-        state.uid  = res.uid;
-        state.user = res.user;
-        showGame();
-        return;
-      }
-    } catch {}
-    localStorage.removeItem('maden_token');
-    state.token = null;
-  }
-  hideLoading();
-  show('page-auth');
+  fbAuth.onAuthStateChanged(async (fbUser) => {
+    if (fbUser) {
+      state.uid  = fbUser.uid;
+      state.user = await fbGetUser(fbUser.uid);
+      if (!state.user) { await fbAuth.signOut(); hideLoading(); show('page-auth'); return; }
+      localStorage.setItem('maden_uid', fbUser.uid);
+      showGame();
+    } else {
+      localStorage.removeItem('maden_uid');
+      hideLoading();
+      show('page-auth');
+    }
+  });
 });
-
-// ─── API helper ────────────────────────────────────────────────
-async function api(method, path, body) {
-  const opts = { method, headers: {'Content-Type':'application/json'} };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(API + path, opts);
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.error || 'Hata');
-  return data;
-}
 
 // ─── Auth ──────────────────────────────────────────────────────
 function switchAuthTab(tab) {
@@ -204,23 +236,32 @@ function switchAuthTab(tab) {
 }
 
 async function doLogin() {
-  const username = qs('#login-username').value.trim();
+  const username = qs('#login-username').value.trim().toLowerCase();
   const password = qs('#login-password').value;
   const errEl = qs('#login-error');
   errEl.innerHTML = '';
   if (!username || !password) { showAuthError(errEl, 'Tüm alanları doldurun'); return; }
   setBtnLoading('login-btn', true);
   try {
-    const res = await api('POST', '/api/login', { username, password });
-    state.token = res.token;
-    state.uid   = res.uid;
-    state.user  = res.user;
-    localStorage.setItem('maden_token', res.token);
-    if (res.streakBonus > 0) {
-      state.pendingStreak = { bonus: res.streakBonus, streak: res.newStreak };
-    }
-    showGame();
-  } catch(e) { showAuthError(errEl, e.message); }
+    // username → email mapping stored in RTDB
+    const snap = await fbDb.ref(`usernames/${username}`).once('value');
+    if (!snap.exists()) throw new Error('Kullanıcı adı veya şifre hatalı');
+    const email = snap.val(); // stored as email
+    await fbAuth.signInWithEmailAndPassword(email, password);
+    // streak bonus
+    const uid = fbAuth.currentUser.uid;
+    const user = await fbGetUser(uid);
+    const now = Date.now();
+    const lastLogin = user?.stats?.lastLogin || 0;
+    const daysSince = Math.floor((now - lastLogin) / 86400000);
+    let streakBonus = 0, newStreak = user?.stats?.loginStreak || 1;
+    if (daysSince === 1) { newStreak++; streakBonus = Math.min(newStreak * 100, 1000); }
+    else if (daysSince > 1) { newStreak = 1; streakBonus = 100; }
+    const upd = { 'stats/lastLogin': now, 'stats/loginStreak': newStreak, 'lastActive': now };
+    if (streakBonus > 0) upd['balance/kmr'] = (user?.balance?.kmr || 0) + streakBonus;
+    await fbUpdateUser(uid, upd);
+    if (streakBonus > 0) state.pendingStreak = { bonus: streakBonus, streak: newStreak };
+  } catch(e) { showAuthError(errEl, e.message.includes('auth')||e.message.includes('password')||e.message.includes('user')?'Kullanıcı adı veya şifre hatalı':e.message); }
   finally    { setBtnLoading('login-btn', false); }
 }
 
@@ -231,22 +272,38 @@ async function doRegister() {
   const errEl = qs('#register-error');
   errEl.innerHTML = '';
   if (!username || !password || !password2) { showAuthError(errEl, 'Tüm alanları doldurun'); return; }
-  if (password !== password2)               { showAuthError(errEl, 'Şifreler eşleşmiyor'); return; }
+  if (username.length < 3 || username.length > 20) { showAuthError(errEl, 'Kullanıcı adı 3-20 karakter olmalı'); return; }
+  if (password !== password2)  { showAuthError(errEl, 'Şifreler eşleşmiyor'); return; }
+  if (password.length < 8)     { showAuthError(errEl, 'Şifre en az 8 karakter olmalı'); return; }
+  if (!/[A-Z]/.test(password)) { showAuthError(errEl, 'Şifre en az 1 büyük harf içermeli'); return; }
+  if (!/[0-9]/.test(password)) { showAuthError(errEl, 'Şifre en az 1 rakam içermeli'); return; }
   setBtnLoading('register-btn', true);
   try {
-    const res = await api('POST', '/api/register', { username, password });
-    state.token = res.token;
-    state.uid   = res.uid;
-    state.user  = res.user;
-    localStorage.setItem('maden_token', res.token);
-    showGame();
+    const ukey = username.toLowerCase();
+    const existing = await fbDb.ref(`usernames/${ukey}`).once('value');
+    if (existing.exists()) throw new Error('Bu kullanıcı adı alınmış');
+    const email = `${ukey}@madengame.app`;
+    const cred = await fbAuth.createUserWithEmailAndPassword(email, password);
+    const uid = cred.user.uid;
+    const now = Date.now();
+    const userData = {
+      uid, username,
+      createdAt: now, lastActive: now,
+      balance: { kmr: 500, banknot: 0, cekip: 0 },
+      miners: {}, equipment: {},
+      stats: { totalPH: 0, league: 'cirak', totalMined: 0, loginStreak: 1, lastLogin: now, lastCollect: now },
+      settings: { notifications: true, sound: true, theme: 'dark' }
+    };
+    await fbDb.ref(`users/${uid}`).set(userData);
+    await fbDb.ref(`usernames/${ukey}`).set(email);
+    await fbUpdateLeaderboard(uid, username, 0, 'cirak');
   } catch(e) { showAuthError(errEl, e.message); }
   finally    { setBtnLoading('register-btn', false); }
 }
 
-function doLogout() {
-  localStorage.removeItem('maden_token');
-  state.token = null; state.uid = null; state.user = null;
+async function doLogout() {
+  await fbAuth.signOut();
+  state.uid = null; state.user = null;
   closeModal('profile'); closeModal('settings');
   hide('page-game'); show('page-auth');
   toast('Çıkış yapıldı', 'info');
@@ -488,17 +545,24 @@ async function collectRewards() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Toplanıyor...';
   try {
-    const res = await api('POST', '/api/collect', { token: state.token });
-    if (res.success) {
-      state.user.balance.kmr = res.newBalance || ((state.user.balance?.kmr||0) + res.earned);
-      state.pendingKmr = 0;
-      state.user.stats.lastCollect = Date.now();
-      if (res.earned > 0) toast(`⛏️ ${fmtKmr(res.earned)} KMR toplandı!`, 'success');
-      else toast('Henüz toplanacak KMR yok', 'info');
-      // Refresh user
-      const vres = await api('POST', '/api/verify', { token: state.token });
-      if (vres.success) { state.user = vres.user; renderAll(); }
-    }
+    const u = state.user;
+    const now = Date.now();
+    const lastCollect = u?.stats?.lastCollect || now;
+    const hoursPassed = Math.min((now - lastCollect) / 3600000, 24);
+    const earned = Math.floor(calcKmrPerHour() * hoursPassed);
+    if (earned <= 0) { toast('Henüz toplanacak KMR yok', 'info'); return; }
+    const newKmr = (u.balance?.kmr || 0) + earned;
+    await fbUpdateUser(state.uid, {
+      'balance/kmr': newKmr,
+      'stats/lastCollect': now,
+      'stats/totalMined': (u.stats?.totalMined || 0) + earned
+    });
+    state.user.balance.kmr = newKmr;
+    state.user.stats.lastCollect = now;
+    state.user.stats.totalMined = (u.stats?.totalMined || 0) + earned;
+    state.pendingKmr = 0;
+    toast(`⛏️ ${fmtKmr(earned)} KMR toplandı!`, 'success');
+    renderAll();
   } catch(e) { toast(e.message, 'error'); }
   finally {
     btn.disabled = false;
@@ -511,13 +575,22 @@ async function convertCurrency(from, to) {
   const input = from === 'kmr' ? qs('#conv-kmr') : qs('#conv-banknot');
   const amount = parseInt(input.value);
   if (!amount || amount <= 0) { toast('Geçerli bir miktar girin', 'error'); return; }
+  const bal = state.user.balance;
   try {
-    const res = await api('POST', '/api/convert', { token: state.token, from, to, amount });
-    state.user.balance = res.balance;
+    if (from === 'kmr' && to === 'banknot') {
+      const needed = amount * 1000;
+      if ((bal.kmr||0) < needed) throw new Error('Yetersiz KMR');
+      await fbUpdateUser(state.uid, { 'balance/kmr': bal.kmr-needed, 'balance/banknot': (bal.banknot||0)+amount });
+      bal.kmr -= needed; bal.banknot = (bal.banknot||0)+amount;
+    } else if (from === 'banknot' && to === 'cekip') {
+      const needed = amount * 10000;
+      if ((bal.banknot||0) < needed) throw new Error('Yetersiz Banknot');
+      await fbUpdateUser(state.uid, { 'balance/banknot': bal.banknot-needed, 'balance/cekip': (bal.cekip||0)+amount });
+      bal.banknot -= needed; bal.cekip = (bal.cekip||0)+amount;
+    } else throw new Error('Geçersiz dönüşüm');
     input.value = '';
     renderTopBar();
-    const label = to === 'banknot' ? `${amount} Banknot` : `${amount} Çekip`;
-    toast(`✅ ${label} kazandın!`, 'success');
+    toast(`✅ ${amount} ${to==='banknot'?'Banknot':'Çekip'} kazandın!`, 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -526,9 +599,16 @@ async function buyMiner(minerId) {
   const m = MINERS_DATA[minerId];
   if (!confirm(`${m.name} satın almak istiyor musun? Fiyat: ${fmtKmr(m.price)} Banknot`)) return;
   try {
-    await api('POST', '/api/buy/miner', { token: state.token, minerId });
-    const res = await api('POST', '/api/verify', { token: state.token });
-    state.user = res.user;
+    const bal = state.user.balance;
+    if ((bal?.banknot||0) < m.price) throw new Error('Yetersiz Banknot');
+    if (state.user.miners?.[minerId]) throw new Error('Bu madenci zaten sizin');
+    await fbUpdateUser(state.uid, {
+      [`miners/${minerId}`]: true,
+      'balance/banknot': (bal.banknot||0) - m.price
+    });
+    state.user.miners = state.user.miners || {};
+    state.user.miners[minerId] = true;
+    state.user.balance.banknot = (bal.banknot||0) - m.price;
     renderAll();
     toast(`✅ ${m.name} satın alındı!`, 'success');
     if (window.Telegram?.WebApp?.HapticFeedback)
@@ -539,21 +619,31 @@ async function buyMiner(minerId) {
 // ─── Open Box ──────────────────────────────────────────────────
 async function openBox(boxId) {
   const b = BOXES_DATA[boxId];
+  const u = state.user;
   try {
+    const bal = u.balance?.[b.currency] || 0;
+    if (bal < b.price) throw new Error(`Yetersiz ${b.currency.toUpperCase()}`);
     showBoxOpenAnim(b.emoji);
-    const res = await api('POST', '/api/open/box', { token: state.token, boxId });
-    if (res.success) {
-      const reward = res.reward;
-      setTimeout(() => {
-        showReward(reward);
-        const vres = api('POST', '/api/verify', { token: state.token });
-        vres.then(r => { if (r.success) { state.user = r.user; renderAll(); } });
-      }, 800);
+    const reward = fbGenerateReward(boxId);
+    const updates = { [`balance/${b.currency}`]: bal - b.price };
+    if (reward.type === 'kmr')     { updates['balance/kmr'] = (u.balance?.kmr||0) - (b.currency==='kmr'?b.price:0) + reward.amount; u.balance.kmr = updates['balance/kmr']; }
+    if (reward.type === 'banknot') { updates['balance/banknot'] = (u.balance?.banknot||0) + reward.amount; u.balance.banknot = updates['balance/banknot']; }
+    if (reward.type === 'equipment') {
+      const cur = u.equipment?.[reward.itemId] || 0;
+      updates[`equipment/${reward.itemId}`] = cur + 1;
+      u.equipment = u.equipment || {};
+      u.equipment[reward.itemId] = cur + 1;
+      const newPH = fbCalcPH(u.equipment);
+      updates['stats/totalPH'] = newPH;
+      updates['stats/league']  = fbCalcLeague(newPH);
+      u.stats.totalPH = newPH;
+      u.stats.league  = fbCalcLeague(newPH);
+      await fbUpdateLeaderboard(state.uid, u.username, newPH, fbCalcLeague(newPH));
     }
-  } catch(e) {
-    hideBoxOpening();
-    toast(e.message, 'error');
-  }
+    u.balance[b.currency] = bal - b.price;
+    await fbUpdateUser(state.uid, updates);
+    setTimeout(() => { showReward(reward); renderAll(); }, 800);
+  } catch(e) { hideBoxOpening(); toast(e.message, 'error'); }
 }
 
 function showBoxOpenAnim(boxEmoji) {
@@ -636,17 +726,17 @@ function openChangePassword() {
 }
 
 async function doChangePassword() {
-  const oldPw  = qs('#old-pw').value;
   const newPw  = qs('#new-pw').value;
   const newPw2 = qs('#new-pw2').value;
-  if (!oldPw || !newPw || !newPw2) { toast('Tüm alanları doldurun', 'error'); return; }
-  if (newPw !== newPw2) { toast('Şifreler eşleşmiyor', 'error'); return; }
+  if (!newPw || !newPw2) { toast('Tüm alanları doldurun', 'error'); return; }
+  if (newPw !== newPw2)  { toast('Şifreler eşleşmiyor', 'error'); return; }
+  if (newPw.length < 8 || !/[A-Z]/.test(newPw) || !/[0-9]/.test(newPw)) { toast('Şifre gereksinimlerini karşılamıyor', 'error'); return; }
   try {
-    await api('POST', '/api/change-password', { token: state.token, oldPassword: oldPw, newPassword: newPw });
+    await fbAuth.currentUser.updatePassword(newPw);
     toast('✅ Şifre güncellendi', 'success');
     qs('#change-pw-section').classList.add('hidden');
-    qs('#old-pw').value = qs('#new-pw').value = qs('#new-pw2').value = '';
-  } catch(e) { toast(e.message, 'error'); }
+    qs('#new-pw').value = qs('#new-pw2').value = '';
+  } catch(e) { toast(e.code === 'auth/requires-recent-login' ? 'Lütfen tekrar giriş yapın' : e.message, 'error'); }
 }
 
 async function doWithdraw() {
@@ -654,13 +744,16 @@ async function doWithdraw() {
   const address = qs('#withdraw-address').value.trim();
   if (!amount || amount < 1) { toast('Minimum 1 Çekip çekebilirsin', 'error'); return; }
   if (!address) { toast('Adres giriniz', 'error'); return; }
+  const u = state.user;
   try {
-    const res = await api('POST', '/api/withdraw', { token: state.token, amount, address });
-    toast('✅ ' + res.message, 'success');
-    qs('#withdraw-amount').value = '';
-    qs('#withdraw-address').value = '';
-    const vres = await api('POST', '/api/verify', { token: state.token });
-    if (vres.success) { state.user = vres.user; renderAll(); fillProfileModal(); }
+    if ((u.balance?.cekip||0) < amount) throw new Error('Yetersiz Çekip');
+    await fbDb.ref('withdrawals').push({ uid: state.uid, username: u.username, amount, address, status: 'pending', createdAt: Date.now() });
+    const newCekip = (u.balance.cekip||0) - amount;
+    await fbUpdateUser(state.uid, { 'balance/cekip': newCekip });
+    u.balance.cekip = newCekip;
+    toast('✅ Çekim talebiniz alındı', 'success');
+    qs('#withdraw-amount').value = qs('#withdraw-address').value = '';
+    renderAll(); fillProfileModal();
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -677,8 +770,10 @@ let leaderboardData = [];
 async function loadLeaderboard(filter) {
   qs('#rank-list').innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Yükleniyor...</p></div>';
   try {
-    const res = await api('GET', '/api/leaderboard');
-    leaderboardData = res.leaderboard;
+    const snap = await fbDb.ref('leaderboard').orderByChild('totalPH').limitToLast(100).once('value');
+    leaderboardData = [];
+    snap.forEach(c => leaderboardData.push({ uid: c.key, ...c.val() }));
+    leaderboardData.sort((a,b) => b.totalPH - a.totalPH);
     renderLeaderboard(filter);
   } catch(e) { toast(e.message,'error'); }
 }
@@ -719,8 +814,7 @@ async function toggleSetting(key, btn) {
   const val = btn.classList.contains('on');
   if (!state.user.settings) state.user.settings = {};
   state.user.settings[key] = val;
-  try { await api('POST','/api/settings',{ token:state.token, settings:{ [key]:val } }); }
-  catch{}
+  try { await fbUpdateUser(state.uid, { [`settings/${key}`]: val }); } catch{}
 }
 
 // ─── Tooltip ───────────────────────────────────────────────────
