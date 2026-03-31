@@ -1503,6 +1503,17 @@ body {
     display: none !important;
   }
 
+  .sidebar.open {
+    display: block !important;
+    position: fixed;
+    top: 64px;
+    left: 8px;
+    width: min(82vw, 320px);
+    max-height: calc(100vh - 80px);
+    z-index: 95;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, .45);
+  }
+
   .section-banner {
     font-size: 22px;
     padding: 8px 10px;
@@ -2022,6 +2033,7 @@ const el = {
   hudLeague: document.getElementById("hudLeague"),
   mobileDock: document.getElementById("mobileDock"),
   leftSidebar: document.getElementById("leftSidebar"),
+  menuBtn: document.getElementById("menuBtn"),
   userBadge: document.getElementById("userBadge"),
   openProfileBtn: document.getElementById("openProfileBtn"),
   openProfileBtnDock: document.getElementById("openProfileBtnDock"),
@@ -2223,7 +2235,7 @@ async function ensureUserDoc(user, username) {
 }
 
 function showMsg(target, msg, isError = false) {
-  target.textContent = msg;
+  target.textContent = normalizeTurkishText(msg);
   target.style.color = isError ? "#ff8fa3" : "#9aa4c7";
   if (msg) showToast(msg, isError ? "error" : "info");
 }
@@ -2232,7 +2244,7 @@ function showToast(message, type = "info") {
   if (!el.toastStack) return;
   const node = document.createElement("div");
   node.className = `toast ${type}`;
-  node.textContent = message;
+  node.textContent = normalizeTurkishText(message);
   el.toastStack.appendChild(node);
   setTimeout(() => node.remove(), 3000);
 }
@@ -2269,6 +2281,36 @@ function toSafeNumber(value, min = 0) {
   const n = Number(value);
   if (!Number.isFinite(n)) return min;
   return n;
+}
+
+function normalizeTurkishText(input) {
+  if (!input || typeof input !== "string") return input;
+  const map = [
+    ["Ã‡", "Ç"], ["Ä±", "ı"], ["Ã¼", "ü"], ["Å", "Ş"], ["ÅŸ", "ş"], ["ÄŸ", "ğ"], ["Ã¶", "ö"], ["Ä°", "İ"],
+    ["â€¢", "•"], ["Ãœ", "Ü"], ["Ã§", "ç"], ["Ã–", "Ö"],
+    ["baÅŸarÄ±lÄ±", "başarılı"], ["hatasÄ±", "hatası"], ["gÃ¶nderildi", "gönderildi"], ["gÃ¶nderilemedi", "gönderilemedi"],
+    ["gÃ¼ncellendi", "güncellendi"], ["gÃ¼ncellenemedi", "güncellenemedi"], ["kapalÄ±", "kapalı"], ["AÃ§Ä±k", "Açık"],
+    ["KazanÃ§", "Kazanç"], ["SandÄ±k", "Sandık"], ["aÃ§Ä±lamadÄ±", "açılamadı"], ["Ã‡ekip", "Çekip"], ["Ãœretim", "Üretim"],
+    ["Ã‡arpan", "Çarpan"], ["AlÄ±m", "Alım"], ["HenÃ¼z", "Henüz"], ["MaÄŸazadan", "Mağazadan"], ["geÃ§ersiz", "geçersiz"],
+    ["BoÅŸ", "Boş"], ["KullanÄ±cÄ±", "Kullanıcı"], ["deÄŸil", "değil"], ["iÅŸlem", "işlem"], ["iÅŸlemi", "işlemi"],
+    ["YatÄ±rma", "Yatırma"], ["Ã‡ekim", "Çekim"], ["Ä°ÅŸlem", "İşlem"], ["DÃ¶nÃ¼ÅŸÃ¼m", "Dönüşüm"], ["Ã–nce", "Önce"]
+  ];
+  let out = input;
+  map.forEach(([wrong, right]) => {
+    out = out.split(wrong).join(right);
+  });
+  return out;
+}
+
+function fixTurkishInDom(root = document.body) {
+  if (!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach((node) => {
+    const fixed = normalizeTurkishText(node.nodeValue);
+    if (fixed !== node.nodeValue) node.nodeValue = fixed;
+  });
 }
 
 function getDefaultCollectSplit() {
@@ -2446,7 +2488,7 @@ function renderWallet(data) {
   animateCounter(el.pendingKmrValue, data.pendingKmr || 0, 0);
   animateCounter(el.phValue, data.totalPH || 0, 0);
   el.slotInfo.textContent = `${(data.miners || []).length} / ${data.maxSlots || DEFAULT_SLOTS}`;
-  el.userBadge.textContent = `${data.username} â€¢ ${data.league}`;
+  el.userBadge.textContent = `${data.username} • ${data.league}`;
   animateCounter(el.hudKmr, data.wallet?.kmr || 0, 0);
   animateCounter(el.hudBanknot, data.wallet?.banknot || 0, 0);
   el.hudLeague.textContent = data.league || "-";
@@ -2455,6 +2497,7 @@ function renderWallet(data) {
     animateCounter(el.totalHourlyRate, totalHourly, 0);
   }
   updateSplitInputs(normalizeCollectSplit(data.collectSplit || getDefaultCollectSplit()));
+  fixTurkishInDom();
 }
 
 function renderMiners(data) {
@@ -3042,7 +3085,26 @@ function bindTabs() {
       document.querySelectorAll(`.tab-btn[data-tab="${id}"]`).forEach((b) => b.classList.add("active"));
       const panel = document.getElementById(`tab-${id}`);
       if (panel) panel.classList.add("active");
+      if (window.matchMedia("(max-width: 1024px)").matches && el.leftSidebar?.classList.contains("open")) {
+        el.leftSidebar.classList.remove("open");
+      }
     });
+  });
+}
+
+function bindMenuButton() {
+  if (!el.menuBtn || !el.leftSidebar) return;
+  el.menuBtn.addEventListener("click", () => {
+    if (window.matchMedia("(max-width: 1024px)").matches) {
+      el.leftSidebar.classList.toggle("open");
+    }
+  });
+  document.addEventListener("click", (ev) => {
+    if (!window.matchMedia("(max-width: 1024px)").matches) return;
+    const target = ev.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.closest("#leftSidebar") || target.closest("#menuBtn")) return;
+    el.leftSidebar.classList.remove("open");
   });
 }
 
@@ -3590,9 +3652,11 @@ async function handleAuthState(user) {
 function init() {
   tryTelegramBootstrap();
   bindTabs();
+  bindMenuButton();
   bindAuth();
   bindProfileAndSupport();
   bindGameActions();
+  fixTurkishInDom();
   onAuthStateChanged(auth, handleAuthState);
 }
 
