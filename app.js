@@ -787,10 +787,7 @@ window.switchFinanceTab = function(tab, btn) {
   if (tab === "history") loadFinanceHistory();
 };
 
-// Track file for upload
-el("depositReceipt")?.addEventListener("change", function() {
-  el("depositFileName").textContent = this.files[0]?.name || "";
-});
+
 
 window.submitDeposit = async function(e) {
   e.preventDefault();
