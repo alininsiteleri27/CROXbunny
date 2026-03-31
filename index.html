@@ -2188,17 +2188,17 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const MINERS = [
-  { key: "cirak", name: "Ã‡Ä±rak", baseCost: 0, baseKmrPerSec: (50 / 3600), multiplier: 1.2, starterOnly: true },
-  { key: "kubra", name: "KÃ¼bra", baseCost: 50, baseKmrPerSec: 250, multiplier: 2 },
+  { key: "cirak", name: "Çırak", baseCost: 0, baseKmrPerSec: (50 / 3600), multiplier: 1.2, starterOnly: true },
+  { key: "kubra", name: "Kübra", baseCost: 50, baseKmrPerSec: 250, multiplier: 2 },
   { key: "beyza", name: "Beyza", baseCost: 80, baseKmrPerSec: 500, multiplier: 2.5 },
   { key: "mehmet", name: "Mehmet", baseCost: 125, baseKmrPerSec: 750, multiplier: 3 },
-  { key: "sevki", name: "Åevki", baseCost: 180, baseKmrPerSec: 1000, multiplier: 3.5 },
+  { key: "sevki", name: "Şevki", baseCost: 180, baseKmrPerSec: 1000, multiplier: 3.5 },
   { key: "ali", name: "Ali", baseCost: 300, baseKmrPerSec: 2000, multiplier: 4 }
 ];
 
 const LEAGUES = [
-  { name: "Ã‡Ä±rak", min: 0, max: 1000, rewardPoolCekip: 50 },
-  { name: "AmatÃ¶r", min: 1001, max: 10000, rewardPoolCekip: 200 },
+  { name: "Çırak", min: 0, max: 1000, rewardPoolCekip: 50 },
+  { name: "Amatör", min: 1001, max: 10000, rewardPoolCekip: 200 },
   { name: "Usta", min: 10001, max: Number.MAX_SAFE_INTEGER, rewardPoolCekip: 1000 }
 ];
 
@@ -2411,7 +2411,7 @@ async function ensureUserDoc(user, username) {
     collectSplit: getDefaultCollectSplit(),
     highestMultiplier: 1,
     totalPH: 0,
-    league: "Ã‡Ä±rak",
+    league: "Çırak",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     lastTickMs: Date.now(),
@@ -2473,21 +2473,7 @@ function toSafeNumber(value, min = 0) {
 
 function normalizeTurkishText(input) {
   if (!input || typeof input !== "string") return input;
-  const map = [
-    ["Ã‡", "Ç"], ["Ä±", "ı"], ["Ã¼", "ü"], ["Å", "Ş"], ["ÅŸ", "ş"], ["ÄŸ", "ğ"], ["Ã¶", "ö"], ["Ä°", "İ"],
-    ["â€¢", "•"], ["Ãœ", "Ü"], ["Ã§", "ç"], ["Ã–", "Ö"],
-    ["baÅŸarÄ±lÄ±", "başarılı"], ["hatasÄ±", "hatası"], ["gÃ¶nderildi", "gönderildi"], ["gÃ¶nderilemedi", "gönderilemedi"],
-    ["gÃ¼ncellendi", "güncellendi"], ["gÃ¼ncellenemedi", "güncellenemedi"], ["kapalÄ±", "kapalı"], ["AÃ§Ä±k", "Açık"],
-    ["KazanÃ§", "Kazanç"], ["SandÄ±k", "Sandık"], ["aÃ§Ä±lamadÄ±", "açılamadı"], ["Ã‡ekip", "Çekip"], ["Ãœretim", "Üretim"],
-    ["Ã‡arpan", "Çarpan"], ["AlÄ±m", "Alım"], ["HenÃ¼z", "Henüz"], ["MaÄŸazadan", "Mağazadan"], ["geÃ§ersiz", "geçersiz"],
-    ["BoÅŸ", "Boş"], ["KullanÄ±cÄ±", "Kullanıcı"], ["deÄŸil", "değil"], ["iÅŸlem", "işlem"], ["iÅŸlemi", "işlemi"],
-    ["YatÄ±rma", "Yatırma"], ["Ã‡ekim", "Çekim"], ["Ä°ÅŸlem", "İşlem"], ["DÃ¶nÃ¼ÅŸÃ¼m", "Dönüşüm"], ["Ã–nce", "Önce"]
-  ];
-  let out = input;
-  map.forEach(([wrong, right]) => {
-    out = out.split(wrong).join(right);
-  });
-  return out;
+  return input;
 }
 
 function fixTurkishInDom(root = document.body) {
@@ -2701,7 +2687,7 @@ function renderWallet(data) {
 function renderMiners(data) {
   const miners = data.miners || [];
   if (!miners.length) {
-    el.minersContainer.innerHTML = "<p class='muted'>HenÃ¼z aktif madencin yok. MaÄŸazadan alabilirsin.</p>";
+    el.minersContainer.innerHTML = "<p class='muted'>Henüz aktif madencin yok. Mağazadan alabilirsin.</p>";
     return;
   }
   el.minersContainer.innerHTML = miners.map((m, i) => {
@@ -2718,9 +2704,9 @@ function renderMiners(data) {
     return `
       <article class="miner-card">
         <div class="${avatarClass}"></div>
-        <h4>${cfg.name} â€¢ Lvl ${level}</h4>
-        <p>KazanÃ§: ${fmt(perSec, 2)} KMR/s â€¢ ${fmt(hourGain)} KMR/saat</p>
-        <p>PH Ã‡arpanÄ±: x${cfg.multiplier}</p>
+        <h4>${cfg.name} • Lvl ${level}</h4>
+        <p>Kazanç: ${fmt(perSec, 2)} KMR/s • ${fmt(hourGain)} KMR/saat</p>
+        <p>PH Çarpanı: x${cfg.multiplier}</p>
         <p>Enerji: ${fmt(energy)} / ${fmt(maxEnergy)}</p>
         <div class="energy-wrap"><div class="energy-fill" style="width:${pct}%"></div></div>
         <button class="btn small energy-btn" data-idx="${i}" data-cost="${refillCost}">Enerji Ver (${fmt(refillCost)} KMR)</button>
@@ -2734,9 +2720,9 @@ function renderMinerStore() {
     <article class="miner-card">
       <div class="miner-avatar avatar-${m.key}"></div>
       <h4>${m.name}</h4>
-      <p>AlÄ±m: ${fmt(m.baseCost)} Banknot</p>
-      <p>Ãœretim: ${fmt(m.baseKmrPerSec)} KMR/s</p>
-      <p>Ã‡arpan: x${m.multiplier}</p>
+      <p>Alım: ${fmt(m.baseCost)} Banknot</p>
+      <p>Üretim: ${fmt(m.baseKmrPerSec)} KMR/s</p>
+      <p>Çarpan: x${m.multiplier}</p>
       <button class="btn small buy-miner-btn" data-key="${m.key}">Madenci Al</button>
     </article>
   `).join("");
@@ -2749,10 +2735,10 @@ function renderDailyShop() {
       <h4>${it.name}</h4>
       <p>Nadirlik: ${it.rarity}</p>
       <p>PH: ${it.ph}</p>
-      <p>Fiyat: ${fmt(it.priceBanknot)} Banknot veya ${fmt(it.priceCekip, 2)} Ã‡ekip</p>
+      <p>Fiyat: ${fmt(it.priceBanknot)} Banknot veya ${fmt(it.priceCekip, 2)} Çekip</p>
       <div class="chest-row">
         <button class="btn small buy-daily-banknot-btn" data-idx="${idx}">Banknot ile al</button>
-        <button class="btn small buy-daily-cekip-btn" data-idx="${idx}">Ã‡ekip ile al</button>
+        <button class="btn small buy-daily-cekip-btn" data-idx="${idx}">Çekip ile al</button>
       </div>
     </article>
   `).join("");
@@ -2852,7 +2838,7 @@ async function expandCave(uid) {
     if (!snap.exists()) return;
     const data = snap.data();
     const cekip = Number(data.wallet?.cekip || 0);
-    if (cekip < SLOT_EXPAND_COST_CEKIP) throw new Error("Yetersiz Ã‡ekip.");
+    if (cekip < SLOT_EXPAND_COST_CEKIP) throw new Error("Yetersiz Çekip.");
     tx.update(userRef, {
       "wallet.cekip": Number((cekip - SLOT_EXPAND_COST_CEKIP).toFixed(2)),
       maxSlots: Number(data.maxSlots || DEFAULT_SLOTS) + 1,
@@ -2871,7 +2857,7 @@ async function buyMiner(uid, minerKey) {
     const data = snap.data();
     const miners = Array.isArray(data.miners) ? data.miners : [];
     const slots = Number(data.maxSlots || DEFAULT_SLOTS);
-    if (miners.length >= slots) throw new Error("BoÅŸ slot yok.");
+    if (miners.length >= slots) throw new Error("Boş slot yok.");
     const banknot = Number(data.wallet?.banknot || 0);
     if (banknot < cfg.baseCost) throw new Error("Yetersiz Banknot.");
     const perSec = getMinerKmrPerSec(cfg.baseKmrPerSec, 1);
@@ -2899,10 +2885,10 @@ async function levelUpMiner(uid, minerIndex) {
     const data = snap.data();
     const miners = Array.isArray(data.miners) ? [...data.miners] : [];
     const m = miners[minerIndex];
-    if (!m) throw new Error("Madenci bulunamadÄ±.");
+    if (!m) throw new Error("Madenci bulunamadı.");
     if (m.level >= MAX_LEVEL) throw new Error("Maksimum seviyede.");
     const cfg = getMinerByKey(m.typeKey);
-    if (!cfg) throw new Error("Madenci tipi geÃ§ersiz.");
+    if (!cfg) throw new Error("Madenci tipi geçersiz.");
     const nextLevel = Number(m.level || 1) + 1;
     const cost = getMinerLevelCost(cfg.baseCost, nextLevel);
     const banknot = Number(data.wallet?.banknot || 0);
@@ -2979,7 +2965,7 @@ async function openChest(uid, chestType) {
 async function buyDailyItem(uid, shopIndex, currency) {
   const shop = getDailyShopItems();
   const picked = shop[shopIndex];
-  if (!picked) throw new Error("ÃœrÃ¼n bulunamadÄ±.");
+  if (!picked) throw new Error("Ürün bulunamadı.");
   const userRef = doc(db, "users", uid);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(userRef);
@@ -2994,7 +2980,7 @@ async function buyDailyItem(uid, shopIndex, currency) {
       updates["wallet.banknot"] = walletVal - picked.priceBanknot;
     } else {
       const walletVal = Number(data.wallet?.cekip || 0);
-      if (walletVal < picked.priceCekip) throw new Error("Yetersiz Ã‡ekip.");
+      if (walletVal < picked.priceCekip) throw new Error("Yetersiz Çekip.");
       updates["wallet.cekip"] = Number((walletVal - picked.priceCekip).toFixed(2));
     }
     tx.update(userRef, updates);
@@ -3047,10 +3033,10 @@ async function createSupportTicket(uid, title, message) {
 async function sendSupportMessage(ticketId, uid, text, senderRole) {
   const ticketRef = doc(db, "supporttickets", ticketId);
   const ticketSnap = await getDoc(ticketRef);
-  if (!ticketSnap.exists()) throw new Error("Talep bulunamadÄ±.");
+  if (!ticketSnap.exists()) throw new Error("Talep bulunamadı.");
   const tData = ticketSnap.data();
-  if (senderRole === "user" && tData.uid !== uid) throw new Error("Bu talep sana ait deÄŸil.");
-  if (tData.status !== "open") throw new Error("Talep kapalÄ±.");
+  if (senderRole === "user" && tData.uid !== uid) throw new Error("Bu talep sana ait değil.");
+  if (tData.status !== "open") throw new Error("Talep kapalı.");
 
   await addDoc(collection(db, "supportmessages"), {
     ticketId,
@@ -3121,12 +3107,12 @@ async function renderUserSupportArea() {
   el.supportTicketsList.innerHTML = tickets.map((t) => `
     <div class="support-ticket-item ${t.id === selectedUserTicketId ? "active" : ""}" data-ticket-id="${t.id}">
       <div><strong>${t.title}</strong></div>
-      <div class="muted">${t.status === "open" ? "AÃ§Ä±k" : "KapalÄ±"} â€¢ ${t.lastSenderRole === "admin" ? "Admin cevapladÄ±" : "Sen yazdÄ±n"}</div>
+      <div class="muted">${t.status === "open" ? "Açık" : "Kapalı"} • ${t.lastSenderRole === "admin" ? "Admin cevapladı" : "Sen yazdın"}</div>
     </div>
-  `).join("") || "<p class='muted'>HenÃ¼z talebin yok.</p>";
+  `).join("") || "<p class='muted'>Henüz talebin yok.</p>";
 
   if (!selectedUserTicketId) {
-    el.supportMessages.innerHTML = "<p class='muted'>Bir talep seÃ§.</p>";
+    el.supportMessages.innerHTML = "<p class='muted'>Bir talep seç.</p>";
     return;
   }
   const messages = await loadSupportMessages(selectedUserTicketId);
@@ -3143,12 +3129,12 @@ async function renderAdminSupportArea() {
     <div class="support-ticket-item ${t.id === selectedAdminTicketId ? "active" : ""}" data-admin-ticket-id="${t.id}">
       <div><strong>${t.title}</strong></div>
       <div class="muted">UID: ${t.uid}</div>
-      <div class="muted">${t.status === "open" ? "AÃ§Ä±k" : "KapalÄ±"} â€¢ Son: ${t.lastSenderRole === "admin" ? "Admin" : "KullanÄ±cÄ±"}</div>
+      <div class="muted">${t.status === "open" ? "Açık" : "Kapalı"} • Son: ${t.lastSenderRole === "admin" ? "Admin" : "Kullanıcı"}</div>
     </div>
   `).join("") || "<p class='muted'>Talep yok.</p>";
 
   if (!selectedAdminTicketId) {
-    el.adminSupportMessages.innerHTML = "<p class='muted'>Bir talep seÃ§.</p>";
+    el.adminSupportMessages.innerHTML = "<p class='muted'>Bir talep seç.</p>";
     return;
   }
   const messages = await loadSupportMessages(selectedAdminTicketId);
@@ -3160,9 +3146,9 @@ async function adminResolveRequest(kind, requestId, approve) {
   const reqRef = doc(db, col, requestId);
   await runTransaction(db, async (tx) => {
     const reqSnap = await tx.get(reqRef);
-    if (!reqSnap.exists()) throw new Error("Talep bulunamadÄ±.");
+    if (!reqSnap.exists()) throw new Error("Talep bulunamadı.");
     const req = reqSnap.data();
-    if (req.status !== "pending") throw new Error("Talep zaten iÅŸlenmiÅŸ.");
+    if (req.status !== "pending") throw new Error("Talep zaten işlenmiş.");
     tx.update(reqRef, {
       status: approve ? "approved" : "rejected",
       resolvedAt: serverTimestamp(),
@@ -3180,7 +3166,7 @@ async function adminResolveRequest(kind, requestId, approve) {
       tx.update(userRef, { "wallet.cekip": Number((walletCekip + amount).toFixed(2)), updatedAt: serverTimestamp() });
     } else {
       const next = Number((walletCekip - amount).toFixed(2));
-      if (next < 0) throw new Error("KullanÄ±cÄ± bakiyesi yetersiz.");
+      if (next < 0) throw new Error("Kullanıcı bakiyesi yetersiz.");
       tx.update(userRef, { "wallet.cekip": next, updatedAt: serverTimestamp() });
     }
   });
@@ -3190,7 +3176,7 @@ async function adminUserAction(uid, deltaKmr, deltaBanknot, deltaCekip, banState
   const userRef = doc(db, "users", uid);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(userRef);
-    if (!snap.exists()) throw new Error("KullanÄ±cÄ± yok.");
+    if (!snap.exists()) throw new Error("Kullanıcı yok.");
     const data = snap.data();
     const kmr = Math.max(0, Math.floor(Number(data.wallet?.kmr || 0) + deltaKmr));
     const banknot = Math.max(0, Math.floor(Number(data.wallet?.banknot || 0) + deltaBanknot));
@@ -3211,7 +3197,7 @@ async function adminItemAction(uid, itemName, ph, action) {
   const userRef = doc(db, "users", uid);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(userRef);
-    if (!snap.exists()) throw new Error("KullanÄ±cÄ± yok.");
+    if (!snap.exists()) throw new Error("Kullanıcı yok.");
     const data = snap.data();
     let inventory = Array.isArray(data.inventory) ? [...data.inventory] : [];
     if (action === "add") {
@@ -3225,7 +3211,7 @@ async function adminItemAction(uid, itemName, ph, action) {
       });
     } else {
       const idx = inventory.findIndex((it) => it.name === itemName && Number(it.ph) === Number(ph));
-      if (idx === -1) throw new Error("Silinecek eÅŸya bulunamadÄ±.");
+      if (idx === -1) throw new Error("Silinecek eşya bulunamadı.");
       inventory.splice(idx, 1);
     }
     tx.update(userRef, { inventory, updatedAt: serverTimestamp() });
@@ -3235,7 +3221,7 @@ async function adminItemAction(uid, itemName, ph, action) {
 async function adminSetRole(uid, action) {
   const userRef = doc(db, "users", uid);
   const target = await getDoc(userRef);
-  if (!target.exists()) throw new Error("KullanÄ±cÄ± yok.");
+  if (!target.exists()) throw new Error("Kullanıcı yok.");
   await updateDoc(userRef, {
     isAdmin: action === "grant",
     updatedAt: serverTimestamp()
@@ -3248,7 +3234,7 @@ async function adminMinerAction(uid, minerType, action) {
   const userRef = doc(db, "users", uid);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(userRef);
-    if (!snap.exists()) throw new Error("KullanÄ±cÄ± yok.");
+    if (!snap.exists()) throw new Error("Kullanıcı yok.");
     const data = snap.data();
     const miners = Array.isArray(data.miners) ? [...data.miners] : [];
     if (action === "add") {
@@ -3327,14 +3313,14 @@ function bindAuth() {
       const username = el.regUsername.value.trim();
       const email = el.regEmail.value.trim();
       const password = el.regPassword.value;
-      if (username.length < 3) throw new Error("KullanÄ±cÄ± adÄ± en az 3 karakter olmalÄ±.");
+      if (username.length < 3) throw new Error("Kullanıcı adı en az 3 karakter olmalı.");
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: username });
       await ensureUserDoc(cred.user, username);
-      showMsg(el.authMessage, "KayÄ±t baÅŸarÄ±lÄ±.");
+      showMsg(el.authMessage, "Kayıt başarılı.");
       if (el.authTabSwitch) el.authTabSwitch.querySelector('[data-auth-tab="login"]')?.click();
     } catch (err) {
-      showMsg(el.authMessage, err.message || "KayÄ±t hatasÄ±.", true);
+      showMsg(el.authMessage, err.message || "Kayıt hatası.", true);
     }
   });
 
@@ -3344,9 +3330,9 @@ function bindAuth() {
       const email = el.loginEmail.value.trim();
       const password = el.loginPassword.value;
       await signInWithEmailAndPassword(auth, email, password);
-      showMsg(el.authMessage, "GiriÅŸ baÅŸarÄ±lÄ±.");
+      showMsg(el.authMessage, "Giriş başarılı.");
     } catch (err) {
-      showMsg(el.authMessage, err.message || "GiriÅŸ hatasÄ±.", true);
+      showMsg(el.authMessage, err.message || "Giriş hatası.", true);
     }
   });
 
@@ -3374,17 +3360,17 @@ function bindProfileAndSupport() {
     e.preventDefault();
     try {
       const nextUsername = el.profileUsername.value.trim();
-      if (nextUsername.length < 3) throw new Error("KullanÄ±cÄ± adÄ± en az 3 karakter olmalÄ±.");
-      if (!currentUser) throw new Error("Oturum bulunamadÄ±.");
+      if (nextUsername.length < 3) throw new Error("Kullanıcı adı en az 3 karakter olmalı.");
+      if (!currentUser) throw new Error("Oturum bulunamadı.");
       await updateProfile(currentUser, { displayName: nextUsername });
       await updateDoc(doc(db, "users", currentUser.uid), {
         username: nextUsername,
         updatedAt: serverTimestamp()
       });
-      showMsg(el.profileMessage, "Profil gÃ¼ncellendi.");
+      showMsg(el.profileMessage, "Profil güncellendi.");
       await rerender();
     } catch (err) {
-      showMsg(el.profileMessage, err.message || "Profil gÃ¼ncellenemedi.", true);
+      showMsg(el.profileMessage, err.message || "Profil güncellenemedi.", true);
     }
   });
 
@@ -3395,17 +3381,17 @@ function bindProfileAndSupport() {
   el.supportForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
-      if (!currentUser) throw new Error("Oturum bulunamadÄ±.");
+      if (!currentUser) throw new Error("Oturum bulunamadı.");
       const title = el.supportTitle.value.trim();
       const message = el.supportMessageInput.value.trim();
       if (!title || !message) throw new Error("Konu ve mesaj zorunlu.");
       const newId = await createSupportTicket(currentUser.uid, title, message);
       selectedUserTicketId = newId;
-      showMsg(el.supportMessage, "Destek talebin gÃ¶nderildi.");
+      showMsg(el.supportMessage, "Destek talebin gönderildi.");
       el.supportForm.reset();
       await renderUserSupportArea();
     } catch (err) {
-      showMsg(el.supportMessage, err.message || "Destek talebi gÃ¶nderilemedi.", true);
+      showMsg(el.supportMessage, err.message || "Destek talebi gönderilemedi.", true);
     }
   });
 
@@ -3422,15 +3408,15 @@ function bindProfileAndSupport() {
     e.preventDefault();
     try {
       if (!currentUser) throw new Error("Oturum yok.");
-      if (!selectedUserTicketId) throw new Error("Ã–nce bir talep seÃ§.");
+      if (!selectedUserTicketId) throw new Error("Önce bir talep seç.");
       const text = el.supportReplyInput.value.trim();
-      if (!text) throw new Error("Mesaj boÅŸ olamaz.");
+      if (!text) throw new Error("Mesaj boş olamaz.");
       await sendSupportMessage(selectedUserTicketId, currentUser.uid, text, "user");
       el.supportReplyInput.value = "";
       await renderUserSupportArea();
       if (currentData?.isAdmin) await renderAdminSupportArea();
     } catch (err) {
-      showMsg(el.supportMessage, err.message || "Mesaj gÃ¶nderilemedi.", true);
+      showMsg(el.supportMessage, err.message || "Mesaj gönderilemedi.", true);
     }
   });
 
@@ -3447,28 +3433,28 @@ function bindProfileAndSupport() {
     e.preventDefault();
     try {
       if (!currentUser || !currentData?.isAdmin) throw new Error("Admin yetkisi yok.");
-      if (!selectedAdminTicketId) throw new Error("Talep seÃ§.");
+      if (!selectedAdminTicketId) throw new Error("Talep seç.");
       const text = el.adminSupportReplyText.value.trim();
-      if (!text) throw new Error("Mesaj boÅŸ.");
+      if (!text) throw new Error("Mesaj boş.");
       await sendSupportMessage(selectedAdminTicketId, currentUser.uid, text, "admin");
       el.adminSupportReplyText.value = "";
       await renderAdminSupportArea();
       await renderUserSupportArea();
     } catch (err) {
-      showMsg(el.adminMessage, err.message || "Admin mesaj gÃ¶nderilemedi.", true);
+      showMsg(el.adminMessage, err.message || "Admin mesaj gönderilemedi.", true);
     }
   });
 
   el.adminCloseTicketBtn.addEventListener("click", async () => {
     try {
       if (!currentUser || !currentData?.isAdmin) throw new Error("Admin yetkisi yok.");
-      if (!selectedAdminTicketId) throw new Error("Talep seÃ§.");
+      if (!selectedAdminTicketId) throw new Error("Talep seç.");
       await closeSupportTicket(selectedAdminTicketId);
-      showMsg(el.adminMessage, "Talep kapatÄ±ldÄ±.");
+      showMsg(el.adminMessage, "Talep kapatıldı.");
       await renderAdminSupportArea();
       await renderUserSupportArea();
     } catch (err) {
-      showMsg(el.adminMessage, err.message || "Talep kapatÄ±lamadÄ±.", true);
+      showMsg(el.adminMessage, err.message || "Talep kapatılamadı.", true);
     }
   });
 }
@@ -3485,7 +3471,7 @@ async function renderAdminLists() {
     dHtml.push(`
       <div class="request-card">
         <p><strong>UID:</strong> ${d.uid}</p>
-        <p><strong>Tutar:</strong> ${fmt(d.amountCekip, 2)} Ã‡ekip</p>
+        <p><strong>Tutar:</strong> ${fmt(d.amountCekip, 2)} Çekip</p>
         <p><a href="${d.receiptUrl}" target="_blank">Dekont URL</a></p>
         <div class="chest-row">
           <button class="btn small admin-resolve-btn" data-kind="deposit" data-id="${s.id}" data-appr="1">Onayla</button>
@@ -3502,7 +3488,7 @@ async function renderAdminLists() {
     wHtml.push(`
       <div class="request-card">
         <p><strong>UID:</strong> ${d.uid}</p>
-        <p><strong>Tutar:</strong> ${fmt(d.amountCekip, 2)} Ã‡ekip</p>
+        <p><strong>Tutar:</strong> ${fmt(d.amountCekip, 2)} Çekip</p>
         <p><strong>Ad:</strong> ${d.fullName}</p>
         <p><strong>IBAN:</strong> ${d.iban}</p>
         <div class="chest-row">
@@ -3633,11 +3619,11 @@ function bindGameActions() {
   el.openBasicChestBtn.addEventListener("click", async () => {
     try {
       const r = await openChest(currentUser.uid, "basic");
-      el.chestResult.textContent = r.item ? `KazanÃ§: ${r.item.name} (+${r.item.ph} PH)` : `KazanÃ§: +${r.cekip} Ã‡ekip`;
+      el.chestResult.textContent = r.item ? `Kazanç: ${r.item.name} (+${r.item.ph} PH)` : `Kazanç: +${r.cekip} Çekip`;
       await rerender();
       showToast("Sandik acildi.", "success");
     } catch (err) {
-      el.chestResult.textContent = err.message || "SandÄ±k aÃ§Ä±lamadÄ±.";
+      el.chestResult.textContent = err.message || "Sandık açılamadı.";
       showToast(err.message || "Sandik acilamadi.", "error");
     }
   });
@@ -3645,11 +3631,11 @@ function bindGameActions() {
   el.openBombChestBtn.addEventListener("click", async () => {
     try {
       const r = await openChest(currentUser.uid, "bomb");
-      el.chestResult.textContent = r.item ? `KazanÃ§: ${r.item.name} (+${r.item.ph} PH)` : `KazanÃ§: +${r.cekip} Ã‡ekip`;
+      el.chestResult.textContent = r.item ? `Kazanç: ${r.item.name} (+${r.item.ph} PH)` : `Kazanç: +${r.cekip} Çekip`;
       await rerender();
       showToast("Bomba sandik acildi.", "success");
     } catch (err) {
-      el.chestResult.textContent = err.message || "Bomba kutusu aÃ§Ä±lamadÄ±.";
+      el.chestResult.textContent = err.message || "Bomba kutusu açılamadı.";
       showToast(err.message || "Bomba sandik acilamadi.", "error");
     }
   });
@@ -3677,10 +3663,10 @@ function bindGameActions() {
         document.getElementById("depositReceiptUrl").value.trim(),
         document.getElementById("depositNote").value.trim()
       );
-      showMsg(el.financeMessage, "YatÄ±rma talebi alÄ±ndÄ±.");
+      showMsg(el.financeMessage, "Yatırma talebi alındı.");
       el.depositForm.reset();
     } catch (err) {
-      showMsg(el.financeMessage, err.message || "YatÄ±rma talebi hatasÄ±.", true);
+      showMsg(el.financeMessage, err.message || "Yatırma talebi hatası.", true);
     }
   });
 
@@ -3688,17 +3674,17 @@ function bindGameActions() {
     e.preventDefault();
     try {
       const amount = toSafeNumber(document.getElementById("withdrawAmount").value, 0.1);
-      if ((currentData?.wallet?.cekip || 0) < amount) throw new Error("Yetersiz Ã‡ekip.");
+      if ((currentData?.wallet?.cekip || 0) < amount) throw new Error("Yetersiz Çekip.");
       await createWithdrawRequest(
         currentUser.uid,
         amount,
         document.getElementById("withdrawIban").value.trim(),
         document.getElementById("withdrawName").value.trim()
       );
-      showMsg(el.financeMessage, "Ã‡ekim talebi alÄ±ndÄ±.");
+      showMsg(el.financeMessage, "Çekim talebi alındı.");
       el.withdrawForm.reset();
     } catch (err) {
-      showMsg(el.financeMessage, err.message || "Ã‡ekim talebi hatasÄ±.", true);
+      showMsg(el.financeMessage, err.message || "Çekim talebi hatası.", true);
     }
   });
 
@@ -3711,9 +3697,9 @@ function bindGameActions() {
       const dC = toSafeNumber(document.getElementById("adminDeltaCekip").value, 0);
       const banState = document.getElementById("adminBanState").value;
       await adminUserAction(uid, dK, dB, dC, banState);
-      showMsg(el.adminMessage, "KullanÄ±cÄ± iÅŸlemi baÅŸarÄ±lÄ±.");
+      showMsg(el.adminMessage, "Kullanıcı işlemi başarılı.");
     } catch (err) {
-      showMsg(el.adminMessage, err.message || "KullanÄ±cÄ± iÅŸlemi hatasÄ±.", true);
+      showMsg(el.adminMessage, err.message || "Kullanıcı işlemi hatası.", true);
     }
   });
 
@@ -3725,9 +3711,9 @@ function bindGameActions() {
       const ph = toSafeNumber(document.getElementById("adminItemPh").value, 1);
       const action = document.getElementById("adminItemAction").value;
       await adminItemAction(uid, name, ph, action);
-      showMsg(el.adminMessage, "EÅŸya iÅŸlemi baÅŸarÄ±lÄ±.");
+      showMsg(el.adminMessage, "Eşya işlemi başarılı.");
     } catch (err) {
-      showMsg(el.adminMessage, err.message || "EÅŸya iÅŸlemi hatasÄ±.", true);
+      showMsg(el.adminMessage, err.message || "Eşya işlemi hatası.", true);
     }
   });
 
@@ -3737,9 +3723,9 @@ function bindGameActions() {
       const uid = document.getElementById("adminRoleUid").value.trim();
       const action = document.getElementById("adminRoleAction").value;
       await adminSetRole(uid, action);
-      showMsg(el.adminMessage, "Rol iÅŸlemi baÅŸarÄ±lÄ±.");
+      showMsg(el.adminMessage, "Rol işlemi başarılı.");
     } catch (err) {
-      showMsg(el.adminMessage, err.message || "Rol iÅŸlemi hatasÄ±.", true);
+      showMsg(el.adminMessage, err.message || "Rol işlemi hatası.", true);
     }
   });
 
@@ -3750,9 +3736,9 @@ function bindGameActions() {
       const minerType = document.getElementById("adminMinerType").value;
       const action = document.getElementById("adminMinerAction").value;
       await adminMinerAction(uid, minerType, action);
-      showMsg(el.adminMessage, "Madenci iÅŸlemi baÅŸarÄ±lÄ±.");
+      showMsg(el.adminMessage, "Madenci işlemi başarılı.");
     } catch (err) {
-      showMsg(el.adminMessage, err.message || "Madenci iÅŸlemi hatasÄ±.", true);
+      showMsg(el.adminMessage, err.message || "Madenci işlemi hatası.", true);
     }
   });
 
@@ -3765,10 +3751,10 @@ function bindGameActions() {
       const id = target.getAttribute("data-id");
       const appr = target.getAttribute("data-appr") === "1";
       await adminResolveRequest(kind, id, appr);
-      showMsg(el.adminMessage, "Talep iÅŸlendi.");
+      showMsg(el.adminMessage, "Talep işlendi.");
       await renderAdminLists();
     } catch (err) {
-      showMsg(el.adminMessage, err.message || "Talep iÅŸleme hatasÄ±.", true);
+      showMsg(el.adminMessage, err.message || "Talep işleme hatası.", true);
     }
   });
 }
@@ -3785,7 +3771,7 @@ function renderMineCardsWithLevelUp() {
     btn.className = "btn small lvlup-btn";
     if (nextLevel <= MAX_LEVEL) {
       const cost = getMinerLevelCost(cfg.baseCost, nextLevel);
-      btn.textContent = `Lvl YÃ¼kselt (${fmt(cost)} Banknot)`;
+      btn.textContent = `Lvl Yükselt (${fmt(cost)} Banknot)`;
       btn.setAttribute("data-idx", String(idx));
     } else {
       btn.textContent = "Max Level";
