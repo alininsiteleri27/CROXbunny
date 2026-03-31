@@ -13,11 +13,11 @@
   <div id="app" class="app-shell game-layout">
     <aside class="sidebar card hidden" id="leftSidebar">
       <h3 class="sidebar-title">Reisza</h3>
-      <p class="muted">Maden Navigasyonu</p>
+      <p class="muted">Menü</p>
       <nav class="tabs vertical-tabs">
-        <button data-tab="home" class="tab-btn active">Maden Mağarası</button>
+        <button data-tab="home" class="tab-btn active">Maden</button>
         <button data-tab="store" class="tab-btn">Mağaza</button>
-        <button data-tab="leaderboard" class="tab-btn">Sıralama</button>
+        <button data-tab="leaderboard" class="tab-btn">Lider</button>
         <button data-tab="finance" class="tab-btn">Finans</button>
         <button data-tab="admin" class="tab-btn hidden" id="adminTabBtn">Admin</button>
       </nav>
@@ -31,7 +31,7 @@
         </div>
         <div class="right-header">
           <span id="userBadge" class="badge">Misafir</span>
-          <button id="openProfileBtn" class="btn">Profil</button>
+          <button id="openProfileBtn" class="btn small">Profil</button>
           <button id="logoutBtn" class="btn ghost hidden">Çıkış</button>
         </div>
       </header>
@@ -68,12 +68,12 @@
 
         <section id="tab-home" class="tab-panel card active glow-panel cave-panel">
           <div class="row">
-            <h3>Maden Deposu</h3>
-            <button id="collectAllBtn" class="btn primary">Hepsini Topla</button>
+          <h3>Maden</h3>
+          <button id="collectAllBtn" class="btn primary">Topla</button>
           </div>
           <div class="stats-line">
             <p>Birikmiş KMR: <strong id="pendingKmrValue">0</strong></p>
-            <p>Slot: <strong id="slotInfo">0 / 0</strong> <button id="expandCaveBtn" class="btn small">+1 Slot (1 Çekip)</button></p>
+            <p>Slot: <strong id="slotInfo">0 / 0</strong> <button id="expandCaveBtn" class="btn small">+Slot</button></p>
           </div>
           <div id="minersContainer" class="miners-grid"></div>
         </section>
@@ -82,19 +82,19 @@
           <h3>Madenciler</h3>
           <div id="minerStore" class="miners-grid"></div>
           <hr />
-          <h3>Sandıklar</h3>
+          <h3>Sandık</h3>
           <div class="chest-showcase">
             <article class="chest-card basic-chest">
               <div class="chest-visual"></div>
-              <h4>Standart Sandık</h4>
-              <p>Starter/Epic eşya veya 0.05 Çekip</p>
-              <button id="openBasicChestBtn" class="btn">Sandık Aç (1.000 KMR)</button>
+              <h4>Standart</h4>
+              <p>1.000 KMR</p>
+              <button id="openBasicChestBtn" class="btn">Aç</button>
             </article>
             <article class="chest-card bomb-chest">
               <div class="chest-visual"></div>
-              <h4>Bomba Kutusu</h4>
-              <p>Epic/Legendary eşya veya 0.5 Çekip</p>
-              <button id="openBombChestBtn" class="btn">Bomba Kutusu Aç (5.000 KMR)</button>
+              <h4>Bomba</h4>
+              <p>5.000 KMR</p>
+              <button id="openBombChestBtn" class="btn">Aç</button>
             </article>
           </div>
           <p id="chestResult" class="muted"></p>
