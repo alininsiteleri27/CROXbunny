@@ -12,9 +12,7 @@ import {
   getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection,
   query, orderBy, limit, getDocs, onSnapshot, serverTimestamp, increment, where
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import {
-  getStorage, ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+// Storage kullanılmıyor
 
 // ── Firebase Config ──────────────────────────
 const firebaseConfig = {
@@ -30,7 +28,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 // ── CONSTANTS ────────────────────────────────
 const MINER_TYPES = [
@@ -801,27 +798,17 @@ window.submitDeposit = async function(e) {
   const amount = parseFloat(el("depositAmount2").value);
   const currency = el("depositCurrency").value;
   const note = el("depositNote").value;
-  const fileInput = el("depositReceipt");
-  let receiptUrl = null;
-
-  if (fileInput.files[0]) {
-    try {
-      const fileRef = ref(storage, `receipts/${currentUser.uid}/${Date.now()}_${fileInput.files[0].name}`);
-      await uploadBytes(fileRef, fileInput.files[0]);
-      receiptUrl = await getDownloadURL(fileRef);
-    } catch(e) { console.warn("Upload error:", e); }
-  }
+  const receiptUrl = el("depositReceiptUrl")?.value?.trim() || null;
 
   await addDoc(collection(db, "deposit_requests"), {
     uid: currentUser.uid,
     username: userData?.username || "?",
     amount, currency, note,
-    receiptUrl: receiptUrl || null,
+    receiptUrl,
     status: "pending",
     createdAt: serverTimestamp()
   });
   el("depositForm").reset();
-  el("depositFileName").textContent = "";
   showToast("✅ Yatırma talebi oluşturuldu!", "success");
 };
 
