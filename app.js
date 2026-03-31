@@ -68,7 +68,14 @@ let refreshTimer = null;
 const el = {
   authView: document.getElementById("authView"),
   gameView: document.getElementById("gameView"),
+  leftSidebar: document.getElementById("leftSidebar"),
   userBadge: document.getElementById("userBadge"),
+  openProfileBtn: document.getElementById("openProfileBtn"),
+  closeProfileBtn: document.getElementById("closeProfileBtn"),
+  profileModal: document.getElementById("profileModal"),
+  profileForm: document.getElementById("profileForm"),
+  profileUsername: document.getElementById("profileUsername"),
+  profileMessage: document.getElementById("profileMessage"),
   logoutBtn: document.getElementById("logoutBtn"),
   authMessage: document.getElementById("authMessage"),
   registerForm: document.getElementById("registerForm"),
@@ -105,8 +112,27 @@ const el = {
   adminMinerActionForm: document.getElementById("adminMinerActionForm"),
   adminDepositRequests: document.getElementById("adminDepositRequests"),
   adminWithdrawRequests: document.getElementById("adminWithdrawRequests"),
-  adminMessage: document.getElementById("adminMessage")
+  adminMessage: document.getElementById("adminMessage"),
+  supportWidget: document.getElementById("supportWidget"),
+  toggleSupportBtn: document.getElementById("toggleSupportBtn"),
+  supportPanel: document.getElementById("supportPanel"),
+  supportForm: document.getElementById("supportForm"),
+  supportTitle: document.getElementById("supportTitle"),
+  supportMessageInput: document.getElementById("supportMessageInput"),
+  supportMessage: document.getElementById("supportMessage"),
+  supportTicketsList: document.getElementById("supportTicketsList"),
+  supportMessages: document.getElementById("supportMessages"),
+  supportReplyForm: document.getElementById("supportReplyForm"),
+  supportReplyInput: document.getElementById("supportReplyInput"),
+  adminSupportTickets: document.getElementById("adminSupportTickets"),
+  adminSupportMessages: document.getElementById("adminSupportMessages"),
+  adminSupportReplyForm: document.getElementById("adminSupportReplyForm"),
+  adminSupportReplyText: document.getElementById("adminSupportReplyText"),
+  adminCloseTicketBtn: document.getElementById("adminCloseTicketBtn")
 };
+
+let selectedUserTicketId = null;
+let selectedAdminTicketId = null;
 
 function fmt(n, d = 0) {
   return Number(n || 0).toLocaleString("tr-TR", { maximumFractionDigits: d, minimumFractionDigits: d });
@@ -591,6 +617,138 @@ async function createWithdrawRequest(uid, amount, iban, fullName) {
   });
 }
 
+async function createSupportTicket(uid, title, message) {
+  const ticketRef = await addDoc(collection(db, "supporttickets"), {
+    uid,
+    title,
+    lastMessage: message,
+    message,
+    status: "open",
+    lastSenderRole: "user",
+    updatedAt: serverTimestamp(),
+    createdAt: serverTimestamp()
+  });
+  await addDoc(collection(db, "supportmessages"), {
+    ticketId: ticketRef.id,
+    uid,
+    senderRole: "user",
+    text: message,
+    createdAt: serverTimestamp()
+  });
+  return ticketRef.id;
+}
+
+async function sendSupportMessage(ticketId, uid, text, senderRole) {
+  const ticketRef = doc(db, "supporttickets", ticketId);
+  const ticketSnap = await getDoc(ticketRef);
+  if (!ticketSnap.exists()) throw new Error("Talep bulunamadı.");
+  const tData = ticketSnap.data();
+  if (senderRole === "user" && tData.uid !== uid) throw new Error("Bu talep sana ait değil.");
+  if (tData.status !== "open") throw new Error("Talep kapalı.");
+
+  await addDoc(collection(db, "supportmessages"), {
+    ticketId,
+    uid,
+    senderRole,
+    text,
+    createdAt: serverTimestamp()
+  });
+
+  await updateDoc(ticketRef, {
+    lastMessage: text,
+    lastSenderRole: senderRole,
+    updatedAt: serverTimestamp()
+  });
+}
+
+async function closeSupportTicket(ticketId) {
+  await updateDoc(doc(db, "supporttickets", ticketId), {
+    status: "closed",
+    updatedAt: serverTimestamp()
+  });
+}
+
+async function loadUserTickets(uid) {
+  const qRef = query(collection(db, "supporttickets"), where("uid", "==", uid), orderBy("createdAt", "desc"), limit(20));
+  const snap = await getDocs(qRef);
+  const tickets = [];
+  snap.forEach((d) => tickets.push({ id: d.id, ...d.data() }));
+  return tickets;
+}
+
+async function loadAllTicketsForAdmin() {
+  const qRef = query(collection(db, "supporttickets"), orderBy("createdAt", "desc"), limit(40));
+  const snap = await getDocs(qRef);
+  const tickets = [];
+  snap.forEach((d) => tickets.push({ id: d.id, ...d.data() }));
+  return tickets;
+}
+
+async function loadSupportMessages(ticketId) {
+  const qRef = query(collection(db, "supportmessages"), where("ticketId", "==", ticketId), orderBy("createdAt", "asc"), limit(200));
+  const snap = await getDocs(qRef);
+  const messages = [];
+  snap.forEach((d) => messages.push({ id: d.id, ...d.data() }));
+  return messages;
+}
+
+function renderMessageList(target, list) {
+  if (!list.length) {
+    target.innerHTML = "<p class='muted'>Mesaj yok.</p>";
+    return;
+  }
+  target.innerHTML = list.map((m) => `
+    <div class="msg-bubble ${m.senderRole === "admin" ? "msg-admin" : "msg-user"}">
+      <div><strong>${m.senderRole === "admin" ? "Admin" : "Sen"}</strong></div>
+      <div>${m.text || ""}</div>
+    </div>
+  `).join("");
+  target.scrollTop = target.scrollHeight;
+}
+
+async function renderUserSupportArea() {
+  if (!currentUser) return;
+  const tickets = await loadUserTickets(currentUser.uid);
+  if (!selectedUserTicketId && tickets.length) selectedUserTicketId = tickets[0].id;
+  if (selectedUserTicketId && !tickets.find((t) => t.id === selectedUserTicketId)) selectedUserTicketId = tickets[0]?.id || null;
+
+  el.supportTicketsList.innerHTML = tickets.map((t) => `
+    <div class="support-ticket-item ${t.id === selectedUserTicketId ? "active" : ""}" data-ticket-id="${t.id}">
+      <div><strong>${t.title}</strong></div>
+      <div class="muted">${t.status === "open" ? "Açık" : "Kapalı"} • ${t.lastSenderRole === "admin" ? "Admin cevapladı" : "Sen yazdın"}</div>
+    </div>
+  `).join("") || "<p class='muted'>Henüz talebin yok.</p>";
+
+  if (!selectedUserTicketId) {
+    el.supportMessages.innerHTML = "<p class='muted'>Bir talep seç.</p>";
+    return;
+  }
+  const messages = await loadSupportMessages(selectedUserTicketId);
+  renderMessageList(el.supportMessages, messages);
+}
+
+async function renderAdminSupportArea() {
+  if (!currentData?.isAdmin) return;
+  const tickets = await loadAllTicketsForAdmin();
+  if (!selectedAdminTicketId && tickets.length) selectedAdminTicketId = tickets[0].id;
+  if (selectedAdminTicketId && !tickets.find((t) => t.id === selectedAdminTicketId)) selectedAdminTicketId = tickets[0]?.id || null;
+
+  el.adminSupportTickets.innerHTML = tickets.map((t) => `
+    <div class="support-ticket-item ${t.id === selectedAdminTicketId ? "active" : ""}" data-admin-ticket-id="${t.id}">
+      <div><strong>${t.title}</strong></div>
+      <div class="muted">UID: ${t.uid}</div>
+      <div class="muted">${t.status === "open" ? "Açık" : "Kapalı"} • Son: ${t.lastSenderRole === "admin" ? "Admin" : "Kullanıcı"}</div>
+    </div>
+  `).join("") || "<p class='muted'>Talep yok.</p>";
+
+  if (!selectedAdminTicketId) {
+    el.adminSupportMessages.innerHTML = "<p class='muted'>Bir talep seç.</p>";
+    return;
+  }
+  const messages = await loadSupportMessages(selectedAdminTicketId);
+  renderMessageList(el.adminSupportMessages, messages);
+}
+
 async function adminResolveRequest(kind, requestId, approve) {
   const col = kind === "deposit" ? "depositrequests" : "withdrawrequests";
   const reqRef = doc(db, col, requestId);
@@ -752,6 +910,124 @@ function bindAuth() {
   });
 
   el.logoutBtn.addEventListener("click", () => signOut(auth));
+}
+
+function bindProfileAndSupport() {
+  el.openProfileBtn.addEventListener("click", () => {
+    if (!currentData) return;
+    el.profileUsername.value = currentData.username || "";
+    el.profileModal.classList.remove("hidden");
+  });
+
+  el.closeProfileBtn.addEventListener("click", () => {
+    el.profileModal.classList.add("hidden");
+  });
+
+  el.profileModal.addEventListener("click", (ev) => {
+    if (ev.target === el.profileModal) el.profileModal.classList.add("hidden");
+  });
+
+  el.profileForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const nextUsername = el.profileUsername.value.trim();
+      if (nextUsername.length < 3) throw new Error("Kullanıcı adı en az 3 karakter olmalı.");
+      if (!currentUser) throw new Error("Oturum bulunamadı.");
+      await updateProfile(currentUser, { displayName: nextUsername });
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        username: nextUsername,
+        updatedAt: serverTimestamp()
+      });
+      showMsg(el.profileMessage, "Profil güncellendi.");
+      await rerender();
+    } catch (err) {
+      showMsg(el.profileMessage, err.message || "Profil güncellenemedi.", true);
+    }
+  });
+
+  el.toggleSupportBtn.addEventListener("click", () => {
+    el.supportPanel.classList.toggle("hidden");
+  });
+
+  el.supportForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      if (!currentUser) throw new Error("Oturum bulunamadı.");
+      const title = el.supportTitle.value.trim();
+      const message = el.supportMessageInput.value.trim();
+      if (!title || !message) throw new Error("Konu ve mesaj zorunlu.");
+      const newId = await createSupportTicket(currentUser.uid, title, message);
+      selectedUserTicketId = newId;
+      showMsg(el.supportMessage, "Destek talebin gönderildi.");
+      el.supportForm.reset();
+      await renderUserSupportArea();
+    } catch (err) {
+      showMsg(el.supportMessage, err.message || "Destek talebi gönderilemedi.", true);
+    }
+  });
+
+  el.supportTicketsList.addEventListener("click", async (ev) => {
+    const target = ev.target;
+    if (!(target instanceof HTMLElement)) return;
+    const wrap = target.closest("[data-ticket-id]");
+    if (!wrap) return;
+    selectedUserTicketId = wrap.getAttribute("data-ticket-id");
+    await renderUserSupportArea();
+  });
+
+  el.supportReplyForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      if (!currentUser) throw new Error("Oturum yok.");
+      if (!selectedUserTicketId) throw new Error("Önce bir talep seç.");
+      const text = el.supportReplyInput.value.trim();
+      if (!text) throw new Error("Mesaj boş olamaz.");
+      await sendSupportMessage(selectedUserTicketId, currentUser.uid, text, "user");
+      el.supportReplyInput.value = "";
+      await renderUserSupportArea();
+      if (currentData?.isAdmin) await renderAdminSupportArea();
+    } catch (err) {
+      showMsg(el.supportMessage, err.message || "Mesaj gönderilemedi.", true);
+    }
+  });
+
+  el.adminSupportTickets.addEventListener("click", async (ev) => {
+    const target = ev.target;
+    if (!(target instanceof HTMLElement)) return;
+    const wrap = target.closest("[data-admin-ticket-id]");
+    if (!wrap) return;
+    selectedAdminTicketId = wrap.getAttribute("data-admin-ticket-id");
+    await renderAdminSupportArea();
+  });
+
+  el.adminSupportReplyForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      if (!currentUser || !currentData?.isAdmin) throw new Error("Admin yetkisi yok.");
+      if (!selectedAdminTicketId) throw new Error("Talep seç.");
+      const text = el.adminSupportReplyText.value.trim();
+      if (!text) throw new Error("Mesaj boş.");
+      await sendSupportMessage(selectedAdminTicketId, currentUser.uid, text, "admin");
+      el.adminSupportReplyText.value = "";
+      await renderAdminSupportArea();
+      await renderUserSupportArea();
+    } catch (err) {
+      showMsg(el.adminMessage, err.message || "Admin mesaj gönderilemedi.", true);
+    }
+  });
+
+  el.adminCloseTicketBtn.addEventListener("click", async () => {
+    try {
+      if (!currentUser || !currentData?.isAdmin) throw new Error("Admin yetkisi yok.");
+      if (!selectedAdminTicketId) throw new Error("Talep seç.");
+      await closeSupportTicket(selectedAdminTicketId);
+      showMsg(el.adminMessage, "Talep kapatıldı.");
+      await renderAdminSupportArea();
+      await renderUserSupportArea();
+    } catch (err) {
+      showMsg(el.adminMessage, err.message || "Talep kapatılamadı.", true);
+    }
+  });
 }
 
 async function renderAdminLists() {
@@ -1045,9 +1321,11 @@ async function rerender() {
   if (currentData.isAdmin) {
     el.adminTabBtn.classList.remove("hidden");
     await renderAdminLists();
+    await renderAdminSupportArea();
   } else {
     el.adminTabBtn.classList.add("hidden");
   }
+  await renderUserSupportArea();
 }
 
 async function handleAuthState(user) {
@@ -1056,7 +1334,10 @@ async function handleAuthState(user) {
     currentData = null;
     el.authView.classList.remove("hidden");
     el.gameView.classList.add("hidden");
+    el.leftSidebar.classList.add("hidden");
+    el.supportWidget.classList.add("hidden");
     el.logoutBtn.classList.add("hidden");
+    el.profileModal.classList.add("hidden");
     if (refreshTimer) clearInterval(refreshTimer);
     return;
   }
@@ -1064,6 +1345,8 @@ async function handleAuthState(user) {
   await ensureUserDoc(user);
   el.authView.classList.add("hidden");
   el.gameView.classList.remove("hidden");
+  el.leftSidebar.classList.remove("hidden");
+  el.supportWidget.classList.remove("hidden");
   el.logoutBtn.classList.remove("hidden");
   await rerender();
   if (refreshTimer) clearInterval(refreshTimer);
@@ -1074,6 +1357,7 @@ function init() {
   tryTelegramBootstrap();
   bindTabs();
   bindAuth();
+  bindProfileAndSupport();
   bindGameActions();
   onAuthStateChanged(auth, handleAuthState);
 }
