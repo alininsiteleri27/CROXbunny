@@ -41,12 +41,12 @@
     </main>
 
     <main id="gameView" class="hidden">
-      <section class="wallet card">
-        <div><strong>KMR:</strong> <span id="kmrValue">0</span></div>
-        <div><strong>Banknot:</strong> <span id="banknotValue">0</span></div>
-        <div><strong>Çekip:</strong> <span id="cekipValue">0</span></div>
-        <div><strong>Toplam PH:</strong> <span id="phValue">0</span></div>
-        <div class="chest-row">
+      <section class="wallet card premium-wallet">
+        <div class="wallet-box"><span>KMR</span><strong id="kmrValue">0</strong></div>
+        <div class="wallet-box"><span>Banknot</span><strong id="banknotValue">0</strong></div>
+        <div class="wallet-box"><span>Çekip</span><strong id="cekipValue">0</strong></div>
+        <div class="wallet-box"><span>Toplam PH</span><strong id="phValue">0</strong></div>
+        <div class="chest-row wallet-actions">
           <button id="convertKmrBtn" class="btn small">1000 KMR → 1 Banknot</button>
           <button id="convertBanknotBtn" class="btn small">1000 Banknot → 1 Çekip</button>
         </div>
@@ -60,13 +60,15 @@
         <button data-tab="admin" class="tab-btn hidden" id="adminTabBtn">Admin</button>
       </nav>
 
-      <section id="tab-home" class="tab-panel card active">
+      <section id="tab-home" class="tab-panel card active glow-panel">
         <div class="row">
           <h3>Maden Deposu</h3>
           <button id="collectAllBtn" class="btn primary">Hepsini Topla</button>
         </div>
-        <p>Birikmiş KMR: <strong id="pendingKmrValue">0</strong></p>
-        <p>Slot: <strong id="slotInfo">0 / 0</strong> <button id="expandCaveBtn" class="btn small">+1 Slot (1 Çekip)</button></p>
+        <div class="stats-line">
+          <p>Birikmiş KMR: <strong id="pendingKmrValue">0</strong></p>
+          <p>Slot: <strong id="slotInfo">0 / 0</strong> <button id="expandCaveBtn" class="btn small">+1 Slot (1 Çekip)</button></p>
+        </div>
         <div id="minersContainer" class="miners-grid"></div>
       </section>
 
@@ -130,6 +132,14 @@
               </select>
               <button class="btn" type="submit">Uygula</button>
             </form>
+            <form id="adminSetRoleForm" class="grid">
+              <input id="adminRoleUid" type="text" placeholder="Admin rolü ver/al UID" required />
+              <select id="adminRoleAction">
+                <option value="grant">Admin Yetkisi Ver</option>
+                <option value="revoke">Admin Yetkisini Al</option>
+              </select>
+              <button class="btn" type="submit">Rol İşlemi</button>
+            </form>
           </div>
           <div>
             <h4>Eşya Ekle / Çıkar</h4>
@@ -142,6 +152,21 @@
                 <option value="remove">Çıkar (isim+PH eşleşme)</option>
               </select>
               <button class="btn" type="submit">Eşya İşlemi</button>
+            </form>
+            <form id="adminMinerActionForm" class="grid">
+              <input id="adminMinerUid" type="text" placeholder="Madenci işlemi UID" required />
+              <select id="adminMinerType">
+                <option value="kubra">Kübra</option>
+                <option value="beyza">Beyza</option>
+                <option value="mehmet">Mehmet</option>
+                <option value="sevki">Şevki</option>
+                <option value="ali">Ali</option>
+              </select>
+              <select id="adminMinerAction">
+                <option value="add">Madenci Ekle</option>
+                <option value="remove">Son Madenciyi Sil</option>
+              </select>
+              <button class="btn" type="submit">Madenci İşlemi</button>
             </form>
           </div>
         </div>
