@@ -1,433 +1,117 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0a0a0f" />
-  <title>⛏️ MadenOyunu — Kazan & Kazan!</title>
-  <meta name="description" content="Telegram tabanlı madencilik oyunu. Madenciler satın al, kömür kazan, gerçek para çek!" />
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Kömür Madeni - Telegram Oyunu</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- ── Particles ───────────────────────────────────────────────── -->
-<div id="particles"></div>
-
-<!-- ── Loading Screen ─────────────────────────────────────────── -->
-<div class="loading-screen" id="loading-screen">
-  <div class="load-icon">⛏️</div>
-  <p>Maden yükleniyor...</p>
-  <div class="spinner"></div>
-</div>
-
-<!-- ── Toast Container ────────────────────────────────────────── -->
-<div id="toast-container"></div>
-
-<!-- ══════════════════════════════════════════════════════════════
-     AUTH PAGE
-     ══════════════════════════════════════════════════════════════ -->
-<div id="page-auth" class="hidden">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div class="logo-icon">⛏️</div>
-      <h1>MadenOyunu</h1>
-      <p>Madenci ol, kömür kazan, gerçek para çek!</p>
-    </div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Giriş Yap</button>
-      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Kayıt Ol</button>
-    </div>
-
-    <!-- Login Form -->
-    <div id="form-login">
-      <div class="form-group">
-        <label>Kullanıcı Adı</label>
-        <input id="login-username" class="form-input" type="text" placeholder="kullanici_adi" autocomplete="username" />
-      </div>
-      <div class="form-group">
-        <label>Şifre</label>
-        <input id="login-password" class="form-input" type="password" placeholder="••••••••" autocomplete="current-password" />
-      </div>
-      <button class="btn btn-gold" id="login-btn" onclick="doLogin()">🔓 Giriş Yap</button>
-      <div id="login-error"></div>
-    </div>
-
-    <!-- Register Form -->
-    <div id="form-register" class="hidden">
-      <div class="form-group">
-        <label>Kullanıcı Adı <span style="color:var(--text3)">(max 20 karakter)</span></label>
-        <input id="reg-username" class="form-input" type="text" placeholder="kullanici_adi" maxlength="20" autocomplete="username" />
-      </div>
-      <div class="form-group">
-        <label>Şifre</label>
-        <input id="reg-password" class="form-input" type="password" placeholder="••••••••" autocomplete="new-password" />
-        <p class="password-hint">En az 8 karakter, 1 büyük harf, 1 rakam</p>
-      </div>
-      <div class="form-group">
-        <label>Şifre Tekrar</label>
-        <input id="reg-password2" class="form-input" type="password" placeholder="••••••••" autocomplete="new-password" />
-      </div>
-      <button class="btn btn-gold" id="register-btn" onclick="doRegister()">⛏️ Hesap Oluştur</button>
-      <div id="register-error"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════
-     GAME PAGE
-     ══════════════════════════════════════════════════════════════ -->
-<div id="page-game" class="hidden">
-
-  <!-- Top Bar -->
-  <div class="top-bar">
-    <div class="top-bar-left">
-      <div class="league-badge" id="league-badge">⚒️ Çırak</div>
-    </div>
-    <div class="currencies">
-      <div class="currency-chip"><span class="icon">🪨</span><span id="bal-kmr">0</span></div>
-      <div class="currency-chip"><span class="icon">💵</span><span id="bal-banknot">0</span></div>
-      <div class="currency-chip"><span class="icon">💰</span><span id="bal-cekip">0.000</span></div>
+  <div id="auth-container">
+    <div class="auth-card">
+      <h2>Kömür Madeni</h2>
+      <form id="login-form">
+        <input type="text" id="login-username" placeholder="Kullanıcı adı" required>
+        <input type="password" id="login-password" placeholder="Şifre" required>
+        <button type="submit">Giriş Yap</button>
+      </form>
+      <form id="register-form">
+        <input type="text" id="register-username" placeholder="Kullanıcı adı (max 20)" required>
+        <input type="password" id="register-password" placeholder="Şifre (min 8, 1 büyük, 1 rakam)" required>
+        <input type="password" id="register-confirm" placeholder="Şifre tekrar" required>
+        <button type="submit">Kayıt Ol</button>
+      </form>
+      <p id="auth-error" style="color: red;"></p>
     </div>
   </div>
 
-  <!-- Game Area -->
-  <div class="game-area">
-
-    <!-- Sidebar -->
-    <nav class="sidebar">
-      <button class="nav-btn" id="nav-profile" onclick="openModal('profile')">
-        <span class="nav-icon">👤</span>
-        <span class="nav-label">Profil</span>
-      </button>
-      <button class="nav-btn" id="nav-shop" onclick="openModal('shop')">
-        <span class="nav-icon">🏪</span>
-        <span class="nav-label">Mağaza</span>
-      </button>
-      <button class="nav-btn" id="nav-rank" onclick="openModal('rank')">
-        <span class="nav-icon">🏆</span>
-        <span class="nav-label">Sıralama</span>
-      </button>
-      <button class="nav-btn active" id="nav-mine" onclick="showView('cave')">
-        <span class="nav-icon">⛏️</span>
-        <span class="nav-label">Maden</span>
-      </button>
-      <button class="nav-btn" id="nav-settings" onclick="openModal('settings')">
-        <span class="nav-icon">⚙️</span>
-        <span class="nav-label">Ayarlar</span>
-      </button>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="main-content" id="main-content">
-
-      <!-- ── Cave View ─────────────────────────────────────── -->
-      <div id="view-cave">
-        <div class="cave-walls"></div>
-        <div class="cave-top" id="cave-top"></div>
-
-        <!-- Ore veins -->
-        <div class="ore-vein" style="left:5%;top:20%;width:80px;height:3px;transform:rotate(-15deg)"></div>
-        <div class="ore-vein" style="right:8%;top:35%;width:60px;height:3px;transform:rotate(20deg)"></div>
-        <div class="ore-vein" style="left:10%;top:55%;width:100px;height:2px;transform:rotate(5deg)"></div>
-
-        <div class="cave-content-inner">
-          <!-- Streak Banner (shown after login) -->
-          <div id="streak-banner" class="streak-banner hidden" style="width:min(340px,90vw);margin-top:10px">
-            <div class="streak-icon">🔥</div>
-            <div class="streak-text">
-              <h3 id="streak-title">Günlük Bonus!</h3>
-              <p id="streak-desc">100 KMR kazandın</p>
-            </div>
-          </div>
-
-          <!-- Cave Entrance -->
-          <div class="cave-entrance" onclick="enterMine()">
-            <div class="cave-arch">
-              <div class="cave-arch-bg">
-                <div class="cave-arch-inner">
-                  <div class="cave-glow"></div>
-                  <!-- Sparkles inside cave -->
-                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0.3">✨</div>
-                </div>
-              </div>
-            </div>
-            <div class="cave-enter-label">👆 Madene Gir</div>
-          </div>
-
-          <!-- Miners in cave -->
-          <div class="cave-miners" id="cave-miners"></div>
-
-          <!-- No miner hint -->
-          <div id="no-miner-hint" class="empty-state" style="margin-top:20px">
-            <div class="empty-icon">⛏️</div>
-            <p>Mağazadan bir madenci satın al!</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Mine Interior View ─────────────────────────────── -->
-      <div id="view-mine" class="hidden">
-        <div class="mine-header">
-          <button class="back-btn" onclick="showView('cave')">←</button>
-          <h2 style="font-size:18px;font-weight:800">⛏️ Maden İçi</h2>
-        </div>
-
-        <!-- Miners digging -->
-        <div class="mine-miners" id="mine-miners"></div>
-
-        <!-- Stats -->
-        <div class="mine-stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">⚡ Saatlik Kazanç</div>
-            <div class="stat-value" id="hourly-rate">0</div>
-            <div class="stat-sub">KMR/saat</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">⏳ Birikmiş</div>
-            <div class="stat-value" id="pending-kmr">0</div>
-            <div class="stat-sub">KMR bekliyor</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">💪 Güç</div>
-            <div class="stat-value" id="total-ph">0</div>
-            <div class="stat-sub">PH (Güç)</div>
-            <div class="ph-bar-wrap" style="margin-top:8px">
-              <div class="ph-bar" id="ph-bar" style="width:0%"></div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">⛏️ Toplam Kazılan</div>
-            <div class="stat-value" id="total-mined" style="font-size:16px">0</div>
-            <div class="stat-sub">KMR ömür boyu</div>
-          </div>
-        </div>
-
-        <!-- Collect Button -->
-        <button class="collect-btn" id="collect-btn" onclick="collectRewards()">
-          <span>⬆️</span> <span>KMR Topla</span>
-        </button>
-
-        <!-- Convert -->
-        <div class="convert-section">
-          <div class="convert-title">💱 Para Dönüştür</div>
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <div class="convert-row">
-              <input class="convert-input" id="conv-kmr" type="number" placeholder="KMR miktarı" min="1000" step="1000" />
-              <button class="btn btn-surface btn-sm" onclick="convertCurrency('kmr','banknot')">→ 💵</button>
-            </div>
-            <div style="font-size:11px;color:var(--text3)">1.000 KMR = 1 Banknot</div>
-            <div class="convert-row">
-              <input class="convert-input" id="conv-banknot" type="number" placeholder="Banknot miktarı" min="10000" step="10000"/>
-              <button class="btn btn-surface btn-sm" onclick="convertCurrency('banknot','cekip')">→ 💰</button>
-            </div>
-            <div style="font-size:11px;color:var(--text3)">10.000 Banknot = 1 Çekip</div>
-          </div>
-        </div>
-
-        <!-- Equipment Shelves -->
-        <div class="shelves-title">🗄️ Eşyalarım <span id="shelf-count" style="color:var(--text3);font-size:13px;font-weight:400">(0)</span></div>
-        <div id="equipment-shelves"></div>
-      </div>
-
-    </div><!-- /main-content -->
-  </div><!-- /game-area -->
-</div><!-- /page-game -->
-
-<!-- ══════════════════════════════════════════════════════════════
-     MODALS
-     ══════════════════════════════════════════════════════════════ -->
-
-<!-- ── Shop Modal ─────────────────────────────────────────── -->
-<div class="modal-overlay hidden" id="modal-shop" onclick="closeModalOutside(event,'shop')">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <span class="modal-title">🏪 Mağaza</span>
-      <button class="modal-close" onclick="closeModal('shop')">✕</button>
+  <div id="game-container">
+    <div class="sidebar">
+      <button class="menu-btn" data-section="home">🏠</button>
+      <button class="menu-btn" data-section="profile">👤</button>
+      <button class="menu-btn" data-section="store">🛒</button>
+      <button class="menu-btn" data-section="leaderboard">🏆</button>
+      <button class="menu-btn" data-section="games">🎮</button>
+      <button class="menu-btn" data-section="settings">⚙️</button>
     </div>
-    <div class="modal-body">
-      <div class="shop-tabs">
-        <button class="shop-tab active" onclick="switchShopTab('miners',this)">⛏️ Madenciler</button>
-        <button class="shop-tab" onclick="switchShopTab('boxes',this)">📦 Kutular</button>
-      </div>
-      <div id="shop-miners"></div>
-      <div id="shop-boxes" class="hidden"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ── Rank Modal ──────────────────────────────────────────── -->
-<div class="modal-overlay hidden" id="modal-rank" onclick="closeModalOutside(event,'rank')">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <span class="modal-title">🏆 Sıralama</span>
-      <button class="modal-close" onclick="closeModal('rank')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="rank-league-tabs">
-        <button class="rank-tab active" onclick="switchRankTab('all',this)">🌍 Tümü</button>
-        <button class="rank-tab" onclick="switchRankTab('cirak',this)">🪨 Çırak</button>
-        <button class="rank-tab" onclick="switchRankTab('amator',this)">⚒️ Amatör</button>
-        <button class="rank-tab" onclick="switchRankTab('usta',this)">🏅 Usta</button>
-      </div>
-      <div class="rank-list" id="rank-list">
-        <div class="empty-state"><div class="empty-icon">⏳</div><p>Yükleniyor...</p></div>
-      </div>
-      <div style="margin-top:16px;padding:14px;background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border)">
-        <div style="font-size:12px;color:var(--text3);margin-bottom:6px">🎁 Lig Ödülleri (Her 20 dakikada)</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <div style="flex:1;text-align:center;padding:8px;background:var(--bg);border-radius:8px">
-            <div style="font-size:11px;color:var(--text3)">🪨 Çırak</div>
-            <div style="font-weight:800;color:var(--gold)">10 💰</div>
-          </div>
-          <div style="flex:1;text-align:center;padding:8px;background:var(--bg);border-radius:8px">
-            <div style="font-size:11px;color:var(--text3)">⚒️ Amatör</div>
-            <div style="font-weight:800;color:var(--gold)">100 💰</div>
-          </div>
-          <div style="flex:1;text-align:center;padding:8px;background:var(--bg);border-radius:8px">
-            <div style="font-size:11px;color:var(--text3)">🏅 Usta</div>
-            <div style="font-weight:800;color:var(--gold)">500 💰</div>
-          </div>
+    <div class="main-content">
+      <!-- HOME -->
+      <div id="home-content" class="content-section">
+        <div class="home-stats">
+          <div class="stat-card">KMR: <span id="kmr-balance">0</span></div>
+          <div class="stat-card">Banknot: <span id="banknot-balance">0</span></div>
+          <div class="stat-card">Kasa (Çekip): <span id="kasa-balance">0</span></div>
+          <div class="stat-card">Toplam PH: <span id="total-ph-value">0</span></div>
         </div>
+        <div class="miner-animation">
+          <h3>Aktif Madenci: <span id="active-miner-name">Mehmet Dayı</span></h3>
+          <p>Saatlik Üretim: <span id="hourly-earn">100</span> KMR</p>
+          <p>Lig: <span id="league-name">Çırak</span></p>
+          <div class="energy-bar">
+            <div class="energy-fill" style="width: 100%"></div>
+          </div>
+          <p>Enerji: <span id="energy-value">100</span>/100</p>
+          <button id="mine-btn">Kaz (10 enerji)</button>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div id="profile-content" class="content-section">
+        <h2>Profil</h2>
+        <p>Kullanıcı: <span id="profile-username"></span></p>
+        <p>Toplam PH: <span id="profile-ph"></span></p>
+        <p>Aktif Madenci: <span id="profile-miner"></span></p>
+        <p>KMR: <span id="profile-kmr"></span></p>
+        <p>Banknot: <span id="profile-banknot"></span></p>
+        <p>Kasa (Çekip): <span id="profile-kasa"></span></p>
+        <button id="convert-kmr-to-banknot">1000 KMR → 1 Banknot</button>
+        <button id="convert-banknot-to-kmr">1 Banknot → 1000 KMR</button>
+        <button id="convert-banknot-to-cekip">10000 Banknot → 1 Çekip</button>
+        <button id="convert-cekip-to-banknot">1 Çekip → 10000 Banknot</button>
+        <button id="withdraw-btn">Çekim Talebi</button>
+        <h3>Başarımlar</h3>
+        <div id="achievements-list"></div>
+      </div>
+
+      <!-- STORE -->
+      <div id="store-content" class="content-section">
+        <h2>Madenciler</h2>
+        <div id="miners-store"></div>
+        <h2>Kutular</h2>
+        <div id="boxes-store"></div>
+      </div>
+
+      <!-- LEADERBOARD -->
+      <div id="leaderboard-content" class="content-section">
+        <h2>Sıralama (Toplam PH)</h2>
+        <div id="leaderboard-list"></div>
+        <p>Sıralamanız: <span id="my-rank">—</span></p>
+      </div>
+
+      <!-- GAMES -->
+      <div id="games-content" class="content-section">
+        <h2>Şans Çarkı</h2>
+        <button id="spin-wheel-btn">Çarkı Çevir (Günde 1)</button>
+        <h2>Kazı Kazan</h2>
+        <button id="scratch-btn">Oyna (500 KMR)</button>
+        <h2>Günlük Görevler</h2>
+        <div id="daily-tasks"></div>
+        <h2>Başarımlar</h2>
+        <div id="achievements-game"></div>
+        <h2>Arkadaş Davet</h2>
+        <button id="invite-friend-btn">Davet Kodu Al</button>
+        <p id="invite-code"></p>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="settings-content" class="content-section">
+        <h2>Ayarlar</h2>
+        <button id="logout-btn">Çıkış Yap</button>
+        <button id="delete-account-btn">Hesabı Sil</button>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ── Profile Modal ───────────────────────────────────────── -->
-<div class="modal-overlay hidden" id="modal-profile" onclick="closeModalOutside(event,'profile')">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <span class="modal-title">👤 Profil</span>
-      <button class="modal-close" onclick="closeModal('profile')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="profile-avatar">⛏️</div>
-      <div style="text-align:center">
-        <div style="font-size:20px;font-weight:800" id="profile-username">—</div>
-        <div id="profile-league-badge" style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:var(--surface);border-radius:20px;font-size:13px;font-weight:600;color:var(--gold)">⚒️ Çırak</div>
-      </div>
-      <div class="profile-info-grid">
-        <div class="profile-info-card">
-          <div class="profile-info-label">💪 Güç</div>
-          <div class="profile-info-value" id="profile-ph">0 PH</div>
-        </div>
-        <div class="profile-info-card">
-          <div class="profile-info-label">🪨 KMR</div>
-          <div class="profile-info-value" id="profile-kmr">0</div>
-        </div>
-        <div class="profile-info-card">
-          <div class="profile-info-label">💵 Banknot</div>
-          <div class="profile-info-value" id="profile-banknot">0</div>
-        </div>
-        <div class="profile-info-card">
-          <div class="profile-info-label">💰 Çekip</div>
-          <div class="profile-info-value" id="profile-cekip">0.000</div>
-        </div>
-      </div>
-      <div class="profile-info-card" style="margin-bottom:16px;text-align:center">
-        <div class="profile-info-label">⛏️ Toplam Kazılan</div>
-        <div class="profile-info-value" id="profile-mined" style="font-size:16px">0 KMR</div>
-      </div>
-
-      <div class="profile-actions">
-        <!-- Withdraw -->
-        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
-          <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">💰 Çekip Çek</div>
-          <div class="convert-row" style="margin-bottom:8px">
-            <input class="convert-input" id="withdraw-amount" type="number" placeholder="Miktar (min 1)" min="1" step="0.001" />
-          </div>
-          <input class="convert-input" id="withdraw-address" type="text" placeholder="Adres / Telegram ID" style="width:100%;margin-bottom:8px" />
-          <button class="btn btn-gold btn-full" onclick="doWithdraw()">💸 Çekim Talebi Oluştur</button>
-        </div>
-        <button class="btn btn-surface" onclick="openChangePassword()">🔑 Şifreyi Değiştir</button>
-        <button class="btn btn-danger" onclick="doLogout()">🚪 Çıkış Yap</button>
-      </div>
-
-      <!-- Change Password (hidden by default) -->
-      <div id="change-pw-section" class="hidden" style="margin-top:16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:12px">🔑 Şifre Değiştir</div>
-        <input class="form-input" id="old-pw" type="password" placeholder="Mevcut şifre" style="margin-bottom:8px" />
-        <input class="form-input" id="new-pw" type="password" placeholder="Yeni şifre" style="margin-bottom:8px" />
-        <input class="form-input" id="new-pw2" type="password" placeholder="Yeni şifre tekrar" style="margin-bottom:12px" />
-        <button class="btn btn-gold btn-full" onclick="doChangePassword()">Şifreyi Güncelle</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── Settings Modal ──────────────────────────────────────── -->
-<div class="modal-overlay hidden" id="modal-settings" onclick="closeModalOutside(event,'settings')">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <span class="modal-title">⚙️ Ayarlar</span>
-      <button class="modal-close" onclick="closeModal('settings')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="settings-section">
-        <div class="settings-section-title">🔔 Bildirimler</div>
-        <div class="setting-row">
-          <span class="setting-label">📢 Lig Ödülleri</span>
-          <button class="toggle on" id="toggle-notif" onclick="toggleSetting('notifications',this)"></button>
-        </div>
-      </div>
-      <div class="settings-section">
-        <div class="settings-section-title">🎨 Görünüm</div>
-        <div class="setting-row">
-          <span class="setting-label">🌙 Karanlık Tema</span>
-          <button class="toggle on" id="toggle-theme" onclick="toggleSetting('theme',this)"></button>
-        </div>
-      </div>
-      <div class="settings-section">
-        <div class="settings-section-title">ℹ️ Hakkında</div>
-        <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-          <span class="setting-label">⛏️ MadenOyunu v1.0</span>
-          <span style="font-size:12px;color:var(--text3)">Kömür kazan, dönüştür, para çek.</span>
-        </div>
-        <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
-          <span class="setting-label">💱 Kur Bilgisi</span>
-          <span style="font-size:12px;color:var(--text3)">1.000 KMR = 1 Banknot</span>
-          <span style="font-size:12px;color:var(--text3)">10.000 Banknot = 1 Çekip</span>
-        </div>
-        <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
-          <span class="setting-label">🏆 Lig Sınırları</span>
-          <span style="font-size:12px;color:var(--text3)">🪨 Çırak: 0–499 PH</span>
-          <span style="font-size:12px;color:var(--text3)">⚒️ Amatör: 500–1999 PH</span>
-          <span style="font-size:12px;color:var(--text3)">🏅 Usta: 2000+ PH</span>
-        </div>
-      </div>
-
-      <button class="btn btn-danger btn-full" onclick="doLogout()">🚪 Çıkış Yap</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── Box Opening Overlay ─────────────────────────────────── -->
-<div id="box-open-overlay" class="box-open-overlay hidden">
-  <div class="box-open-particles" id="box-particles"></div>
-  <div class="box-open-anim" id="box-anim-icon">📦</div>
-  <div class="reward-reveal" id="reward-reveal">
-    <div class="reward-emoji" id="reward-emoji">⭐</div>
-    <div class="reward-name" id="reward-name">Ödül!</div>
-    <div class="reward-amount" id="reward-amount">+100</div>
-    <div class="reward-rarity" id="reward-rarity" style="color:var(--common)">Common</div>
-  </div>
-  <button class="btn btn-gold" style="margin-top:32px;min-width:160px" onclick="closeBoxOpening()">Harika! 🎉</button>
-</div>
-
-<!-- ── Item Tooltip ────────────────────────────────────────── -->
-<div class="item-tooltip hidden" id="item-tooltip">
-  <h4 id="tip-name">—</h4>
-  <div class="ph">+<span id="tip-ph">0</span> PH</div>
-  <div id="tip-rarity" style="font-size:11px;margin-top:2px"></div>
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-<script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
