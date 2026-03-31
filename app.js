@@ -69,9 +69,14 @@ let refreshTimer = null;
 const el = {
   authView: document.getElementById("authView"),
   gameView: document.getElementById("gameView"),
+  hudKmr: document.getElementById("hudKmr"),
+  hudBanknot: document.getElementById("hudBanknot"),
+  hudLeague: document.getElementById("hudLeague"),
+  mobileDock: document.getElementById("mobileDock"),
   leftSidebar: document.getElementById("leftSidebar"),
   userBadge: document.getElementById("userBadge"),
   openProfileBtn: document.getElementById("openProfileBtn"),
+  openProfileBtnDock: document.getElementById("openProfileBtnDock"),
   closeProfileBtn: document.getElementById("closeProfileBtn"),
   profileModal: document.getElementById("profileModal"),
   profileForm: document.getElementById("profileForm"),
@@ -349,6 +354,9 @@ function renderWallet(data) {
   el.phValue.textContent = fmt(data.totalPH || 0);
   el.slotInfo.textContent = `${(data.miners || []).length} / ${data.maxSlots || DEFAULT_SLOTS}`;
   el.userBadge.textContent = `${data.username} • ${data.league}`;
+  el.hudKmr.textContent = fmt(data.wallet?.kmr || 0);
+  el.hudBanknot.textContent = fmt(data.wallet?.banknot || 0);
+  el.hudLeague.textContent = data.league || "-";
 }
 
 function renderMiners(data) {
@@ -905,10 +913,11 @@ function bindTabs() {
   const panels = document.querySelectorAll(".tab-panel");
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-tab");
+      if (!id) return;
       buttons.forEach((b) => b.classList.remove("active"));
       panels.forEach((p) => p.classList.remove("active"));
-      btn.classList.add("active");
-      const id = btn.getAttribute("data-tab");
+      document.querySelectorAll(`.tab-btn[data-tab="${id}"]`).forEach((b) => b.classList.add("active"));
       const panel = document.getElementById(`tab-${id}`);
       if (panel) panel.classList.add("active");
     });
@@ -948,11 +957,13 @@ function bindAuth() {
 }
 
 function bindProfileAndSupport() {
-  el.openProfileBtn.addEventListener("click", () => {
+  const openProfile = () => {
     if (!currentData) return;
     el.profileUsername.value = currentData.username || "";
     el.profileModal.classList.remove("hidden");
-  });
+  };
+  el.openProfileBtn.addEventListener("click", openProfile);
+  if (el.openProfileBtnDock) el.openProfileBtnDock.addEventListener("click", openProfile);
 
   el.closeProfileBtn.addEventListener("click", () => {
     el.profileModal.classList.add("hidden");
@@ -1370,6 +1381,7 @@ async function handleAuthState(user) {
     el.authView.classList.remove("hidden");
     el.gameView.classList.add("hidden");
     el.leftSidebar.classList.add("hidden");
+    if (el.mobileDock) el.mobileDock.classList.add("hidden");
     el.supportWidget.classList.add("hidden");
     el.logoutBtn.classList.add("hidden");
     el.profileModal.classList.add("hidden");
@@ -1381,6 +1393,7 @@ async function handleAuthState(user) {
   el.authView.classList.add("hidden");
   el.gameView.classList.remove("hidden");
   el.leftSidebar.classList.remove("hidden");
+  if (el.mobileDock) el.mobileDock.classList.remove("hidden");
   el.supportWidget.classList.remove("hidden");
   el.logoutBtn.classList.remove("hidden");
   await rerender();
