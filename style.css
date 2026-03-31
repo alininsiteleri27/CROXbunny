@@ -1,60 +1,223 @@
+:root {
+  --bg: #0b0d12;
+  --panel: #121622;
+  --panel-2: #171d2e;
+  --text: #eef2ff;
+  --muted: #9aa4c7;
+  --gold: #f8c84e;
+  --neon: #44ffd1;
+  --danger: #ff5c7a;
+  --ok: #69ffa2;
+  --border: #2a3350;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Inter, Arial, sans-serif;
+}
+
 body {
-  background-color: #0b0c10;
-  font-family: 'Segoe UI', sans-serif;
-  color: #ffd700;
-  text-align: center;
   margin: 0;
-  padding: 0;
+  background: radial-gradient(circle at top right, #1b1322, var(--bg) 45%);
+  color: var(--text);
 }
 
-h1, h2, h3 {
-  color: #fffcaa;
-  text-shadow: 0 0 8px #ff8800;
+.app-shell {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 16px;
 }
 
-.hidden { display: none; }
-
-button {
-  background: linear-gradient(90deg, #ffcc00, #ff8800);
-  border: none;
-  color: #000;
-  padding: 8px 16px;
-  margin: 4px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
 
-button:hover {
-  box-shadow: 0 0 10px #ffcc00;
+h1, h2, h3, h4 {
+  margin: 0 0 8px;
 }
 
-.tab { display: none; }
-.tab.active { display: block; }
+p { margin: 6px 0; }
+.muted { color: var(--muted); }
+.hidden { display: none !important; }
 
-nav {
-  background-color: #111;
-  padding: 8px;
-}
-nav button {
-  background: none;
-  color: #ffcc00;
-  border: 1px solid #ffcc00;
+.card {
+  background: linear-gradient(160deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-top: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
-#miners, #miners-store {
+.wallet {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.wallet div {
+  background: #11172a;
+  border: 1px solid #202845;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.tabs {
+  margin-top: 12px;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  gap: 8px;
+}
+
+.tab-btn {
+  background: #151c33;
+  color: var(--text);
+  border: 1px solid #243154;
+  border-radius: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  border-color: var(--gold);
+  color: #111;
+  background: linear-gradient(90deg, var(--gold), var(--neon));
+  font-weight: 700;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.btn {
+  background: #1c2440;
+  border: 1px solid #3a4b81;
+  color: #f6f9ff;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  filter: brightness(1.1);
+}
+
+.btn.primary {
+  background: linear-gradient(90deg, var(--gold), #ffc773);
+  color: #121212;
+  border-color: #f4bd42;
+  font-weight: 700;
+}
+
+.btn.ghost {
+  background: transparent;
+  border-color: #6678b8;
+}
+
+.btn.small {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #2d3963;
+  background: #0f1529;
+  color: var(--text);
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.grid {
+  display: grid;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.miners-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
 }
 
 .miner-card {
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid #ffcc00;
-  border-radius: 10px;
+  border: 1px solid #2d3760;
+  border-radius: 12px;
+  background: #0f162d;
   padding: 10px;
-  margin: 5px;
-  width: 180px;
 }
 
-.admin-only { display: none; }
+.energy-wrap {
+  margin-top: 8px;
+  background: #1d2544;
+  border-radius: 999px;
+  overflow: hidden;
+  height: 10px;
+}
+
+.energy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--danger), var(--ok));
+}
+
+.chest-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th, .table td {
+  border-bottom: 1px solid #28304f;
+  padding: 8px;
+  text-align: left;
+}
+
+.badge {
+  background: #11182e;
+  border: 1px solid #2f3f71;
+  border-radius: 999px;
+  padding: 5px 10px;
+  color: var(--neon);
+}
+
+.right-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.request-card {
+  border: 1px solid #2f3f6e;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: #10182f;
+}
+
+a {
+  color: #7ec8ff;
+}
