@@ -41,6 +41,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const MINERS = [
+  { key: "cirak", name: "Çırak", baseCost: 0, baseKmrPerSec: (50 / 3600), multiplier: 1.2, starterOnly: true },
   { key: "kubra", name: "Kübra", baseCost: 50, baseKmrPerSec: 250, multiplier: 2 },
   { key: "beyza", name: "Beyza", baseCost: 80, baseKmrPerSec: 500, multiplier: 2.5 },
   { key: "mehmet", name: "Mehmet", baseCost: 125, baseKmrPerSec: 750, multiplier: 3 },
@@ -147,7 +148,7 @@ function getMinerLevelCost(baseCost, level) {
 }
 
 function getMinerKmrPerSec(baseRate, level) {
-  return Math.floor(baseRate * Math.pow(1.25, level - 1));
+  return Number((baseRate * Math.pow(1.25, level - 1)).toFixed(4));
 }
 
 function getLeagueByPh(ph) {
@@ -222,17 +223,25 @@ async function ensureUserDoc(user, username) {
     username: username || user.displayName || `user_${user.uid.slice(0, 6)}`,
     isAdmin: false,
     isBanned: false,
-    wallet: { kmr: 5000, banknot: 5, cekip: 0 },
+    wallet: { kmr: 500, banknot: 0, cekip: 0 },
     pendingKmr: 0,
     maxSlots: DEFAULT_SLOTS,
-    miners: [],
+    miners: [{
+      typeKey: "cirak",
+      level: 1,
+      energy: 3600,
+      maxEnergy: 3600,
+      updatedAtMs: Date.now(),
+      source: "starter"
+    }],
     inventory: [],
     highestMultiplier: 1,
     totalPH: 0,
     league: "Çırak",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-    lastTickMs: Date.now()
+    lastTickMs: Date.now(),
+    starterGranted: true
   };
 
   await setDoc(userRef, newUser);
@@ -291,6 +300,29 @@ async function refreshUserData(uid) {
   const snap = await getDoc(userRef);
   if (!snap.exists()) return null;
   const data = snap.data();
+  if (!data.starterGranted) {
+    const miners = Array.isArray(data.miners) ? [...data.miners] : [];
+    const hasStarter = miners.some((m) => m.typeKey === "cirak");
+    if (!hasStarter) {
+      miners.push({
+        typeKey: "cirak",
+        level: 1,
+        energy: 3600,
+        maxEnergy: 3600,
+        updatedAtMs: Date.now(),
+        source: "starter"
+      });
+    }
+    await updateDoc(userRef, {
+      miners,
+      "wallet.kmr": Math.max(500, Number(data.wallet?.kmr || 0)),
+      starterGranted: true,
+      updatedAt: serverTimestamp()
+    });
+    const refreshed = await getDoc(userRef);
+    if (!refreshed.exists()) return null;
+    Object.assign(data, refreshed.data());
+  }
   const highestMultiplier = getHighestMinerMultiplier(data.miners || []);
   const totalPH = getTotalPh(data.inventory || [], highestMultiplier);
   const league = getLeagueByPh(totalPH).name;
@@ -335,10 +367,12 @@ function renderMiners(data) {
     const energy = Number(m.energy || 0);
     const pct = Math.max(0, Math.min(100, (energy / maxEnergy) * 100));
     const refillCost = hourGain * 4;
+    const avatarClass = `miner-avatar avatar-${cfg.key}`;
     return `
       <article class="miner-card">
+        <div class="${avatarClass}"></div>
         <h4>${cfg.name} • Lvl ${level}</h4>
-        <p>Kazanç: ${fmt(perSec)} KMR/s</p>
+        <p>Kazanç: ${fmt(perSec, 2)} KMR/s • ${fmt(hourGain)} KMR/saat</p>
         <p>PH Çarpanı: x${cfg.multiplier}</p>
         <p>Enerji: ${fmt(energy)} / ${fmt(maxEnergy)}</p>
         <div class="energy-wrap"><div class="energy-fill" style="width:${pct}%"></div></div>
@@ -349,8 +383,9 @@ function renderMiners(data) {
 }
 
 function renderMinerStore() {
-  el.minerStore.innerHTML = MINERS.map((m) => `
+  el.minerStore.innerHTML = MINERS.filter((m) => !m.starterOnly).map((m) => `
     <article class="miner-card">
+      <div class="miner-avatar avatar-${m.key}"></div>
       <h4>${m.name}</h4>
       <p>Alım: ${fmt(m.baseCost)} Banknot</p>
       <p>Üretim: ${fmt(m.baseKmrPerSec)} KMR/s</p>
