@@ -1,502 +1,328 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="ReisZa Mining & League - Madeni kazan, liglerde yüksel!" />
-  <title>ReisZa Mining & League</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Reisza Mining & League</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
+    <div id="app">
+        <!-- Auth Screen -->
+        <div id="auth-screen" class="screen active">
+            <div class="auth-container">
+                <div class="logo">
+                    <div class="logo-icon">⛏️</div>
+                    <h1>REISZA</h1>
+                    <p>Mining & League</p>
+                </div>
+                
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchAuthTab('login')">Giriş Yap</button>
+                    <button class="auth-tab" onclick="switchAuthTab('register')">Kayıt Ol</button>
+                </div>
 
-  <!-- ===== SPLASH SCREEN ===== -->
-  <div id="splash-screen">
-    <div class="splash-content">
-      <div class="splash-logo">
-        <span class="logo-icon">⛏️</span>
-        <h1>ReisZa</h1>
-        <p>Mining & League</p>
-      </div>
-      <div class="splash-loader">
-        <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
-        <p id="loaderText">Yükleniyor...</p>
-      </div>
+                <form id="login-form" class="auth-form">
+                    <input type="email" id="login-email" placeholder="E-posta" required>
+                    <input type="password" id="login-password" placeholder="Şifre" required>
+                    <button type="submit" class="btn-primary">Giriş Yap</button>
+                </form>
+
+                <form id="register-form" class="auth-form hidden">
+                    <input type="text" id="register-username" placeholder="Kullanıcı Adı" required>
+                    <input type="email" id="register-email" placeholder="E-posta" required>
+                    <input type="password" id="register-password" placeholder="Şifre (min 6 karakter)" required>
+                    <button type="submit" class="btn-primary">Kayıt Ol</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="main-app" class="hidden">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="user-info">
+                    <span id="header-username">@username</span>
+                    <span id="admin-badge" class="admin-badge hidden">ADMIN</span>
+                </div>
+                <div class="currencies">
+                    <div class="currency">
+                        <span class="currency-icon">⚫</span>
+                        <span id="kmr-balance">0</span>
+                        <small>KMR</small>
+                    </div>
+                    <div class="currency">
+                        <span class="currency-icon">💵</span>
+                        <span id="banknote-balance">0</span>
+                        <small>Banknot</small>
+                    </div>
+                    <div class="currency">
+                        <span class="currency-icon">💎</span>
+                        <span id="cekip-balance">0</span>
+                        <small>Çekip</small>
+                    </div>
+                </div>
+                <button onclick="logout()" class="btn-logout">Çıkış</button>
+            </header>
+
+            <!-- Navigation -->
+            <nav class="bottom-nav">
+                <button onclick="navigateTo('mine')" class="nav-btn active" data-page="mine">
+                    <span>⛏️</span>
+                    <small>Maden</small>
+                </button>
+                <button onclick="navigateTo('store')" class="nav-btn" data-page="store">
+                    <span>🛒</span>
+                    <small>Mağaza</small>
+                </button>
+                <button onclick="navigateTo('inventory')" class="nav-btn" data-page="inventory">
+                    <span>🎒</span>
+                    <small>Envanter</small>
+                </button>
+                <button onclick="navigateTo('leaderboard')" class="nav-btn" data-page="leaderboard">
+                    <span>🏆</span>
+                    <small>Sıralama</small>
+                </button>
+                <button onclick="navigateTo('finance')" class="nav-btn" data-page="finance">
+                    <span>💰</span>
+                    <small>Finans</small>
+                </button>
+                <button id="admin-nav-btn" onclick="navigateTo('admin')" class="nav-btn hidden" data-page="admin">
+                    <span>⚙️</span>
+                    <small>Admin</small>
+                </button>
+            </nav>
+
+            <!-- Pages -->
+            <main class="main-content">
+                <!-- Mine Page -->
+                <div id="page-mine" class="page active">
+                    <div class="stats-card">
+                        <h3>Hash Gücü (PH)</h3>
+                        <div class="ph-display">
+                            <span id="total-ph">0</span>
+                            <small>PH</small>
+                        </div>
+                        <div class="league-info">
+                            <span id="current-league">Çırak</span>
+                            <div class="league-progress">
+                                <div id="league-bar" class="progress-bar"></div>
+                            </div>
+                            <small id="next-league">Sıradaki: Amatör</small>
+                        </div>
+                    </div>
+
+                    <div class="collect-section">
+                        <div class="kmr-storage">
+                            <div class="storage-header">
+                                <span>Biriken KMR</span>
+                                <span id="stored-kmr">0</span>
+                            </div>
+                            <div class="storage-bar">
+                                <div id="storage-fill" class="storage-fill"></div>
+                            </div>
+                            <small>Max: <span id="max-storage">10000</span> KMR</small>
+                        </div>
+                        <button onclick="collectAllKMR()" class="btn-collect">Hepsini Topla</button>
+                    </div>
+
+                    <div class="miners-section">
+                        <h3>Madencilerim <span id="miner-slots">0/5</span></h3>
+                        <div id="miners-grid" class="miners-grid">
+                            <!-- Miners will be loaded here -->
+                        </div>
+                        <button onclick="expandMine()" class="btn-expand">
+                            Mağara Genişlet (10 Çekip)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Store Page -->
+                <div id="page-store" class="page">
+                    <div class="store-tabs">
+                        <button onclick="switchStoreTab('miners')" class="store-tab active">Madenciler</button>
+                        <button onclick="switchStoreTab('crates')" class="store-tab">Sandıklar</button>
+                        <button onclick="switchStoreTab('daily')" class="store-tab">Günlük</button>
+                    </div>
+
+                    <div id="store-miners" class="store-content active">
+                        <div id="miners-shop" class="shop-grid">
+                            <!-- Miners will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div id="store-crates" class="store-content">
+                        <div class="crate-card" onclick="openCrate('basic')">
+                            <div class="crate-icon">📦</div>
+                            <h4>Sandık</h4>
+                            <p>Starter/Epic Eşya veya 0.05 Çekip</p>
+                            <div class="price">1.000 KMR</div>
+                        </div>
+                        <div class="crate-card" onclick="openCrate('bomb')">
+                            <div class="crate-icon">💣</div>
+                            <h4>Bomba Kutusu</h4>
+                            <p>Epic/Legendary Eşya veya 0.5 Çekip</p>
+                            <div class="price">5.000 KMR</div>
+                        </div>
+                    </div>
+
+                    <div id="store-daily" class="store-content">
+                        <div id="daily-items" class="shop-grid">
+                            <!-- Daily items will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Page -->
+                <div id="page-inventory" class="page">
+                    <div class="inventory-stats">
+                        <div class="stat-card">
+                            <span>Toplam Eşya</span>
+                            <strong id="total-items">0</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>Legendary</span>
+                            <strong id="legendary-count">0</strong>
+                        </div>
+                    </div>
+                    <div id="inventory-grid" class="inventory-grid">
+                        <!-- Items will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Leaderboard Page -->
+                <div id="page-leaderboard" class="page">
+                    <div class="league-tabs">
+                        <button onclick="filterLeaderboard('all')" class="league-tab active">Tümü</button>
+                        <button onclick="filterLeaderboard('cirak')" class="league-tab">Çırak</button>
+                        <button onclick="filterLeaderboard('amatör')" class="league-tab">Amatör</button>
+                        <button onclick="filterLeaderboard('usta')" class="league-tab">Usta</button>
+                    </div>
+                    <div id="leaderboard-list" class="leaderboard-list">
+                        <!-- Leaderboard will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Finance Page -->
+                <div id="page-finance" class="page">
+                    <div class="finance-tabs">
+                        <button onclick="switchFinanceTab('deposit')" class="finance-tab active">Para Yatır</button>
+                        <button onclick="switchFinanceTab('withdraw')" class="finance-tab">Para Çek</button>
+                    </div>
+
+                    <div id="finance-deposit" class="finance-content active">
+                        <div class="info-card">
+                            <h4>Banka Hesabı</h4>
+                            <p>IBAN: TR12 3456 7890 1234 5678 9012 34</p>
+                            <p>Alıcı: Reisza Mining A.Ş.</p>
+                        </div>
+                        <form onsubmit="submitDeposit(event)" class="finance-form">
+                            <input type="number" id="deposit-amount" placeholder="Miktar (Çekip)" step="0.01" required>
+                            <input type="url" id="deposit-receipt" placeholder="Dekont URL'si" required>
+                            <button type="submit" class="btn-primary">Talep Gönder</button>
+                        </form>
+                        <div id="deposit-history" class="history-list">
+                            <!-- History will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div id="finance-withdraw" class="finance-content">
+                        <form onsubmit="submitWithdraw(event)" class="finance-form">
+                            <input type="number" id="withdraw-amount" placeholder="Miktar (Çekip)" step="0.01" required>
+                            <input type="text" id="withdraw-iban" placeholder="IBAN" required>
+                            <input type="text" id="withdraw-name" placeholder="Ad Soyad" required>
+                            <button type="submit" class="btn-primary">Çekim Talebi</button>
+                        </form>
+                        <div id="withdraw-history" class="history-list">
+                            <!-- History will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Page -->
+                <div id="page-admin" class="page">
+                    <div class="admin-tabs">
+                        <button onclick="switchAdminTab('users')" class="admin-tab active">Kullanıcılar</button>
+                        <button onclick="switchAdminTab('deposits')" class="admin-tab">Yatırımlar</button>
+                        <button onclick="switchAdminTab('withdraws')" class="admin-tab">Çekimler</button>
+                        <button onclick="switchAdminTab('items')" class="admin-tab">Eşya Yönetimi</button>
+                    </div>
+
+                    <div id="admin-users" class="admin-content active">
+                        <input type="text" id="user-search" placeholder="Kullanıcı ara..." onkeyup="searchUsers()">
+                        <div id="admin-users-list" class="admin-list">
+                            <!-- Users will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div id="admin-deposits" class="admin-content">
+                        <div id="admin-deposits-list" class="admin-list">
+                            <!-- Deposits will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div id="admin-withdraws" class="admin-content">
+                        <div id="admin-withdraws-list" class="admin-list">
+                            <!-- Withdraws will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div id="admin-items" class="admin-content">
+                        <button onclick="showAddItemModal()" class="btn-primary">Yeni Eşya Ekle</button>
+                        <div id="admin-items-list" class="admin-list">
+                            <!-- Items will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
-  </div>
 
-  <!-- ===== AUTH SCREEN ===== -->
-  <div id="auth-screen" class="hidden">
-    <div class="auth-container">
-      <div class="auth-logo">
-        <span class="logo-icon">⛏️</span>
-        <h1>ReisZa</h1>
-        <p class="auth-subtitle">Mining & League</p>
-      </div>
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')">Giriş Yap</button>
-        <button class="auth-tab" id="registerTab" onclick="switchAuthTab('register')">Kayıt Ol</button>
-      </div>
-      <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
-        <div class="form-group">
-          <label>E-posta</label>
-          <input type="email" id="loginEmail" placeholder="ornek@mail.com" required />
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay hidden" onclick="closeModal()"></div>
+    
+    <div id="crate-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Sandık Açılıyor...</h3>
+            <div class="crate-animation">📦</div>
+            <div id="crate-result" class="crate-result hidden"></div>
         </div>
-        <div class="form-group">
-          <label>Şifre</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" required />
-        </div>
-        <div id="loginError" class="form-error hidden"></div>
-        <button type="submit" class="btn-gold btn-full" id="loginBtn">
-          <span>Giriş Yap</span>
-          <span class="btn-icon">→</span>
-        </button>
-      </form>
-      <form id="registerForm" class="auth-form hidden" onsubmit="handleRegister(event)">
-        <div class="form-group">
-          <label>Kullanıcı Adı</label>
-          <input type="text" id="regUsername" placeholder="MadenciReis" required minlength="3" maxlength="20" />
-        </div>
-        <div class="form-group">
-          <label>E-posta</label>
-          <input type="email" id="regEmail" placeholder="ornek@mail.com" required />
-        </div>
-        <div class="form-group">
-          <label>Şifre</label>
-          <input type="password" id="regPassword" placeholder="••••••••" required minlength="6" />
-        </div>
-        <div id="registerError" class="form-error hidden"></div>
-        <button type="submit" class="btn-gold btn-full" id="registerBtn">
-          <span>Hesap Oluştur</span>
-          <span class="btn-icon">⛏️</span>
-        </button>
-      </form>
     </div>
-  </div>
 
-  <!-- ===== NOTIFICATION BANNER ===== -->
-  <div id="notifBanner" class="notif-banner hidden">
-    <span id="notifText"></span>
-    <button onclick="closeNotif()" class="notif-close">✕</button>
-  </div>
-
-  <!-- ===== ADMIN NOTIFICATION ===== -->
-  <div id="adminNotifModal" class="modal-overlay hidden">
-    <div class="modal glass-card">
-      <div class="modal-header">
-        <span class="modal-icon">📢</span>
-        <h3>Yönetici Bildirimi</h3>
-      </div>
-      <p id="adminNotifText" class="modal-body-text"></p>
-      <button class="btn-gold btn-full" onclick="acknowledgeAdminNotif()">Anladım ✓</button>
+    <div id="item-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Eşya Detayı</h3>
+            <div id="item-details"></div>
+        </div>
     </div>
-  </div>
 
-  <!-- ===== MAIN APP ===== -->
-  <div id="main-app" class="hidden">
+    <div id="admin-user-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Kullanıcı Yönetimi</h3>
+            <div id="admin-user-details"></div>
+        </div>
+    </div>
 
-    <!-- TOP BAR -->
-    <header class="top-bar">
-      <div class="user-info" onclick="openProfileModal()">
-        <div class="avatar" id="topAvatar">R</div>
-        <div class="user-details">
-          <span class="user-name" id="topUserName">Madenci</span>
-          <span class="user-league" id="topUserLeague">⚔️ Çırak</span>
-        </div>
-      </div>
-      <div class="currencies">
-        <div class="currency-pill" title="KMR - Kömür">
-          <span class="c-icon">🪨</span>
-          <span class="c-val" id="topKmr">0</span>
-        </div>
-        <div class="currency-pill" title="Banknot">
-          <span class="c-icon">💵</span>
-          <span class="c-val" id="topBanknot">0</span>
-        </div>
-        <div class="currency-pill" title="Çekip">
-          <span class="c-icon">💎</span>
-          <span class="c-val" id="topCekip">0</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- PAGE CONTENT -->
-    <main class="page-content" id="pageContent">
-
-      <!-- ====== HOME PAGE ====== -->
-      <section id="page-home" class="page active">
-        <div class="cave-header">
-          <h2>🏔️ Maden Mağaran</h2>
-          <div class="cave-stats">
-            <div class="stat-box">
-              <span class="stat-label">Üretim/s</span>
-              <span class="stat-value" id="totalProduction">0 KMR/s</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-label">Toplam PH</span>
-              <span class="stat-value" id="totalPH">0 PH</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- KMR Deposit -->
-        <div class="deposit-box glass-card">
-          <div class="deposit-info">
-            <span class="deposit-icon">🪨</span>
-            <div>
-              <p class="deposit-label">Birikmiş KMR</p>
-              <p class="deposit-amount" id="depositAmount">0 KMR</p>
-            </div>
-          </div>
-          <button class="btn-gold" id="collectAllBtn" onclick="collectAll()">
-            Hepsini Topla
-          </button>
-        </div>
-
-        <!-- Miner Slots -->
-        <div class="miners-section">
-          <div class="section-header">
-            <h3>⚒️ Madenciler</h3>
-            <button class="btn-outline btn-sm" onclick="expandCave()">
-              💎 Slot Genişlet
-            </button>
-          </div>
-          <div class="miners-grid" id="minersGrid">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-
-        <!-- Inventory Preview -->
-        <div class="inventory-section">
-          <div class="section-header">
-            <h3>🎒 Envanter</h3>
-            <span class="item-count" id="itemCount">0 Eşya</span>
-          </div>
-          <div class="inventory-grid" id="inventoryGrid">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-      </section>
-
-      <!-- ====== STORE PAGE ====== -->
-      <section id="page-store" class="page hidden">
-        <div class="page-header-title">
-          <h2>🛒 Mağaza</h2>
-        </div>
-
-        <!-- Store Tabs -->
-        <div class="store-tabs">
-          <button class="store-tab active" onclick="switchStoreTab('miners', this)">⛏️ Madenciler</button>
-          <button class="store-tab" onclick="switchStoreTab('chests', this)">📦 Sandıklar</button>
-          <button class="store-tab" onclick="switchStoreTab('featured', this)">⭐ Vitrin</button>
-        </div>
-
-        <!-- Miners Tab -->
-        <div id="storeTab-miners" class="store-tab-content">
-          <div class="miners-shop-grid" id="minersShopGrid">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-
-        <!-- Chests Tab -->
-        <div id="storeTab-chests" class="store-tab-content hidden">
-          <div class="chests-grid">
-            <div class="chest-card glass-card" onclick="openChest('basic')">
-              <div class="chest-icon">📦</div>
-              <h3>Sandık</h3>
-              <p class="chest-desc">Starter/Epic eşya veya Çekip!</p>
-              <div class="chest-odds">
-                <span>🎯 Starter: 60%</span>
-                <span>⚡ Epic: 30%</span>
-                <span>💎 0.05 Çekip: 10%</span>
-              </div>
-              <div class="chest-price">
-                <span class="price-icon">🪨</span>
-                <span class="price-val">1.000 KMR</span>
-              </div>
-              <button class="btn-gold btn-full">Aç!</button>
-            </div>
-            <div class="chest-card glass-card" onclick="openChest('bomb')">
-              <div class="chest-icon">💣</div>
-              <h3>Bomba Kutusu</h3>
-              <p class="chest-desc">Epic/Legendary eşya veya Çekip!</p>
-              <div class="chest-odds">
-                <span>⚡ Epic: 55%</span>
-                <span>👑 Legendary: 35%</span>
-                <span>💎 0.5 Çekip: 10%</span>
-              </div>
-              <div class="chest-price">
-                <span class="price-icon">🪨</span>
-                <span class="price-val">5.000 KMR</span>
-              </div>
-              <button class="btn-gold btn-full">Aç!</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Featured Tab -->
-        <div id="storeTab-featured" class="store-tab-content hidden">
-          <p class="featured-refresh">🔄 Her gün yenilenir</p>
-          <div class="featured-grid" id="featuredGrid">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-      </section>
-
-      <!-- ====== LEADERBOARD PAGE ====== -->
-      <section id="page-leaderboard" class="page hidden">
-        <div class="page-header-title">
-          <h2>🏆 Sıralama</h2>
-        </div>
-        <div class="league-tabs">
-          <button class="league-tab active" onclick="switchLeagueTab('cirak', this)">⚔️ Çırak</button>
-          <button class="league-tab" onclick="switchLeagueTab('amator', this)">🥊 Amatör</button>
-          <button class="league-tab" onclick="switchLeagueTab('usta', this)">👑 Usta</button>
-        </div>
-        <div class="league-info-bar glass-card" id="leagueInfoBar">
-          <div class="league-pool">
-            <span class="pool-label">💎 Ödül Havuzu</span>
-            <span class="pool-val" id="leaguePoolVal">50 Çekip</span>
-          </div>
-          <div class="league-range">
-            <span id="leagueRangeText">0 – 1.000 PH</span>
-          </div>
-        </div>
-        <div class="my-rank-box glass-card" id="myRankBox">
-          <span class="my-rank-label">Sıran</span>
-          <span class="my-rank-val" id="myRank">#--</span>
-          <span class="my-ph-val" id="myPHVal">0 PH</span>
-        </div>
-        <div class="leaderboard-list" id="leaderboardList">
-          <div class="lb-loading">Yükleniyor...</div>
-        </div>
-      </section>
-
-      <!-- ====== FINANCE PAGE ====== -->
-      <section id="page-finance" class="page hidden">
-        <div class="page-header-title">
-          <h2>💰 Finans</h2>
-        </div>
-        <div class="finance-tabs">
-          <button class="finance-tab active" onclick="switchFinanceTab('deposit', this)">💵 Yatır</button>
-          <button class="finance-tab" onclick="switchFinanceTab('withdraw', this)">🏦 Çek</button>
-          <button class="finance-tab" onclick="switchFinanceTab('history', this)">📋 Geçmiş</button>
-        </div>
-
-        <!-- Deposit Tab -->
-        <div id="finTab-deposit" class="finance-tab-content">
-          <div class="finance-card glass-card">
-            <div class="finance-icon">💵</div>
-            <h3>Bakiye Yükle</h3>
-            <p class="finance-desc">Dekontunuzu gönderin, Banknot veya Çekip olarak yükleme yapılır.</p>
-            <div class="exchange-info">
-              <div class="ex-row"><span>1.000 KMR</span><span>=</span><span>1 Banknot</span></div>
-              <div class="ex-row"><span>1.000 Banknot</span><span>=</span><span>1 Çekip</span></div>
-            </div>
-            <form id="depositForm" onsubmit="submitDeposit(event)">
-              <div class="form-group">
-                <label>Yatırılan Miktar (TL)</label>
-                <input type="number" id="depositAmount2" placeholder="100" min="10" required />
-              </div>
-              <div class="form-group">
-                <label>İstenen Para Birimi</label>
-                <select id="depositCurrency">
-                  <option value="banknot">Banknot</option>
-                  <option value="cekip">Çekip</option>
+    <div id="add-item-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Yeni Eşya Ekle</h3>
+            <form onsubmit="addNewItem(event)">
+                <input type="text" id="new-item-name" placeholder="Eşya Adı" required>
+                <select id="new-item-rarity" required>
+                    <option value="starter">Starter</option>
+                    <option value="epic">Epic</option>
+                    <option value="legendary">Legendary</option>
                 </select>
-              </div>
-              <div class="form-group">
-                <label>Dekont URL veya Açıklama</label>
-                <textarea id="depositNote" placeholder="Dekont URL'i veya ödeme açıklaması" rows="3"></textarea>
-              </div>
-              <div class="form-group">
-                <label>Dekont Görseli URL (Opsiyonel)</label>
-                <input type="url" id="depositReceiptUrl" placeholder="https://imgur.com/dekont-linki" />
-                <p style="font-size:11px;color:var(--text-muted);margin-top:5px;">📌 Dekont görselini <a href="https://imgur.com" target="_blank" style="color:var(--gold)">imgur.com</a>'a yükleyip linkini yapıştır</p>
-              </div>
-              <button type="submit" class="btn-gold btn-full">Talep Gönder</button>
+                <input type="number" id="new-item-ph" placeholder="PH Değeri" required>
+                <input type="url" id="new-item-image" placeholder="Görsel URL">
+                <button type="submit" class="btn-primary">Ekle</button>
             </form>
-          </div>
         </div>
-
-        <!-- Withdraw Tab -->
-        <div id="finTab-withdraw" class="finance-tab-content hidden">
-          <div class="finance-card glass-card">
-            <div class="finance-icon">🏦</div>
-            <h3>Para Çek</h3>
-            <p class="finance-desc">Çekip bakiyenizi banka hesabınıza çekin.</p>
-            <div class="balance-show">
-              <span>Çekip Bakiyeniz:</span>
-              <span class="balance-val" id="withdrawCekipBalance">0 💎</span>
-            </div>
-            <form id="withdrawForm" onsubmit="submitWithdraw(event)">
-              <div class="form-group">
-                <label>Çekilecek Çekip Miktarı</label>
-                <input type="number" id="withdrawAmount" placeholder="1" min="1" step="0.001" required />
-              </div>
-              <div class="form-group">
-                <label>IBAN</label>
-                <input type="text" id="withdrawIBAN" placeholder="TR00 0000 0000 0000 0000 0000 00" required />
-              </div>
-              <div class="form-group">
-                <label>Ad Soyad</label>
-                <input type="text" id="withdrawName" placeholder="Ad Soyad" required />
-              </div>
-              <button type="submit" class="btn-gold btn-full">Çekim Talebi Oluştur</button>
-            </form>
-          </div>
-        </div>
-
-        <!-- History Tab -->
-        <div id="finTab-history" class="finance-tab-content hidden">
-          <div id="financeHistoryList" class="history-list">
-            <div class="lb-loading">Geçmiş yükleniyor...</div>
-          </div>
-        </div>
-      </section>
-
-    </main>
-
-    <!-- BOTTOM NAV -->
-    <nav class="bottom-nav">
-      <button class="nav-btn active" id="navHome" onclick="navigate('home')">
-        <span class="nav-icon">⛏️</span>
-        <span class="nav-label">Mağara</span>
-      </button>
-      <button class="nav-btn" id="navStore" onclick="navigate('store')">
-        <span class="nav-icon">🛒</span>
-        <span class="nav-label">Mağaza</span>
-      </button>
-      <button class="nav-btn" id="navLeaderboard" onclick="navigate('leaderboard')">
-        <span class="nav-icon">🏆</span>
-        <span class="nav-label">Sıralama</span>
-      </button>
-      <button class="nav-btn" id="navFinance" onclick="navigate('finance')">
-        <span class="nav-icon">💰</span>
-        <span class="nav-label">Finans</span>
-      </button>
-    </nav>
-
-  </div><!-- /main-app -->
-
-  <!-- ===== MODALS ===== -->
-
-  <!-- Profile Modal -->
-  <div id="profileModal" class="modal-overlay hidden" onclick="closeModalOnBg(event, 'profileModal')">
-    <div class="modal glass-card modal-large">
-      <div class="modal-close-btn" onclick="closeModal('profileModal')">✕</div>
-      <div class="profile-header">
-        <div class="profile-avatar" id="profileAvatar">R</div>
-        <div class="profile-info">
-          <h3 id="profileName">Madenci</h3>
-          <p id="profileEmail" class="text-muted">--</p>
-          <span id="profileLeagueBadge" class="league-badge">⚔️ Çırak</span>
-        </div>
-      </div>
-      <div class="profile-stats">
-        <div class="pstat"><span class="pstat-val" id="pstatKmr">0</span><span class="pstat-label">KMR</span></div>
-        <div class="pstat"><span class="pstat-val" id="pstatBanknot">0</span><span class="pstat-label">Banknot</span></div>
-        <div class="pstat"><span class="pstat-val" id="pstatCekip">0</span><span class="pstat-label">Çekip</span></div>
-        <div class="pstat"><span class="pstat-val" id="pstatPH">0</span><span class="pstat-label">PH</span></div>
-      </div>
-      <div class="profile-actions">
-        <button class="btn-outline btn-full" onclick="openChangePassword()">🔑 Şifre Değiştir</button>
-        <button class="btn-danger btn-full" onclick="handleLogout()">🚪 Çıkış Yap</button>
-      </div>
     </div>
-  </div>
 
-  <!-- Miner Detail Modal -->
-  <div id="minerModal" class="modal-overlay hidden" onclick="closeModalOnBg(event, 'minerModal')">
-    <div class="modal glass-card">
-      <div class="modal-close-btn" onclick="closeModal('minerModal')">✕</div>
-      <div class="modal-header">
-        <span class="modal-icon" id="minerModalIcon">⛏️</span>
-        <h3 id="minerModalName">Madenci</h3>
-      </div>
-      <div class="miner-modal-stats" id="minerModalStats"></div>
-      <div class="energy-section">
-        <p class="energy-label">⚡ Enerji</p>
-        <div class="energy-bar-big">
-          <div class="energy-fill-big" id="minerModalEnergyFill"></div>
-          <span class="energy-text-big" id="minerModalEnergyText">--</span>
-        </div>
-        <button class="btn-gold btn-full" id="minerModalEnergyBtn" onclick="refillEnergy()">
-          ⚡ Enerji Ver
-        </button>
-      </div>
-      <button class="btn-outline btn-full" id="minerModalUpgradeBtn" onclick="upgradeMiner()">
-        ⬆️ Seviye Yükselt
-      </button>
-    </div>
-  </div>
-
-  <!-- Buy Miner Modal -->
-  <div id="buyMinerModal" class="modal-overlay hidden" onclick="closeModalOnBg(event, 'buyMinerModal')">
-    <div class="modal glass-card">
-      <div class="modal-close-btn" onclick="closeModal('buyMinerModal')">✕</div>
-      <div class="modal-header">
-        <span class="modal-icon" id="buyMinerIcon">⛏️</span>
-        <h3 id="buyMinerName">Madenci Satın Al</h3>
-      </div>
-      <div class="buy-miner-info" id="buyMinerInfo"></div>
-      <button class="btn-gold btn-full" id="buyMinerConfirmBtn" onclick="confirmBuyMiner()">
-        Satın Al
-      </button>
-    </div>
-  </div>
-
-  <!-- Chest Result Modal -->
-  <div id="chestResultModal" class="modal-overlay hidden">
-    <div class="modal glass-card text-center">
-      <div class="chest-result-animation" id="chestResultAnim">🎁</div>
-      <h3 id="chestResultTitle">Tebrikler!</h3>
-      <p id="chestResultDesc" class="chest-result-desc"></p>
-      <div id="chestResultItem" class="chest-result-item"></div>
-      <button class="btn-gold btn-full" onclick="closeModal('chestResultModal')">Harika! ✨</button>
-    </div>
-  </div>
-
-  <!-- Expand Cave Modal -->
-  <div id="expandCaveModal" class="modal-overlay hidden" onclick="closeModalOnBg(event, 'expandCaveModal')">
-    <div class="modal glass-card">
-      <div class="modal-close-btn" onclick="closeModal('expandCaveModal')">✕</div>
-      <div class="modal-header">
-        <span class="modal-icon">🏔️</span>
-        <h3>Mağara Genişlet</h3>
-      </div>
-      <div id="expandCaveInfo" class="expand-info"></div>
-      <button class="btn-gold btn-full" id="expandCaveBtn" onclick="confirmExpandCave()">
-        💎 Genişlet
-      </button>
-    </div>
-  </div>
-
-  <!-- Change Password Modal -->
-  <div id="changePassModal" class="modal-overlay hidden" onclick="closeModalOnBg(event, 'changePassModal')">
-    <div class="modal glass-card">
-      <div class="modal-close-btn" onclick="closeModal('changePassModal')">✕</div>
-      <div class="modal-header">
-        <span class="modal-icon">🔑</span>
-        <h3>Şifre Değiştir</h3>
-      </div>
-      <form onsubmit="changePassword(event)">
-        <div class="form-group">
-          <label>Yeni Şifre</label>
-          <input type="password" id="newPassword" placeholder="En az 6 karakter" minlength="6" required />
-        </div>
-        <div id="changePassError" class="form-error hidden"></div>
-        <button type="submit" class="btn-gold btn-full">Güncelle</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Toast Notification -->
-  <div id="toast" class="toast hidden"></div>
-
-  <script type="module" src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
