@@ -36,25 +36,56 @@
         </div>
       </header>
 
-      <main id="authView" class="card auth-card">
-        <h2>Giriş / Kayıt</h2>
-        <p class="muted">E-posta, kullanıcı adı ve şifre ile devam et.</p>
-        <form id="registerForm" class="grid">
-          <input id="regUsername" type="text" placeholder="Kullanıcı adı" minlength="3" maxlength="24" required />
-          <input id="regEmail" type="email" placeholder="E-posta" required />
-          <input id="regPassword" type="password" placeholder="Şifre (min 6)" minlength="6" required />
-          <button class="btn primary" type="submit">Kayıt Ol</button>
-        </form>
-        <hr />
-        <form id="loginForm" class="grid">
-          <input id="loginEmail" type="email" placeholder="E-posta" required />
-          <input id="loginPassword" type="password" placeholder="Şifre" required />
-          <button class="btn" type="submit">Giriş Yap</button>
-        </form>
-        <p id="authMessage" class="muted"></p>
+      <main id="authView" class="card auth-card toon-auth">
+        <div class="toon-bg-layer"></div>
+        <div class="toon-stars"></div>
+        <div class="toon-header">
+          <div class="toon-miner"></div>
+          <div>
+            <h2>Reisza'ya Hoş Geldin</h2>
+            <p class="muted">Madene giriş yap, kazanmaya başla.</p>
+          </div>
+        </div>
+        <div class="auth-panels">
+          <section class="auth-panel">
+            <h3>Kayıt Ol</h3>
+            <form id="registerForm" class="grid">
+              <input id="regUsername" type="text" placeholder="Kullanıcı adı" minlength="3" maxlength="24" required />
+              <input id="regEmail" type="email" placeholder="E-posta" required />
+              <input id="regPassword" type="password" placeholder="Şifre (min 6)" minlength="6" required />
+              <button class="btn primary" type="submit">Kayıt Ol</button>
+            </form>
+          </section>
+          <section class="auth-panel">
+            <h3>Giriş Yap</h3>
+            <form id="loginForm" class="grid">
+              <input id="loginEmail" type="email" placeholder="E-posta" required />
+              <input id="loginPassword" type="password" placeholder="Şifre" required />
+              <button class="btn" type="submit">Giriş Yap</button>
+            </form>
+          </section>
+        </div>
+        <p id="authMessage" class="muted auth-message"></p>
       </main>
 
       <main id="gameView" class="hidden">
+        <section class="fantasy-hud">
+          <article class="wood-card">
+            <span>KMR</span>
+            <strong id="hudKmr">0</strong>
+          </article>
+          <article class="wood-card">
+            <span>Banknot</span>
+            <strong id="hudBanknot">0</strong>
+          </article>
+          <article class="wood-card">
+            <span>Lig</span>
+            <strong id="hudLeague">-</strong>
+          </article>
+        </section>
+
+        <section class="section-banner">Maden Mağarası</section>
+
         <section class="wallet card premium-wallet">
           <div class="wallet-box"><span>KMR</span><strong id="kmrValue">0</strong></div>
           <div class="wallet-box"><span>Banknot</span><strong id="banknotValue">0</strong></div>
@@ -250,6 +281,14 @@
       <p id="supportMessage" class="muted"></p>
     </div>
   </div>
+
+  <nav id="mobileDock" class="mobile-dock hidden">
+    <button class="dock-btn tab-btn active" data-tab="store"><span>🛒</span><small>Mağaza</small></button>
+    <button class="dock-btn tab-btn" data-tab="home"><span>⛏️</span><small>Maden</small></button>
+    <button id="openProfileBtnDock" class="dock-btn"><span>👤</span><small>Profil</small></button>
+    <button class="dock-btn tab-btn" data-tab="finance"><span>📜</span><small>Görev</small></button>
+    <button class="dock-btn tab-btn" data-tab="leaderboard"><span>🏆</span><small>Lider</small></button>
+  </nav>
 
   <script type="module" src="./app.js"></script>
 </body>
