@@ -100,7 +100,9 @@ const el = {
   financeMessage: document.getElementById("financeMessage"),
   adminTabBtn: document.getElementById("adminTabBtn"),
   adminUserActionForm: document.getElementById("adminUserActionForm"),
+  adminSetRoleForm: document.getElementById("adminSetRoleForm"),
   adminItemActionForm: document.getElementById("adminItemActionForm"),
+  adminMinerActionForm: document.getElementById("adminMinerActionForm"),
   adminDepositRequests: document.getElementById("adminDepositRequests"),
   adminWithdrawRequests: document.getElementById("adminWithdrawRequests"),
   adminMessage: document.getElementById("adminMessage")
@@ -666,6 +668,45 @@ async function adminItemAction(uid, itemName, ph, action) {
   });
 }
 
+async function adminSetRole(uid, action) {
+  const userRef = doc(db, "users", uid);
+  const target = await getDoc(userRef);
+  if (!target.exists()) throw new Error("Kullanıcı yok.");
+  await updateDoc(userRef, {
+    isAdmin: action === "grant",
+    updatedAt: serverTimestamp()
+  });
+}
+
+async function adminMinerAction(uid, minerType, action) {
+  const cfg = getMinerByKey(minerType);
+  if (!cfg) throw new Error("Madenci tipi yok.");
+  const userRef = doc(db, "users", uid);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists()) throw new Error("Kullanıcı yok.");
+    const data = snap.data();
+    const miners = Array.isArray(data.miners) ? [...data.miners] : [];
+    if (action === "add") {
+      const level = 1;
+      const perSec = getMinerKmrPerSec(cfg.baseKmrPerSec, level);
+      miners.push({
+        typeKey: cfg.key,
+        level,
+        energy: perSec * 3600 * ENERGY_HOURS,
+        maxEnergy: perSec * 3600 * ENERGY_HOURS,
+        updatedAtMs: Date.now(),
+        source: "admin"
+      });
+      tx.update(userRef, { miners, updatedAt: serverTimestamp() });
+      return;
+    }
+    if (!miners.length) throw new Error("Silinecek madenci yok.");
+    miners.pop();
+    tx.update(userRef, { miners, updatedAt: serverTimestamp() });
+  });
+}
+
 function bindTabs() {
   const buttons = document.querySelectorAll(".tab-btn");
   const panels = document.querySelectorAll(".tab-panel");
@@ -922,6 +963,31 @@ function bindGameActions() {
     }
   });
 
+  el.adminSetRoleForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const uid = document.getElementById("adminRoleUid").value.trim();
+      const action = document.getElementById("adminRoleAction").value;
+      await adminSetRole(uid, action);
+      showMsg(el.adminMessage, "Rol işlemi başarılı.");
+    } catch (err) {
+      showMsg(el.adminMessage, err.message || "Rol işlemi hatası.", true);
+    }
+  });
+
+  el.adminMinerActionForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const uid = document.getElementById("adminMinerUid").value.trim();
+      const minerType = document.getElementById("adminMinerType").value;
+      const action = document.getElementById("adminMinerAction").value;
+      await adminMinerAction(uid, minerType, action);
+      showMsg(el.adminMessage, "Madenci işlemi başarılı.");
+    } catch (err) {
+      showMsg(el.adminMessage, err.message || "Madenci işlemi hatası.", true);
+    }
+  });
+
   document.getElementById("tab-admin").addEventListener("click", async (ev) => {
     const target = ev.target;
     if (!(target instanceof HTMLElement)) return;
@@ -971,6 +1037,7 @@ async function rerender() {
     return;
   }
   renderWallet(currentData);
+  renderMinerStore();
   renderMiners(currentData);
   renderMineCardsWithLevelUp();
   renderDailyShop();
