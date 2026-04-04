@@ -3,6 +3,22 @@
 //  game.js — Full Game Logic (Firebase + Modular)
 // =============================================
 
+// DEBUG: Firebase hatalarını yakalama
+const originalConsoleError = console.error;
+console.error = function(...args) {
+  originalConsoleError.apply(console, args);
+  // Hatayı kullanıcıya göster
+  if (args[0] && args[0].toString().includes('permission-denied')) {
+    Toast.show('İzin hatası! Lütfen sayfayı yenileyin.', 'error', 5000);
+  }
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+// ... devamı// =============================================
+//  REİSZAS — MADEN İMPARATORLUĞU
+//  game.js — Full Game Logic (Firebase + Modular)
+// =============================================
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
