@@ -1168,25 +1168,33 @@ class Game {
   }
 
   // ---- REALTIME SUBSCRIPTIONS ----
-  subscribeRealtime() {
-    const nq = query(
-      collection(db, 'notifications'),
-      where('userId', 'in', [this.user.uid, 'all']),
-      where('read', '==', false)
-    );
-    this.notifUnsubscribe = onSnapshot(nq, snap => {
+ subscribeRealtime() {
+  // Notifications listener
+  const nq = query(
+    collection(db, 'notifications'),
+    where('userId', 'in', [this.user.uid, 'all']),
+    where('read', '==', false)
+  );
+  this.notifUnsubscribe = onSnapshot(nq, 
+    snap => {
       const count = snap.size;
       const badge = document.getElementById('notif-badge');
       if (badge) {
         badge.textContent = count;
         badge.style.display = count > 0 ? 'flex' : 'none';
       }
-    }, err => console.error('Notif listener error:', err));
+    },
+    err => {
+      console.error('Bildirim listener hatası:', err.message);
+      // Hata durumunda sessizce devam et
+    }
+  );
 
-    const userRef = doc(db, 'users', this.user.uid);
-    this.userUnsubscribe = onSnapshot(userRef, snap => {
+  // User doc listener
+  const userRef = doc(db, 'users', this.user.uid);
+  this.userUnsubscribe = onSnapshot(userRef, 
+    snap => {
       if (!snap.exists()) return;
-      const prev = this.userData?.banknot || 0;
       this.userData = snap.data();
       if (this.userData.banned) {
         Auth.logout();
@@ -1196,10 +1204,16 @@ class Game {
       this.renderHUD();
       this.renderFinance();
       this.applyTheme(this.userData?.settings?.theme || 'dark');
-    }, err => console.error('User listener error:', err));
+    },
+    err => {
+      console.error('User listener hatası:', err.message);
+    }
+  );
 
-    const sysRef = doc(db, 'system', 'config');
-    onSnapshot(sysRef, snap => {
+  // System config listener
+  const sysRef = doc(db, 'system', 'config');
+  onSnapshot(sysRef, 
+    snap => {
       if (!snap.exists()) return;
       const cfg = snap.data();
       const ms = document.getElementById('maintenance-screen');
@@ -1210,9 +1224,12 @@ class Game {
         if (ms) ms.style.display = 'none';
         document.getElementById('game-screen').classList.add('active');
       }
-    }, err => console.error('System listener error:', err));
-  }
-
+    },
+    err => {
+      console.error('System listener hatası:', err.message);
+    }
+  );
+}
   // ---- ADMIN PANEL ----
   bindAdminUI() {
     if (!this.isAdmin) return;
