@@ -1,92 +1,17 @@
 // =============================================
 //  REİSZAS — MADEN İMPARATORLUĞU
-//  game.js — Full Game Logic (Firebase + Modular)
+//  game.js — Final Version
 // =============================================
 
-// Guard: Çift yükleme kontrolü
-if (window.__REISZAS_GAME_LOADED__) {
-  console.warn('Game.js zaten yüklü, tekrar yüklenmiyor...');
-  throw new Error('SCRIPT_ALREADY_LOADED');
+// Guard: Çift yükleme önleme
+if (window.__REISZAS_GAME_INSTANCE__) {
+  console.log('Game zaten yüklü, atlıyorum...');
+  throw new Error('ALREADY_LOADED');
 }
-window.__REISZAS_GAME_LOADED__ = true;
+window.__REISZAS_LOADED__ = true;
 
-// Eğer Firebase daha önce initialize edildiyse, tekrar etme
-let app, auth, db;
-
-if (!window.__REISZAS_FIREBASE_APP__) {
-  // İlk yükleme - normal import
-  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
-  const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, updatePassword } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
-  const { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot, orderBy, limit, increment, deleteDoc, writeBatch } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-
-  // Firebase Config
-  const firebaseConfig = {
-    apiKey: "AIzaSyDuKLuoePZ6mNsKhQBGXumxMwF0UKTQvc8",
-    authDomain: "oyun-75056.firebaseapp.com",
-    databaseURL: "https://oyun-75056-default-rtdb.firebaseio.com",
-    projectId: "oyun-75056",
-    storageBucket: "oyun-75056.firebasestorage.app",
-    messagingSenderId: "980660244755",
-    appId: "1:980660244755:web:47889c4b6637ab05cdcae6",
-    measurementId: "G-J9RKPSVT8B"
-  };
-
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-
-  // Global olarak kaydet
-  window.__REISZAS_FIREBASE_APP__ = app;
-  window.__REISZAS_FIREBASE_AUTH__ = auth;
-  window.__REISZAS_FIREBASE_DB__ = db;
-  
-  // Export'ları global yap (diğer kodlar için)
-  window.FirebaseModules = {
-    auth, db, doc, getDoc, setDoc, updateDoc, collection, 
-    query, where, getDocs, addDoc, serverTimestamp, 
-    onSnapshot, orderBy, limit, deleteDoc, writeBatch,
-    createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    sendPasswordResetEmail, onAuthStateChanged, signOut, updatePassword
-  };
-} else {
-  // Daha önce initialize edilmiş, kullan
-  app = window.__REISZAS_FIREBASE_APP__;
-  auth = window.__REISZAS_FIREBASE_AUTH__;
-  db = window.__REISZAS_FIREBASE_DB__;
-}
-
-// Modülleri destructure et
-const { 
-  auth: authInstance, 
-  db: dbInstance,
-  doc, getDoc, setDoc, updateDoc, collection,
-  query, where, getDocs, addDoc, serverTimestamp, 
-  onSnapshot, orderBy, limit, deleteDoc, writeBatch,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  sendPasswordResetEmail, onAuthStateChanged, signOut, updatePassword
-} = window.FirebaseModules;
-
-// auth ve db'yi güncelle
-const auth = authInstance;
-const db = dbInstance;// =============================================
-//  REİSZAS — MADEN İMPARATORLUĞU
-//  game.js — Full Game Logic (Firebase + Modular)
 // =============================================
-
-// DEBUG: Firebase hatalarını yakalama
-const originalConsoleError = console.error;
-console.error = function(...args) {
-  originalConsoleError.apply(console, args);
-  // Hatayı kullanıcıya göster
-  if (args[0] && args[0].toString().includes('permission-denied')) {
-    Toast.show('İzin hatası! Lütfen sayfayı yenileyin.', 'error', 5000);
-  }
-};
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-// ... devamı// =============================================
-//  REİSZAS — MADEN İMPARATORLUĞU
-//  game.js — Full Game Logic (Firebase + Modular)
+//  FIREBASE IMPORTS
 // =============================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -97,10 +22,13 @@ import {
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, collection,
   query, where, getDocs, addDoc, serverTimestamp, onSnapshot,
-  orderBy, limit, increment, deleteDoc, writeBatch
+  orderBy, limit, deleteDoc, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// ---- FIREBASE CONFIG ----
+// =============================================
+//  FIREBASE INIT
+// =============================================
+
 const firebaseConfig = {
   apiKey: "AIzaSyDuKLuoePZ6mNsKhQBGXumxMwF0UKTQvc8",
   authDomain: "oyun-75056.firebaseapp.com",
@@ -116,11 +44,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ---- CONSTANTS ----
-const MINE_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
-const LEAGUE_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
-const FLASH_DEAL_INTERVAL_MS = 3 * 60 * 60 * 1000; // 3 hours
-const MAX_OFFLINE_MS = 12 * 60 * 60 * 1000; // 12h cap
+// =============================================
+//  CONSTANTS
+// =============================================
+
+const MINE_INTERVAL_MS = 20 * 60 * 1000;
+const LEAGUE_INTERVAL_MS = 30 * 60 * 1000;
+const FLASH_DEAL_INTERVAL_MS = 3 * 60 * 60 * 1000;
+const MAX_OFFLINE_MS = 12 * 60 * 60 * 1000;
 const BANKNOT_TO_GOLD = 10000;
 const GOLD_TO_TL = 1000;
 
@@ -165,13 +96,14 @@ const ITEM_NAMES = [
 const ITEM_ICONS = ['⚙️','🔩','⚒️','🪛','🔧','🛡️','💍','🧲','🪨','💎','🔮','🌟','✨','🌀','🔥','❄️','⚡','🌊','🍃','☀️'];
 
 // =============================================
-//  ITEM GENERATOR
+//  UTILITIES
 // =============================================
+
 function generateItem(idOverride) {
   const id = idOverride || `item_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
   const nameIdx = Math.floor(Math.random() * ITEM_NAMES.length);
   const iconIdx = Math.floor(Math.random() * ITEM_ICONS.length);
-  const ph = Math.floor(Math.random() * 191) + 10; // 10–200
+  const ph = Math.floor(Math.random() * 191) + 10;
   return { id, name: ITEM_NAMES[nameIdx], icon: ITEM_ICONS[iconIdx], ph };
 }
 
@@ -179,9 +111,6 @@ function generateItems(count) {
   return Array.from({ length: count }, () => generateItem());
 }
 
-// =============================================
-//  CHEST OPENER
-// =============================================
 function openChest(type) {
   const rewards = [];
   const r = Math.random();
@@ -215,9 +144,6 @@ function openChest(type) {
   return rewards;
 }
 
-// =============================================
-//  UTILITY
-// =============================================
 function fmtNum(n) {
   if (n === undefined || n === null) return '0';
   return Number(n).toLocaleString('tr-TR');
@@ -245,6 +171,7 @@ function formatCountdown(ms) {
 // =============================================
 //  TOAST SYSTEM
 // =============================================
+
 const Toast = {
   container: null,
   init() { this.container = document.getElementById('toast-container'); },
@@ -265,7 +192,8 @@ const Toast = {
 // =============================================
 //  AUTH MODULE
 // =============================================
-const Auth = {
+
+const AuthModule = {
   async login(username, password) {
     const q = query(collection(db, 'users'), where('username', '==', username));
     const snap = await getDocs(q);
@@ -282,11 +210,8 @@ const Auth = {
     const uid = cred.user.uid;
     const startItems = generateItems(5);
     await setDoc(doc(db, 'users', uid), {
-      uid,
-      email,
-      username,
-      banknot: 500,
-      gold: 0,
+      uid, email, username,
+      banknot: 500, gold: 0,
       items: startItems,
       miner: 'kubra',
       productionMode: 'banknot',
@@ -314,8 +239,9 @@ const Auth = {
 };
 
 // =============================================
-//  MAIN GAME CLASS
+//  GAME CLASS
 // =============================================
+
 class Game {
   constructor() {
     this.user = null;
@@ -324,22 +250,17 @@ class Game {
     this.mineTimerInterval = null;
     this.leagueTimerInterval = null;
     this.flashTimerInterval = null;
-    this.dmUnsubscribe = null;
     this.notifUnsubscribe = null;
     this.userUnsubscribe = null;
-    this.unsubTargetUser = null;
-    this.adminSelectedUid = null;
-    this.adminSelectedData = null;
-    this.flashDealItem = null;
-    this.flashDealExpiry = null;
     this._mining = false;
     this._leagueStart = null;
     this._distributing = false;
-    this.lastMineTime = null;
-    this.mineInterval = null;
+    this.flashDealItem = null;
+    this.flashDealExpiry = null;
+    this.adminSelectedUid = null;
+    this._uiBound = false;
   }
 
-  // ---- INIT ----
   async init() {
     Toast.init();
     this.setupParticles();
@@ -358,7 +279,6 @@ class Game {
     });
   }
 
-  // ---- AUTH SCREEN ----
   showAuthScreen() {
     document.getElementById('auth-screen').classList.add('active');
     document.getElementById('game-screen').classList.remove('active');
@@ -394,7 +314,7 @@ class Game {
       if (!username || !password) { errEl.textContent = 'Tüm alanları doldurun.'; return; }
       try {
         document.getElementById('btn-login').disabled = true;
-        await Auth.login(username, password);
+        await AuthModule.login(username, password);
       } catch (e) {
         errEl.textContent = this.firebaseErrMsg(e);
         document.getElementById('btn-login').disabled = false;
@@ -411,7 +331,7 @@ class Game {
       if (username.length < 3) { errEl.textContent = 'Kullanıcı adı en az 3 karakter.'; return; }
       try {
         document.getElementById('btn-register').disabled = true;
-        await Auth.register(email, username, password);
+        await AuthModule.register(email, username, password);
         Toast.show('Hesap oluşturuldu! Hoş geldin! ⛏', 'success');
       } catch (e) {
         errEl.textContent = this.firebaseErrMsg(e);
@@ -425,7 +345,7 @@ class Game {
       errEl.textContent = '';
       if (!email) { errEl.textContent = 'Email adresin gerekli.'; return; }
       try {
-        await Auth.resetPassword(email);
+        await AuthModule.resetPassword(email);
         errEl.style.color = 'var(--green)';
         errEl.textContent = 'Sıfırlama linki gönderildi!';
       } catch (e) {
@@ -446,18 +366,15 @@ class Game {
     return map[e.code] || e.message;
   }
 
-  // ---- LOAD USER ----
   async loadUser() {
     const ref = doc(db, 'users', this.user.uid);
     const snap = await getDoc(ref);
     if (!snap.exists()) return;
     this.userData = snap.data();
     this.isAdmin = this.userData.isAdmin || false;
-    this.lastMineTime = this.userData.lastMineTime || Date.now();
     await updateDoc(ref, { lastActive: Date.now() });
   }
 
-  // ---- RENDER ALL ----
   renderAll() {
     if (!this.userData) return;
     this.renderHUD();
@@ -482,21 +399,18 @@ class Game {
   renderAvatar() {
     const d = this.userData;
     const url = d.avatarUrl;
-    const avatarSmall = document.getElementById('avatar-small');
-    const avatarSidebar = document.getElementById('sidebar-avatar');
-    const bigAvatar = document.getElementById('big-avatar');
     const setAv = (el) => {
+      if (!el) return;
       if (url) { el.innerHTML = `<img src="${url}" onerror="this.parentElement.textContent='⛏'" />`; }
       else { el.textContent = '⛏'; }
     };
-    if (avatarSmall) setAv(avatarSmall);
-    if (avatarSidebar) setAv(avatarSidebar);
-    if (bigAvatar) setAv(bigAvatar);
+    setAv(document.getElementById('avatar-small'));
+    setAv(document.getElementById('sidebar-avatar'));
+    setAv(document.getElementById('big-avatar'));
   }
 
   renderSidebar() {
-    const d = this.userData;
-    document.getElementById('sidebar-username').textContent = d.username;
+    document.getElementById('sidebar-username').textContent = this.userData.username;
   }
 
   renderAdminSidebar() {
@@ -522,14 +436,11 @@ class Game {
     document.getElementById('active-miner-name').textContent = miner.name;
     document.getElementById('active-miner-display').textContent = `${miner.name} (×${miner.mult})`;
     document.getElementById('total-ph-display').textContent = fmtNum(totalPH);
-    document.getElementById('prod-mode-display').textContent =
-      d.productionMode === 'gold' ? 'Altın' : 'Banknot';
+    document.getElementById('prod-mode-display').textContent = d.productionMode === 'gold' ? 'Altın' : 'Banknot';
     document.getElementById('item-count-display').textContent = `(${(d.items||[]).length})`;
 
-    const minerCards = document.querySelectorAll('.miner-card');
-    minerCards.forEach(c => {
-      c.classList.remove('active');
-      if (c.dataset.miner === d.miner) c.classList.add('active');
+    document.querySelectorAll('.miner-card').forEach(c => {
+      c.classList.toggle('active', c.dataset.miner === d.miner);
     });
 
     const grid = document.getElementById('items-grid');
@@ -561,7 +472,6 @@ class Game {
     document.getElementById('ctrl-miner').textContent = miner.name;
     document.getElementById('ctrl-items').textContent = (d.items||[]).length;
     document.getElementById('ctrl-league').textContent = `${fmtNum(d.leagueEarned)} 💰`;
-
     document.getElementById('item-ph-display').textContent = fmtNum(itemPH);
     document.getElementById('miner-mult-display').textContent = `×${miner.mult}`;
     document.getElementById('total-ph-display2').textContent = fmtNum(totalPH);
@@ -571,13 +481,9 @@ class Game {
     const d = this.userData;
     document.getElementById('profile-email').textContent = d.email || '-';
     document.getElementById('profile-last-login').textContent =
-      this.user?.metadata?.lastSignInTime
-        ? new Date(this.user.metadata.lastSignInTime).toLocaleString('tr-TR')
-        : '-';
+      this.user?.metadata?.lastSignInTime ? new Date(this.user.metadata.lastSignInTime).toLocaleString('tr-TR') : '-';
     document.getElementById('profile-created').textContent =
-      this.user?.metadata?.creationTime
-        ? new Date(this.user.metadata.creationTime).toLocaleDateString('tr-TR')
-        : '-';
+      this.user?.metadata?.creationTime ? new Date(this.user.metadata.creationTime).toLocaleDateString('tr-TR') : '-';
     document.getElementById('profile-username-input').placeholder = d.username;
   }
 
@@ -589,19 +495,17 @@ class Game {
     document.getElementById('fin-tl').textContent = `${tl} ₺`;
   }
 
-  // ---- BIND GAME UI ----
   bindGameUI() {
     if (this._uiBound) return;
     this._uiBound = true;
 
     document.getElementById('menu-toggle').addEventListener('click', () => {
       const sb = document.getElementById('sidebar');
-      const mc = document.getElementById('main-content');
       if (window.innerWidth <= 768) {
         sb.classList.toggle('mobile-open');
       } else {
         sb.classList.toggle('collapsed');
-        mc.classList.toggle('full');
+        document.getElementById('main-content').classList.toggle('full');
       }
     });
 
@@ -622,16 +526,13 @@ class Game {
 
     document.getElementById('btn-logout').addEventListener('click', async () => {
       this.clearTimers();
-      if (this.dmUnsubscribe) this.dmUnsubscribe();
       if (this.notifUnsubscribe) this.notifUnsubscribe();
       if (this.userUnsubscribe) this.userUnsubscribe();
-      await Auth.logout();
+      await AuthModule.logout();
     });
 
     document.getElementById('notif-bell').addEventListener('click', () => this.switchPanel('notifications'));
-
     document.getElementById('profile-chip').addEventListener('click', () => this.switchPanel('profile-panel'));
-
     document.getElementById('prod-banknot').addEventListener('click', () => this.setProductionMode('banknot'));
     document.getElementById('prod-gold').addEventListener('click', () => this.setProductionMode('gold'));
 
@@ -648,6 +549,7 @@ class Game {
     document.querySelectorAll('.btn-chest').forEach(btn => {
       btn.addEventListener('click', () => this.buyChest(btn.dataset.chest));
     });
+
     document.getElementById('btn-close-chest').addEventListener('click', () => {
       document.getElementById('chest-result-modal').style.display = 'none';
     });
@@ -657,17 +559,17 @@ class Game {
       const gold = Math.floor(amt / BANKNOT_TO_GOLD);
       document.getElementById('convert-preview').textContent = `= ${fmtNum(gold)} Altın`;
     });
-    document.getElementById('btn-convert').addEventListener('click', () => this.convertBanknotToGold());
 
+    document.getElementById('btn-convert').addEventListener('click', () => this.convertBanknotToGold());
     document.getElementById('btn-withdraw').addEventListener('click', () => this.createWithdrawRequest());
 
     document.getElementById('btn-set-avatar').addEventListener('click', () => {
       const url = document.getElementById('avatar-url-field').value.trim();
       if (!url) { Toast.show('URL gir.', 'warn'); return; }
       this.updateUserData({ avatarUrl: url });
-      Toast.show('Fotoğraf güncellendi!', 'success');
       this.userData.avatarUrl = url;
       this.renderAvatar();
+      Toast.show('Fotoğraf güncellendi!', 'success');
     });
 
     document.getElementById('btn-change-username').addEventListener('click', () => this.changeUsername());
@@ -716,7 +618,6 @@ class Game {
     if (name === 'store') this.renderFlashDeal();
   }
 
-  // ---- THEME ----
   applyTheme(theme) {
     document.body.dataset.theme = theme || 'dark';
     document.querySelectorAll('.theme-btn').forEach(b => {
@@ -724,7 +625,6 @@ class Game {
     });
   }
 
-  // ---- PRODUCTION MODE ----
   async setProductionMode(mode) {
     this.userData.productionMode = mode;
     await this.updateUserData({ productionMode: mode });
@@ -735,7 +635,6 @@ class Game {
     Toast.show(`Üretim modu: ${mode === 'gold' ? 'Altın' : 'Banknot'}`, 'info');
   }
 
-  // ---- SELECT MINER ----
   async selectMiner(minerKey) {
     this.userData.miner = minerKey;
     await this.updateUserData({ miner: minerKey });
@@ -750,7 +649,6 @@ class Game {
     Toast.show(`${miner.name} seçildi!`, 'success');
   }
 
-  // ---- TIMERS ----
   startTimers() {
     this.mineTimerInterval = setInterval(() => this.tickMineTimer(), 1000);
     this.leagueTimerInterval = setInterval(() => this.tickLeagueTimer(), 1000);
@@ -791,24 +689,18 @@ class Game {
 
       if (mode === 'gold') {
         const goldAmt = Math.floor(reward / BANKNOT_TO_GOLD);
-        if (goldAmt > 0) {
-          updates.gold = (this.userData.gold || 0) + goldAmt;
-        } else {
-          updates.banknot = (this.userData.banknot || 0) + reward;
-        }
+        if (goldAmt > 0) updates.gold = (this.userData.gold || 0) + goldAmt;
+        else updates.banknot = (this.userData.banknot || 0) + reward;
       } else {
         const banknotAmt = Math.floor(reward * ratio);
         const goldAmt = Math.floor((reward * (1-ratio)) / BANKNOT_TO_GOLD);
         updates.banknot = (this.userData.banknot || 0) + banknotAmt;
-        if (goldAmt > 0) {
-          updates.gold = (this.userData.gold || 0) + goldAmt;
-        }
+        if (goldAmt > 0) updates.gold = (this.userData.gold || 0) + goldAmt;
       }
 
       updates.totalEarned = (this.userData.totalEarned || 0) + reward;
 
       await this.updateUserData(updates);
-      
       Object.assign(this.userData, updates);
       
       this.renderHUD();
@@ -830,11 +722,8 @@ class Game {
     }
   }
 
-  // League timer
   async tickLeagueTimer() {
-    if (!this._leagueStart) {
-      this._leagueStart = Date.now();
-    }
+    if (!this._leagueStart) this._leagueStart = Date.now();
     const elapsed = Date.now() - this._leagueStart;
     const remaining = LEAGUE_INTERVAL_MS - elapsed;
     const el = document.getElementById('league-timer');
@@ -844,7 +733,6 @@ class Game {
       this._leagueStart = Date.now();
       await this.distributeLeague();
     }
-
     this.updateLeagueShare();
   }
 
@@ -862,6 +750,7 @@ class Game {
     try {
       const myPH = this.calcTotalPH();
       if (myPH === 0) { this._distributing = false; return; }
+      
       const usersSnap = await getDocs(collection(db, 'users'));
       let totalPH = 0;
       usersSnap.forEach(d => {
@@ -872,8 +761,10 @@ class Game {
           totalPH += itemPH * m.mult;
         }
       });
+      
       if (totalPH === 0) { this._distributing = false; return; }
       const myShare = Math.floor((myPH / totalPH) * 1000);
+      
       if (myShare > 0) {
         await this.updateUserData({
           banknot: (this.userData.banknot || 0) + myShare,
@@ -886,7 +777,7 @@ class Game {
         Toast.show(`Lig ödülü! +${myShare} 💰`, 'success');
         await this.addNotification(`Lig dağıtımından ${myShare} banknot kazandın!`, 'reward');
       }
-    } catch(e) { console.error('League distribute error:', e); }
+    } catch(e) { console.error('League error:', e); }
     this._distributing = false;
   }
 
@@ -939,7 +830,6 @@ class Game {
     this.generateFlashDeal();
   }
 
-  // ---- OFFLINE EARNINGS ----
   async checkOfflineEarnings() {
     const last = this.userData?.lastMineTime || Date.now();
     const elapsed = Math.min(Date.now() - last, MAX_OFFLINE_MS);
@@ -967,7 +857,6 @@ class Game {
     document.getElementById('offline-modal').style.display = 'flex';
   }
 
-  // ---- MINE ANIMATION ----
   spawnOrePop() {
     const el = document.getElementById('ore-pop');
     if (!el) return;
@@ -991,7 +880,6 @@ class Game {
     }
   }
 
-  // ---- CHEST / STORE ----
   async buyChest(type) {
     const cfg = CHEST_CONFIG[type];
     if (!cfg) return;
@@ -1034,7 +922,6 @@ class Game {
     modal.style.display = 'flex';
   }
 
-  // ---- CONVERT ----
   async convertBanknotToGold() {
     const amt = parseInt(document.getElementById('convert-banknot').value) || 0;
     if (amt < BANKNOT_TO_GOLD) { Toast.show(`En az ${fmtNum(BANKNOT_TO_GOLD)} banknot gerekiyor.`, 'warn'); return; }
@@ -1053,7 +940,6 @@ class Game {
     document.getElementById('convert-preview').textContent = '= 0 Altın';
   }
 
-  // ---- WITHDRAW ----
   async createWithdrawRequest() {
     const amt = parseInt(document.getElementById('withdraw-amount').value) || 0;
     const address = document.getElementById('withdraw-address').value.trim();
@@ -1102,7 +988,6 @@ class Game {
     }
   }
 
-  // ---- PROFILE CHANGES ----
   async changeUsername() {
     const newUsername = document.getElementById('profile-username-input').value.trim().toLowerCase();
     if (!newUsername || newUsername.length < 3) { Toast.show('En az 3 karakter.', 'warn'); return; }
@@ -1128,7 +1013,6 @@ class Game {
     }
   }
 
-  // ---- DM ----
   async sendDM() {
     const msg = document.getElementById('dm-input').value.trim();
     if (!msg) return;
@@ -1148,13 +1032,27 @@ class Game {
     if (!el) return;
     el.innerHTML = '';
     try {
-      const q = query(
+      // İki ayrı sorgu - 'in' kullanmıyoruz
+      const q1 = query(
         collection(db, 'messages'),
-        where('senderId', 'in', [this.user.uid, 'admin']),
-        orderBy('timestamp', 'asc'), limit(50)
+        where('senderId', '==', this.user.uid),
+        where('receiverId', '==', 'admin'),
+        orderBy('timestamp', 'desc'),
+        limit(25)
       );
-      const snap = await getDocs(q);
-      snap.forEach(d => {
+      const q2 = query(
+        collection(db, 'messages'),
+        where('senderId', '==', 'admin'),
+        where('receiverId', '==', this.user.uid),
+        orderBy('timestamp', 'desc'),
+        limit(25)
+      );
+      
+      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+      const allMessages = [...snap1.docs, ...snap2.docs]
+        .sort((a, b) => (a.data().timestamp?.toMillis() || 0) - (b.data().timestamp?.toMillis() || 0));
+      
+      allMessages.forEach(d => {
         const m = d.data();
         const ismine = m.senderId === this.user.uid;
         const div = document.createElement('div');
@@ -1163,10 +1061,12 @@ class Game {
         el.appendChild(div);
       });
       el.scrollTop = el.scrollHeight;
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+      console.error('DM hatası:', e);
+      el.innerHTML = '<div style="color:var(--red);padding:10px;">Mesajlar yüklenemedi</div>';
+    }
   }
 
-  // ---- SUPPORT TICKETS ----
   async sendSupportTicket() {
     const subject = document.getElementById('support-subject').value.trim();
     const message = document.getElementById('support-message').value.trim();
@@ -1174,8 +1074,7 @@ class Game {
     await addDoc(collection(db, 'tickets'), {
       userId: this.user.uid,
       username: this.userData.username,
-      subject,
-      message,
+      subject, message,
       status: 'open',
       createdAt: serverTimestamp()
     });
@@ -1202,21 +1101,38 @@ class Game {
     } catch(e) { el.innerHTML = '<div class="empty-state">Yüklenemedi.</div>'; }
   }
 
-  // ---- NOTIFICATIONS ----
   async loadNotifications() {
     const el = document.getElementById('notif-list');
     if (!el) return;
     try {
-      const q = query(
+      // İki ayrı sorgu - 'in' kullanmıyoruz
+      const q1 = query(
         collection(db, 'notifications'),
-        where('userId', 'in', [this.user.uid, 'all']),
-        orderBy('createdAt', 'desc'), limit(30)
+        where('userId', '==', this.user.uid),
+        orderBy('createdAt', 'desc'),
+        limit(15)
       );
-      const snap = await getDocs(q);
-      if (snap.empty) { el.innerHTML = '<div class="empty-state">Henüz bildirim yok.</div>'; return; }
+      const q2 = query(
+        collection(db, 'notifications'),
+        where('userId', '==', 'all'),
+        orderBy('createdAt', 'desc'),
+        limit(15)
+      );
+      
+      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+      const allNotifs = [...snap1.docs, ...snap2.docs]
+        .sort((a, b) => (b.data().createdAt?.toMillis() || 0) - (a.data().createdAt?.toMillis() || 0))
+        .slice(0, 30);
+      
+      if (allNotifs.length === 0) {
+        el.innerHTML = '<div class="empty-state">Henüz bildirim yok.</div>';
+        return;
+      }
+      
       el.innerHTML = '';
       const batch = writeBatch(db);
-      snap.forEach(d => {
+      
+      allNotifs.forEach(d => {
         const n = d.data();
         const div = document.createElement('div');
         div.className = `notif-item ${n.read ? '' : 'unread'}`;
@@ -1236,95 +1152,98 @@ class Game {
           batch.update(doc(db, 'notifications', d.id), { read: true });
         }
       });
+      
       await batch.commit().catch(() => {});
       document.getElementById('notif-badge').style.display = 'none';
+      
     } catch(e) {
-      el.innerHTML = '<div class="empty-state">Yüklenemedi.</div>';
+      console.error('Bildirim hatası:', e);
+      el.innerHTML = '<div class="empty-state">Yüklenemedi: ' + e.message + '</div>';
     }
   }
 
   async addNotification(message, type = 'system') {
     await addDoc(collection(db, 'notifications'), {
       userId: this.user.uid,
-      message,
-      type,
+      message, type,
       read: false,
       createdAt: serverTimestamp()
     });
   }
 
-  // ---- REALTIME SUBSCRIPTIONS ----
- subscribeRealtime() {
-  // Notifications listener
-  const nq = query(
-    collection(db, 'notifications'),
-    where('userId', 'in', [this.user.uid, 'all']),
-    where('read', '==', false)
-  );
-  this.notifUnsubscribe = onSnapshot(nq, 
-    snap => {
-      const count = snap.size;
-      const badge = document.getElementById('notif-badge');
-      if (badge) {
-        badge.textContent = count;
-        badge.style.display = count > 0 ? 'flex' : 'none';
-      }
-    },
-    err => {
-      console.error('Bildirim listener hatası:', err.message);
-      // Hata durumunda sessizce devam et
-    }
-  );
+  subscribeRealtime() {
+    // Notifications - sadece kendi bildirimlerin
+    const nq = query(
+      collection(db, 'notifications'),
+      where('userId', '==', this.user.uid),
+      orderBy('createdAt', 'desc'),
+      limit(50)
+    );
+    
+    this.notifUnsubscribe = onSnapshot(nq, 
+      snap => {
+        const unreadCount = snap.docs.filter(d => !d.data().read).length;
+        const badge = document.getElementById('notif-badge');
+        if (badge) {
+          badge.textContent = unreadCount;
+          badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+        }
+      },
+      err => console.error('Bildirim listener hatası:', err.message)
+    );
 
-  // User doc listener
-  const userRef = doc(db, 'users', this.user.uid);
-  this.userUnsubscribe = onSnapshot(userRef, 
-    snap => {
-      if (!snap.exists()) return;
-      this.userData = snap.data();
-      if (this.userData.banned) {
-        Auth.logout();
-        Toast.show('Hesabınız banlandı.', 'error');
-        return;
+    // User doc listener
+    const userRef = doc(db, 'users', this.user.uid);
+    this.userUnsubscribe = onSnapshot(userRef, 
+      snap => {
+        if (!snap.exists()) return;
+        this.userData = snap.data();
+        if (this.userData.banned) {
+          AuthModule.logout();
+          Toast.show('Hesabınız banlandı.', 'error');
+          return;
+        }
+        this.renderHUD();
+        this.renderFinance();
+        this.applyTheme(this.userData?.settings?.theme || 'dark');
+      },
+      err => {
+        console.error('User listener hatası:', err.message);
+        if (err.code === 'permission-denied') {
+          Toast.show('Oturum süreniz doldu.', 'error');
+          setTimeout(() => AuthModule.logout(), 2000);
+        }
       }
-      this.renderHUD();
-      this.renderFinance();
-      this.applyTheme(this.userData?.settings?.theme || 'dark');
-    },
-    err => {
-      console.error('User listener hatası:', err.message);
-    }
-  );
+    );
 
-  // System config listener
-  const sysRef = doc(db, 'system', 'config');
-  onSnapshot(sysRef, 
-    snap => {
-      if (!snap.exists()) return;
-      const cfg = snap.data();
-      const ms = document.getElementById('maintenance-screen');
-      if (cfg.maintenance && !this.isAdmin) {
-        if (ms) ms.style.display = 'flex';
-        document.getElementById('game-screen').classList.remove('active');
-      } else {
-        if (ms) ms.style.display = 'none';
-        document.getElementById('game-screen').classList.add('active');
-      }
-    },
-    err => {
-      console.error('System listener hatası:', err.message);
-    }
-  );
-}
-  // ---- ADMIN PANEL ----
+    // System config
+    try {
+      const sysRef = doc(db, 'system', 'config');
+      onSnapshot(sysRef, 
+        snap => {
+          if (!snap.exists()) return;
+          const cfg = snap.data();
+          const ms = document.getElementById('maintenance-screen');
+          if (cfg.maintenance && !this.isAdmin) {
+            if (ms) ms.style.display = 'flex';
+            document.getElementById('game-screen').classList.remove('active');
+          } else {
+            if (ms) ms.style.display = 'none';
+            document.getElementById('game-screen').classList.add('active');
+          }
+        },
+        err => console.error('System listener hatası:', err.message)
+      );
+    } catch(e) { console.error('System config hatası:', e); }
+  }
+
   bindAdminUI() {
     if (!this.isAdmin) return;
 
     document.getElementById('btn-admin-search').addEventListener('click', () => this.adminSearchUser());
 
     document.getElementById('admin-notif-target').addEventListener('change', (e) => {
-      document.getElementById('admin-notif-user-row').style.display =
-        e.target.value === 'single' ? '' : 'none';
+      document.getElementById('admin-notif-user-row').style.display = e.target.value === 'single' ? '' : 'none';
     });
 
     document.getElementById('btn-send-notif').addEventListener('click', () => this.adminSendNotif());
@@ -1340,10 +1259,12 @@ class Game {
   }
 
   async loadAdminPanel() {
-    await this.loadAdminRequests();
-    await this.loadAdminTickets();
-    await this.loadAdminDMs();
-    await this.loadAdminStats();
+    await Promise.all([
+      this.loadAdminRequests(),
+      this.loadAdminTickets(),
+      this.loadAdminDMs(),
+      this.loadAdminStats()
+    ]);
   }
 
   async adminSearchUser() {
@@ -1368,7 +1289,6 @@ class Game {
       if (!found) { el.textContent = 'Kullanıcı bulunamadı.'; actionsEl.style.display = 'none'; return; }
 
       this.adminSelectedUid = found.id;
-      this.adminSelectedData = found;
       el.innerHTML = `<b>${found.username}</b> | 💰 ${fmtNum(found.banknot)} | 🥇 ${fmtNum(found.gold)} | UID: ${found.id}`;
       actionsEl.style.display = '';
     } catch(e) { el.textContent = 'Hata: ' + e.message; }
@@ -1435,22 +1355,16 @@ class Game {
 
     if (target === 'all') {
       await addDoc(collection(db, 'notifications'), {
-        userId: 'all',
-        message,
-        type,
-        read: false,
-        createdAt: serverTimestamp()
+        userId: 'all', message, type,
+        read: false, createdAt: serverTimestamp()
       });
       Toast.show('Tüm kullanıcılara bildirim gönderildi!', 'success');
     } else {
       const uid = document.getElementById('admin-notif-uid').value.trim();
       if (!uid) { Toast.show('UID gir.', 'warn'); return; }
       await addDoc(collection(db, 'notifications'), {
-        userId: uid,
-        message,
-        type,
-        read: false,
-        createdAt: serverTimestamp()
+        userId: uid, message, type,
+        read: false, createdAt: serverTimestamp()
       });
       Toast.show('Bildirim gönderildi!', 'success');
     }
@@ -1581,7 +1495,6 @@ class Game {
     } catch(e) {}
   }
 
-  // ---- HELPERS ----
   async updateUserData(updates) {
     try {
       await updateDoc(doc(db, 'users', this.user.uid), updates);
@@ -1590,7 +1503,6 @@ class Game {
     }
   }
 
-  // ---- PARTICLES ----
   setupParticles() {
     const container = document.getElementById('particles');
     if (!container) return;
@@ -1606,7 +1518,16 @@ class Game {
   }
 }
 
-// ---- BOOT ----
+// =============================================
+//  BOOT
+// =============================================
+
 const game = new Game();
 window.game = game;
-game.init();
+window.__REISZAS_GAME_INSTANCE__ = game;
+
+game.init().catch(err => {
+  if (err.message !== 'ALREADY_LOADED') {
+    console.error('Game init hatası:', err);
+  }
+});
