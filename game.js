@@ -3,6 +3,76 @@
 //  game.js — Full Game Logic (Firebase + Modular)
 // =============================================
 
+// Guard: Çift yükleme kontrolü
+if (window.__REISZAS_GAME_LOADED__) {
+  console.warn('Game.js zaten yüklü, tekrar yüklenmiyor...');
+  throw new Error('SCRIPT_ALREADY_LOADED');
+}
+window.__REISZAS_GAME_LOADED__ = true;
+
+// Eğer Firebase daha önce initialize edildiyse, tekrar etme
+let app, auth, db;
+
+if (!window.__REISZAS_FIREBASE_APP__) {
+  // İlk yükleme - normal import
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+  const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, updatePassword } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+  const { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot, orderBy, limit, increment, deleteDoc, writeBatch } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDuKLuoePZ6mNsKhQBGXumxMwF0UKTQvc8",
+    authDomain: "oyun-75056.firebaseapp.com",
+    databaseURL: "https://oyun-75056-default-rtdb.firebaseio.com",
+    projectId: "oyun-75056",
+    storageBucket: "oyun-75056.firebasestorage.app",
+    messagingSenderId: "980660244755",
+    appId: "1:980660244755:web:47889c4b6637ab05cdcae6",
+    measurementId: "G-J9RKPSVT8B"
+  };
+
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+
+  // Global olarak kaydet
+  window.__REISZAS_FIREBASE_APP__ = app;
+  window.__REISZAS_FIREBASE_AUTH__ = auth;
+  window.__REISZAS_FIREBASE_DB__ = db;
+  
+  // Export'ları global yap (diğer kodlar için)
+  window.FirebaseModules = {
+    auth, db, doc, getDoc, setDoc, updateDoc, collection, 
+    query, where, getDocs, addDoc, serverTimestamp, 
+    onSnapshot, orderBy, limit, deleteDoc, writeBatch,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    sendPasswordResetEmail, onAuthStateChanged, signOut, updatePassword
+  };
+} else {
+  // Daha önce initialize edilmiş, kullan
+  app = window.__REISZAS_FIREBASE_APP__;
+  auth = window.__REISZAS_FIREBASE_AUTH__;
+  db = window.__REISZAS_FIREBASE_DB__;
+}
+
+// Modülleri destructure et
+const { 
+  auth: authInstance, 
+  db: dbInstance,
+  doc, getDoc, setDoc, updateDoc, collection,
+  query, where, getDocs, addDoc, serverTimestamp, 
+  onSnapshot, orderBy, limit, deleteDoc, writeBatch,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  sendPasswordResetEmail, onAuthStateChanged, signOut, updatePassword
+} = window.FirebaseModules;
+
+// auth ve db'yi güncelle
+const auth = authInstance;
+const db = dbInstance;// =============================================
+//  REİSZAS — MADEN İMPARATORLUĞU
+//  game.js — Full Game Logic (Firebase + Modular)
+// =============================================
+
 // DEBUG: Firebase hatalarını yakalama
 const originalConsoleError = console.error;
 console.error = function(...args) {
