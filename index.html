@@ -1,646 +1,595 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ReisZas - Maden Krallığı</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REİSZAS — Maden İmparatorluğu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="screen active">
-        <div class="loader-container">
-            <div class="mine-cart-animation">
-                <i class="fas fa-dumpster"></i>
-                <div class="tracks"></div>
-            </div>
-            <h1 class="game-title">REISZAS</h1>
-            <p class="loading-text">Madenler yükleniyor...</p>
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-            </div>
+<body class="dark-theme" data-theme="dark">
+
+<!-- ===================== AUTH SCREEN ===================== -->
+<div id="auth-screen" class="screen active">
+  <div class="auth-bg">
+    <div class="particles" id="particles"></div>
+    <div class="mine-silhouette"></div>
+  </div>
+  <div class="auth-container">
+    <div class="auth-logo">
+      <div class="logo-icon">⛏</div>
+      <h1>REİSZAS</h1>
+      <p class="logo-sub">MADEN İMPARATORLUĞU</p>
+    </div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="tab-btn active" data-tab="login">GİRİŞ YAP</button>
+        <button class="tab-btn" data-tab="register">KAYIT OL</button>
+        <button class="tab-btn" data-tab="forgot">ŞİFRE SIFIRLA</button>
+      </div>
+
+      <!-- Login Tab -->
+      <div id="tab-login" class="tab-content active">
+        <div class="form-group">
+          <label>Kullanıcı Adı</label>
+          <input type="text" id="login-username" placeholder="kullanıcı_adın" autocomplete="off" />
         </div>
+        <div class="form-group">
+          <label>Şifre</label>
+          <input type="password" id="login-password" placeholder="••••••••" />
+        </div>
+        <button class="btn-primary" id="btn-login">⚡ GİRİŞ YAP</button>
+        <div class="auth-error" id="login-error"></div>
+      </div>
+
+      <!-- Register Tab -->
+      <div id="tab-register" class="tab-content">
+        <div class="form-group">
+          <label>E-posta</label>
+          <input type="email" id="reg-email" placeholder="email@örnek.com" />
+        </div>
+        <div class="form-group">
+          <label>Kullanıcı Adı</label>
+          <input type="text" id="reg-username" placeholder="benzersiz_kullanıcı_adı" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>Şifre</label>
+          <input type="password" id="reg-password" placeholder="En az 6 karakter" />
+        </div>
+        <button class="btn-primary" id="btn-register">🚀 HESAP OLUŞTUR</button>
+        <div class="auth-error" id="reg-error"></div>
+      </div>
+
+      <!-- Forgot Tab -->
+      <div id="tab-forgot" class="tab-content">
+        <div class="form-group">
+          <label>E-posta Adresin</label>
+          <input type="email" id="forgot-email" placeholder="email@örnek.com" />
+        </div>
+        <button class="btn-primary" id="btn-forgot">📧 SIFIRLAMA LİNKİ GÖNDER</button>
+        <div class="auth-error" id="forgot-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MAIN GAME SCREEN ===================== -->
+<div id="game-screen" class="screen">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div class="brand">⛏ <span>REİSZAS</span></div>
+    </div>
+    <div class="topbar-center">
+      <div class="currency-display">
+        <span class="currency-item"><img src="" alt="" class="currency-icon">💰 <span id="hud-banknot">0</span></span>
+        <span class="currency-item">🥇 <span id="hud-gold">0</span></span>
+        <span class="currency-item">⚡ PH: <span id="hud-ph">0</span></span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="notif-btn" id="notif-bell">🔔 <span class="notif-badge" id="notif-badge" style="display:none">0</span></button>
+      <div class="profile-chip" id="profile-chip">
+        <div class="avatar-small" id="avatar-small">⛏</div>
+        <span id="hud-username">...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- LEFT SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-avatar" id="sidebar-avatar">⛏</div>
+      <div class="sidebar-info">
+        <div class="sidebar-username" id="sidebar-username">...</div>
+        <div class="sidebar-rank">Madenci</div>
+      </div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><button class="sidebar-btn active" data-panel="mine">⛏ Maden</button></li>
+      <li><button class="sidebar-btn" data-panel="control">🎮 Kontrol Merkezi</button></li>
+      <li><button class="sidebar-btn" data-panel="profile-panel">👤 Kişisel Bilgiler</button></li>
+      <li><button class="sidebar-btn" data-panel="finance">💳 Finans</button></li>
+      <li><button class="sidebar-btn" data-panel="settings-panel">⚙️ Ayarlar</button></li>
+      <li><button class="sidebar-btn" data-panel="support">🛟 Destek</button></li>
+      <li><button class="sidebar-btn" data-panel="howto">📖 Nasıl Oynanır</button></li>
+      <li id="admin-sidebar-btn" style="display:none"><button class="sidebar-btn admin-btn" data-panel="admin">👑 Admin Panel</button></li>
+    </ul>
+    <button class="btn-logout" id="btn-logout">🚪 Çıkış Yap</button>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="main-content">
+
+    <!-- MINE PANEL -->
+    <div class="panel active" id="panel-mine">
+      <div class="mine-scene">
+        <div class="mine-cave">
+          <div class="cave-bg"></div>
+          <div class="mine-crystals">
+            <div class="crystal c1">💎</div>
+            <div class="crystal c2">💎</div>
+            <div class="crystal c3">🪨</div>
+          </div>
+          <div class="miner-character" id="miner-char">
+            <div class="miner-body">⛏️</div>
+            <div class="miner-name" id="active-miner-name">Kübra</div>
+          </div>
+          <div class="dust-particles" id="dust"></div>
+          <div class="ore-pop" id="ore-pop"></div>
+        </div>
+
+        <div class="mine-stats-row">
+          <div class="mine-stat-card">
+            <div class="stat-label">Sonraki Kazanç</div>
+            <div class="stat-value timer-display" id="mine-timer">20:00</div>
+          </div>
+          <div class="mine-stat-card">
+            <div class="stat-label">Aktif Madenci</div>
+            <div class="stat-value" id="active-miner-display">Kübra (×2)</div>
+          </div>
+          <div class="mine-stat-card">
+            <div class="stat-label">Toplam PH</div>
+            <div class="stat-value" id="total-ph-display">0</div>
+          </div>
+          <div class="mine-stat-card">
+            <div class="stat-label">Üretim Modu</div>
+            <div class="stat-value" id="prod-mode-display">Banknot</div>
+          </div>
+        </div>
+
+        <!-- Üretim Modu Seçici -->
+        <div class="prod-mode-selector">
+          <h3>Üretim Modu</h3>
+          <div class="prod-buttons">
+            <button class="prod-btn active" id="prod-banknot" data-mode="banknot">💰 Banknot</button>
+            <button class="prod-btn" id="prod-gold" data-mode="gold">🥇 Altın</button>
+          </div>
+          <div class="prod-split-row" id="prod-split-row" style="display:none">
+            <label>Banknot %: <input type="range" id="split-range" min="0" max="100" value="100" /></label>
+            <span id="split-label">100% Banknot / 0% Altın</span>
+          </div>
+        </div>
+
+        <!-- Madenci Seçici -->
+        <div class="miner-selector">
+          <h3>Madenci Seç</h3>
+          <div class="miner-cards" id="miner-cards">
+            <div class="miner-card active" data-miner="kubra">
+              <div class="miner-emoji">👷‍♀️</div>
+              <div class="miner-card-name">Kübra</div>
+              <div class="miner-card-stat">×2 PH | 50 💰/20dk</div>
+              <div class="miner-card-badge">BAŞLANGIÇ</div>
+            </div>
+            <div class="miner-card locked" data-miner="beyza">
+              <div class="miner-emoji">👷‍♀️</div>
+              <div class="miner-card-name">Beyza</div>
+              <div class="miner-card-stat">×3 PH | 100 💰/sa</div>
+              <div class="miner-card-badge">🔒 KİLİTLİ</div>
+            </div>
+            <div class="miner-card locked" data-miner="ali">
+              <div class="miner-emoji">👷</div>
+              <div class="miner-card-name">Ali</div>
+              <div class="miner-card-stat">×5 PH | 200 💰/sa</div>
+              <div class="miner-card-badge">🔒 KİLİTLİ</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Eşyalar -->
+        <div class="items-section">
+          <h3>Madenci Eşyaları <span class="item-count" id="item-count-display">(0)</span></h3>
+          <div class="items-grid" id="items-grid">
+            <div class="empty-items">Henüz eşyan yok. Mağazadan sandık aç!</div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Auth Screen -->
-    <div id="auth-screen" class="screen">
-        <div class="auth-container">
-            <div class="auth-logo">
-                <i class="fas fa-gem"></i>
-                <h1>REISZAS</h1>
-                <p>Altın Krallığına Hoş Geldin</p>
-            </div>
-            
-            <div class="auth-tabs">
-                <button class="auth-tab active" onclick="switchAuthTab('login')">Giriş Yap</button>
-                <button class="auth-tab" onclick="switchAuthTab('register')">Kayıt Ol</button>
-            </div>
-
-            <form id="login-form" class="auth-form active">
-                <div class="input-group">
-                    <i class="fas fa-envelope"></i>
-                    <input type="email" id="login-email" placeholder="E-posta adresiniz" required>
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="login-password" placeholder="Şifreniz" required>
-                </div>
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-sign-in-alt"></i> Giriş Yap
-                </button>
-                <p class="auth-link" onclick="showForgotPassword()">Şifremi unuttum?</p>
-            </form>
-
-            <form id="register-form" class="auth-form">
-                <div class="input-group">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="register-username" placeholder="Kullanıcı adı (3-20 karakter)" required minlength="3" maxlength="20">
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-envelope"></i>
-                    <input type="email" id="register-email" placeholder="E-posta adresiniz" required>
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="register-password" placeholder="Şifre (min 6 karakter)" required minlength="6">
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-shield-alt"></i>
-                    <input type="password" id="register-password-confirm" placeholder="Şifre tekrar" required>
-                </div>
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-user-plus"></i> Hesap Oluştur
-                </button>
-            </form>
+    <!-- CONTROL CENTER PANEL -->
+    <div class="panel" id="panel-control">
+      <div class="panel-header"><h2>🎮 Kontrol Merkezi</h2></div>
+      <div class="control-grid">
+        <div class="control-card">
+          <h3>📊 Oyun İstatistikleri</h3>
+          <div class="stat-list">
+            <div class="stat-row"><span>Toplam Kazanç</span><span id="ctrl-total-earned">0 💰</span></div>
+            <div class="stat-row"><span>Toplam PH</span><span id="ctrl-ph">0</span></div>
+            <div class="stat-row"><span>Aktif Madenci</span><span id="ctrl-miner">-</span></div>
+            <div class="stat-row"><span>Eşya Sayısı</span><span id="ctrl-items">0</span></div>
+            <div class="stat-row"><span>Lig Kazancı</span><span id="ctrl-league">0 💰</span></div>
+          </div>
         </div>
+        <div class="control-card">
+          <h3>🏆 Lig Sistemi</h3>
+          <p class="info-text">Her 30 dakikada 1000 banknot tüm oyuncular arasında PH oranına göre dağıtılır. Online/offline fark etmez!</p>
+          <div class="stat-row"><span>Sonraki Lig Dağıtımı</span><span id="league-timer">30:00</span></div>
+          <div class="stat-row"><span>Senin Payın (tahmini)</span><span id="league-share">0 💰</span></div>
+        </div>
+        <div class="control-card">
+          <h3>⚡ PH Dağılımı</h3>
+          <div id="ph-breakdown">
+            <div class="stat-row"><span>Eşya PH</span><span id="item-ph-display">0</span></div>
+            <div class="stat-row"><span>Madenci Çarpanı</span><span id="miner-mult-display">×2</span></div>
+            <div class="stat-row"><span>Toplam PH</span><span id="total-ph-display2">0</span></div>
+          </div>
+        </div>
+        <div class="control-card">
+          <h3>💬 Mesajlar (DM)</h3>
+          <div class="dm-box" id="dm-messages"></div>
+          <div class="dm-input-row">
+            <input type="text" id="dm-input" placeholder="Admin'e mesaj gönder..." />
+            <button class="btn-small" id="btn-dm-send">Gönder</button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Main App -->
-    <div id="main-app" class="screen">
-        <!-- Top Bar -->
-        <div class="top-bar">
-            <div class="user-info" onclick="showProfile()">
-                <div class="avatar-container">
-                    <img id="user-avatar" src="https://via.placeholder.com/50" alt="Avatar">
-                    <div class="level-badge" id="user-level">1</div>
-                </div>
-                <div class="user-details">
-                    <span id="user-name" class="username">Kullanıcı</span>
-                    <span id="user-power" class="power"><i class="fas fa-bolt"></i> 0 PH</span>
-                </div>
-            </div>
-            <button class="btn-settings" onclick="showSettings()">
-                <i class="fas fa-cog"></i>
-            </button>
+    <!-- PROFILE PANEL -->
+    <div class="panel" id="panel-profile-panel">
+      <div class="panel-header"><h2>👤 Kişisel Bilgiler</h2></div>
+      <div class="profile-container">
+        <div class="profile-avatar-section">
+          <div class="big-avatar" id="big-avatar">⛏</div>
+          <div class="avatar-options">
+            <label class="btn-secondary">📷 URL ile Fotoğraf
+              <input type="text" id="avatar-url-input" placeholder="https://..." style="display:none" />
+            </label>
+            <button class="btn-secondary" id="btn-set-avatar">Güncelle</button>
+          </div>
+          <input type="text" id="avatar-url-field" placeholder="Fotoğraf URL gir..." class="url-field" />
         </div>
-
-        <!-- Balance Cards -->
-        <div class="balance-container">
-            <div class="balance-card banknote">
-                <div class="card-bg"></div>
-                <i class="fas fa-money-bill-wave"></i>
-                <div class="balance-info">
-                    <span class="label">Banknot</span>
-                    <span id="banknote-balance" class="amount">0</span>
-                </div>
-                <button class="btn-collect pulse" id="collect-btn" onclick="collectAll()">
-                    <i class="fas fa-hand-holding-usd"></i> Topla
-                </button>
+        <div class="profile-info-section">
+          <div class="form-group">
+            <label>Kullanıcı Adı</label>
+            <div class="input-row">
+              <input type="text" id="profile-username-input" placeholder="Yeni kullanıcı adı" />
+              <button class="btn-small" id="btn-change-username">Değiştir</button>
             </div>
-            
-            <div class="balance-card gold">
-                <div class="card-bg"></div>
-                <i class="fas fa-coins"></i>
-                <div class="balance-info">
-                    <span class="label">Altın</span>
-                    <span id="gold-balance" class="amount">0</span>
-                </div>
-                <button class="btn-convert" onclick="showConvertModal()">
-                    <i class="fas fa-exchange-alt"></i> Çevir
-                </button>
+          </div>
+          <div class="form-group">
+            <label>Şifre Değiştir</label>
+            <div class="input-row">
+              <input type="password" id="profile-new-pass" placeholder="Yeni şifre" />
+              <button class="btn-small" id="btn-change-pass">Değiştir</button>
             </div>
+          </div>
+          <div class="profile-details">
+            <div class="detail-row"><span>Email:</span><span id="profile-email">-</span></div>
+            <div class="detail-row"><span>Son Giriş:</span><span id="profile-last-login">-</span></div>
+            <div class="detail-row"><span>Kayıt Tarihi:</span><span id="profile-created">-</span></div>
+          </div>
         </div>
-
-        <!-- Main Content Area -->
-        <div class="content-area" id="content-area">
-            <!-- Mining Section (Default) -->
-            <div id="mining-section" class="section active">
-                <div class="mine-entrance">
-                    <div class="mine-visual">
-                        <div class="cave-bg"></div>
-                        <div class="miners-container">
-                            <!-- Kübra -->
-                            <div class="miner-card active" id="miner-kubra" data-miner="kubra">
-                                <div class="miner-avatar kubra">
-                                    <i class="fas fa-female"></i>
-                                    <div class="mining-animation">
-                                        <i class="fas fa-pickaxe"></i>
-                                    </div>
-                                </div>
-                                <div class="miner-info">
-                                    <h3>KÜBRA</h3>
-                                    <span class="status">Çalışıyor</span>
-                                    <div class="production">
-                                        <i class="fas fa-clock"></i> 20dk: 20 BN
-                                    </div>
-                                    <div class="progress-ring">
-                                        <div class="progress" id="progress-kubra"></div>
-                                    </div>
-                                </div>
-                                <div class="offline-badge">OFFLINE</div>
-                            </div>
-
-                            <!-- Ali -->
-                            <div class="miner-card locked" id="miner-ali" data-miner="ali">
-                                <div class="lock-overlay">
-                                    <i class="fas fa-lock"></i>
-                                    <span>5000 BN ile Aç</span>
-                                    <button class="btn-unlock" onclick="unlockMiner('ali', 5000)">
-                                        <i class="fas fa-unlock"></i> Satın Al
-                                    </button>
-                                </div>
-                                <div class="miner-avatar ali">
-                                    <i class="fas fa-male"></i>
-                                </div>
-                                <div class="miner-info">
-                                    <h3>ALİ</h3>
-                                    <div class="production">
-                                        <i class="fas fa-clock"></i> 20dk: 50 BN
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Beyza -->
-                            <div class="miner-card locked" id="miner-beyza" data-miner="beyza">
-                                <div class="lock-overlay">
-                                    <i class="fas fa-lock"></i>
-                                    <span>20000 BN ile Aç</span>
-                                    <button class="btn-unlock" onclick="unlockMiner('beyza', 20000)">
-                                        <i class="fas fa-unlock"></i> Satın Al
-                                    </button>
-                                </div>
-                                <div class="miner-avatar beyza">
-                                    <i class="fas fa-female"></i>
-                                </div>
-                                <div class="miner-info">
-                                    <h3>BEYZA</h3>
-                                    <div class="production">
-                                        <i class="fas fa-clock"></i> 20dk: 200 BN
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Stats Panel -->
-                <div class="stats-panel">
-                    <h3><i class="fas fa-chart-line"></i> Üretim İstatistikleri</h3>
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <i class="fas fa-clock"></i>
-                            <span class="stat-value" id="hourly-production">60</span>
-                            <span class="stat-label">Saatlik BN</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-calendar-day"></i>
-                            <span class="stat-value" id="daily-production">1440</span>
-                            <span class="stat-label">Günlük BN</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-gem"></i>
-                            <span class="stat-value" id="active-miners">1</span>
-                            <span class="stat-label">Aktif Madenci</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Shop Section -->
-            <div id="shop-section" class="section">
-                <div class="shop-header">
-                    <h2><i class="fas fa-store"></i> Günün Fırsatları</h2>
-                    <div class="countdown" id="shop-countdown">23:59:59</div>
-                </div>
-
-                <div class="shop-categories">
-                    <button class="category-btn active" onclick="switchShopTab('items')">Eşyalar</button>
-                    <button class="category-btn" onclick="switchShopTab('chests')">Sandıklar</button>
-                </div>
-
-                <div id="shop-items" class="shop-grid active">
-                    <!-- Dynamic items loaded here -->
-                </div>
-
-                <div id="shop-chests" class="shop-grid">
-                    <div class="chest-card bronze" onclick="buyChest('bronze', 100)">
-                        <div class="chest-icon">
-                            <i class="fas fa-box-open"></i>
-                            <div class="glow"></div>
-                        </div>
-                        <h3>Bronz Sandık</h3>
-                        <p>10-50 Banknot</p>
-                        <small>%10 Eşya Şansı</small>
-                        <button class="btn-buy">100 BN</button>
-                    </div>
-                    
-                    <div class="chest-card silver" onclick="buyChest('silver', 500)">
-                        <div class="chest-icon">
-                            <i class="fas fa-box-open"></i>
-                            <div class="glow"></div>
-                        </div>
-                        <h3>Gümüş Sandık</h3>
-                        <p>50-200 Banknot</p>
-                        <small>%30 Eşya Şansı</small>
-                        <button class="btn-buy">500 BN</button>
-                    </div>
-                    
-                    <div class="chest-card gold" onclick="buyChest('gold', 1000)">
-                        <div class="chest-icon">
-                            <i class="fas fa-box-open"></i>
-                            <div class="glow"></div>
-                        </div>
-                        <h3>Altın Sandık</h3>
-                        <p>200-500 Banknot</p>
-                        <small>%50 Eşya Şansı</small>
-                        <button class="btn-buy">1000 BN</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- League Section -->
-            <div id="league-section" class="section">
-                <div class="league-header">
-                    <div class="trophy-icon">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <h2>Günlük Lig</h2>
-                    <p>Toplam Havuz: <strong>1000 BN</strong></p>
-                    <div class="league-timer" id="league-timer">Sıfırlanma: 14:32:15</div>
-                </div>
-
-                <div class="league-table-container">
-                    <div class="table-header">
-                        <span>Sıra</span>
-                        <span>Madenci</span>
-                        <span>Güç (PH)</span>
-                        <span>Pay</span>
-                    </div>
-                    <div id="league-table" class="league-list">
-                        <!-- Dynamic content -->
-                    </div>
-                </div>
-
-                <div class="my-position">
-                    <span>Sizin Sıranız: <strong id="my-rank">-</strong></span>
-                    <span>Tahmini Pay: <strong id="my-share">0 BN</strong></span>
-                </div>
-            </div>
-
-            <!-- Finance Section -->
-            <div id="finance-section" class="section">
-                <div class="finance-tabs">
-                    <button class="fin-tab active" onclick="switchFinanceTab('deposit')">Yatırma</button>
-                    <button class="fin-tab" onclick="switchFinanceTab('withdraw')">Çekim</button>
-                    <button class="fin-tab" onclick="switchFinanceTab('history')">Geçmiş</button>
-                </div>
-
-                <div id="deposit-panel" class="finance-panel active">
-                    <div class="rate-info">
-                        <i class="fas fa-info-circle"></i>
-                        <span>1 TL = 1000 Banknot</span>
-                    </div>
-                    <div class="deposit-form">
-                        <label>Miktar (TL)</label>
-                        <input type="number" id="deposit-amount" min="10" placeholder="Min. 10 TL" oninput="calculateDeposit()">
-                        <div class="conversion-result">
-                            <i class="fas fa-arrow-down"></i>
-                            <span id="deposit-result">0 Banknot</span>
-                        </div>
-                        <button class="btn-primary btn-large" onclick="createDeposit()">
-                            <i class="fas fa-credit-card"></i> Yatırma Talebi Oluştur
-                        </button>
-                    </div>
-                    <div class="payment-methods">
-                        <h4>Ödeme Yöntemleri</h4>
-                        <div class="method-list">
-                            <div class="method-item">
-                                <i class="fas fa-university"></i>
-                                <span>Havale/EFT</span>
-                            </div>
-                            <div class="method-item">
-                                <i class="fas fa-mobile-alt"></i>
-                                <span>Papara</span>
-                            </div>
-                            <div class="method-item">
-                                <i class="fas fa-wallet"></i>
-                                <span>Kripto</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="withdraw-panel" class="finance-panel">
-                    <div class="rate-info">
-                        <i class="fas fa-info-circle"></i>
-                        <span>10000 Banknot = 10 TL (1000 BN = 1 Altın)</span>
-                    </div>
-                    <div class="withdraw-form">
-                        <label>Banknot Miktarı</label>
-                        <input type="number" id="withdraw-amount" min="10000" step="1000" placeholder="Min. 10000 BN" oninput="calculateWithdraw()">
-                        <div class="conversion-steps">
-                            <div class="step">
-                                <span id="withdraw-bn">0 BN</span>
-                                <i class="fas fa-arrow-right"></i>
-                                <span id="withdraw-gold">0 Altın</span>
-                                <i class="fas fa-arrow-right"></i>
-                                <span id="withdraw-tl">0 TL</span>
-                            </div>
-                        </div>
-                        <button class="btn-primary btn-large" onclick="createWithdrawal()">
-                            <i class="fas fa-money-bill-wave"></i> Çekim Talebi Oluştur
-                        </button>
-                    </div>
-                </div>
-
-                <div id="history-panel" class="finance-panel">
-                    <div id="transaction-history" class="history-list">
-                        <!-- Dynamic content -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Support Section -->
-            <div id="support-section" class="section">
-                <div class="support-header">
-                    <h2><i class="fas fa-headset"></i> Destek Merkezi</h2>
-                    <button class="btn-new-ticket" onclick="showNewTicketModal()">
-                        <i class="fas fa-plus"></i> Yeni Talep
-                    </button>
-                </div>
-                <div id="ticket-list" class="ticket-list">
-                    <!-- Dynamic tickets -->
-                </div>
-            </div>
-
-            <!-- Leaderboard Section -->
-            <div id="leaderboard-section" class="section">
-                <div class="leaderboard-tabs">
-                    <button class="lb-tab active" onclick="switchLeaderboard('power')">
-                        <i class="fas fa-bolt"></i> En Güçlüler
-                    </button>
-                    <button class="lb-tab" onclick="switchLeaderboard('rich')">
-                        <i class="fas fa-crown"></i> En Zenginler
-                    </button>
-                    <button class="lb-tab" onclick="switchLeaderboard('withdraw')">
-                        <i class="fas fa-trophy"></i> En Çok Çekenler
-                    </button>
-                </div>
-                
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="leaderboard-search" placeholder="Kullanıcı ara..." oninput="searchLeaderboard()">
-                </div>
-
-                <div id="leaderboard-content" class="leaderboard-list">
-                    <!-- Dynamic content -->
-                </div>
-            </div>
-
-            <!-- How to Play Section -->
-            <div id="howto-section" class="section">
-                <div class="guide-container">
-                    <h2><i class="fas fa-book-open"></i> Nasıl Oynanır?</h2>
-                    
-                    <div class="guide-card">
-                        <div class="guide-icon"><i class="fas fa-hammer"></i></div>
-                        <h3>1. Madencilik</h3>
-                        <p>Kübra, Ali ve Beyza ile madenlerde çalışın. Her 20 dakikada bir banknot üretirler. Offline olsanız bile üretim devam eder!</p>
-                    </div>
-
-                    <div class="guide-card">
-                        <div class="guide-icon"><i class="fas fa-shopping-cart"></i></div>
-                        <h3>2. Ekipman Satın Al</h3>
-                        <p>Banknotlarınızla mağazadan eşya alın. Her eşya PH (Güç) puanı verir. Güç ne kadar yüksekse ligdeki payınız o kadar büyük olur.</p>
-                    </div>
-
-                    <div class="guide-card">
-                        <div class="guide-icon"><i class="fas fa-trophy"></i></div>
-                        <h3>3. Ligde Yarış</h3>
-                        <p>Günlük 1000 banknot havuzundan PH gücünüze göre pay alın. En güçlü madenciler en büyük ödülleri kazanır!</p>
-                    </div>
-
-                    <div class="guide-card">
-                        <div class="guide-icon"><i class="fas fa-exchange-alt"></i></div>
-                        <h3>4. Para Çekme</h3>
-                        <p>Biriktirdiğiniz banknotları altına çevirip (1000 BN = 1 Altın) gerçek para olarak çekin. 10000 BN = 10 TL değerindedir.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bottom Navigation -->
-        <div class="bottom-nav">
-            <button class="nav-btn active" onclick="showSection('mining')">
-                <i class="fas fa-mountain"></i>
-                <span>Maden</span>
-            </button>
-            <button class="nav-btn" onclick="showSection('shop')">
-                <i class="fas fa-shopping-bag"></i>
-                <span>Mağaza</span>
-            </button>
-            <button class="nav-btn" onclick="showSection('league')">
-                <i class="fas fa-medal"></i>
-                <span>Lig</span>
-            </button>
-            <button class="nav-btn" onclick="showSection('finance')">
-                <i class="fas fa-wallet"></i>
-                <span>Finans</span>
-            </button>
-            <button class="nav-btn" onclick="showSection('support')">
-                <i class="fas fa-headset"></i>
-                <span>Destek</span>
-            </button>
-        </div>
+      </div>
     </div>
 
-    <!-- Modals -->
-    <!-- Profile Modal -->
-    <div id="profile-modal" class="modal">
-        <div class="modal-content profile-modal">
-            <div class="modal-header">
-                <h2><i class="fas fa-user-circle"></i> Profilim</h2>
-                <button class="btn-close" onclick="closeModal('profile-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="profile-avatar-section">
-                    <div class="avatar-preview">
-                        <img id="profile-avatar-img" src="https://via.placeholder.com/100" alt="Avatar">
-                        <button class="btn-change-avatar" onclick="changeAvatar()">
-                            <i class="fas fa-camera"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="profile-form">
-                    <div class="form-group">
-                        <label>Kullanıcı Adı</label>
-                        <input type="text" id="profile-username" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>E-posta</label>
-                        <input type="email" id="profile-email" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Üyelik Tarihi</label>
-                        <input type="text" id="profile-date" readonly>
-                    </div>
-                    
-                    <div class="password-change-section">
-                        <h4>Şifre Değiştir</h4>
-                        <input type="password" id="old-password" placeholder="Mevcut şifre">
-                        <input type="password" id="new-password" placeholder="Yeni şifre (min 6)">
-                        <input type="password" id="confirm-new-password" placeholder="Yeni şifre tekrar">
-                        <button class="btn-secondary" onclick="changePassword()">
-                            <i class="fas fa-key"></i> Şifreyi Güncelle
-                        </button>
-                    </div>
-                </div>
-
-                <div class="inventory-section">
-                    <h3><i class="fas fa-backpack"></i> Envanterim</h3>
-                    <div id="user-inventory" class="inventory-grid">
-                        <!-- Dynamic items -->
-                    </div>
-                </div>
-            </div>
+    <!-- FINANCE PANEL -->
+    <div class="panel" id="panel-finance">
+      <div class="panel-header"><h2>💳 Finans</h2></div>
+      <div class="finance-grid">
+        <div class="finance-card">
+          <h3>💰 Bakiyeler</h3>
+          <div class="balance-display">
+            <div class="balance-item"><span class="bal-label">Banknot</span><span class="bal-val" id="fin-banknot">0</span></div>
+            <div class="balance-item"><span class="bal-label">Altın</span><span class="bal-val" id="fin-gold">0</span></div>
+            <div class="balance-item"><span class="bal-label">TL Değeri</span><span class="bal-val" id="fin-tl">0 ₺</span></div>
+          </div>
+          <div class="conversion-info">
+            <p>10.000 banknot = 1 altın</p>
+            <p>1.000 altın = 10 ₺</p>
+          </div>
         </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-cog"></i> Ayarlar</h2>
-                <button class="btn-close" onclick="closeModal('settings-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>Bildirim Sesleri</h4>
-                        <p>Efekt seslerini aç/kapat</p>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="sound-toggle" checked onchange="toggleSound()">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>Otomatik Toplama</h4>
-                        <p>Uygulamaya girince otomatik topla</p>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="auto-collect" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="setting-item danger">
-                    <button class="btn-danger" onclick="logout()">
-                        <i class="fas fa-sign-out-alt"></i> Çıkış Yap
-                    </button>
-                </div>
-            </div>
+        <div class="finance-card">
+          <h3>📤 Çekim Talebi</h3>
+          <div class="form-group">
+            <label>Miktar (Altın, min: 50)</label>
+            <input type="number" id="withdraw-amount" min="50" placeholder="50" />
+          </div>
+          <div class="form-group">
+            <label>IBAN veya Kripto Adresi</label>
+            <input type="text" id="withdraw-address" placeholder="TR... veya 0x..." />
+          </div>
+          <button class="btn-primary" id="btn-withdraw">📤 Çekim Talebi Oluştur</button>
         </div>
-    </div>
-
-    <!-- Convert Modal -->
-    <div id="convert-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-exchange-alt"></i> Banknot → Altın</h2>
-                <button class="btn-close" onclick="closeModal('convert-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="convert-info">
-                    <p>Dönüşüm Oranı: <strong>1000 Banknot = 1 Altın</strong></p>
-                </div>
-                <div class="convert-form">
-                    <label>Çevrilecek Banknot</label>
-                    <input type="number" id="convert-amount" min="1000" step="1000" placeholder="1000" oninput="calculateConvert()">
-                    <div class="convert-result">
-                        <i class="fas fa-arrow-down"></i>
-                        <span id="convert-gold-result">0 Altın</span>
-                    </div>
-                    <button class="btn-primary btn-large" onclick="convertToGold()">
-                        <i class="fas fa-check"></i> Çevir
-                    </button>
-                </div>
-            </div>
+        <div class="finance-card">
+          <h3>📥 Yatırım</h3>
+          <p class="info-text">Yatırım yapmak için Admin ile iletişime geçin. Kontrol Merkezi > DM üzerinden mesaj gönderin.</p>
+          <button class="btn-secondary" onclick="window.game.switchPanel('control')">💬 Admin'e Mesaj At</button>
         </div>
-    </div>
-
-    <!-- Chest Open Modal -->
-    <div id="chest-modal" class="modal">
-        <div class="modal-content chest-content">
-            <div class="chest-animation" id="chest-animation">
-                <i class="fas fa-box"></i>
-                <div class="particles"></div>
-            </div>
-            <div class="chest-result" id="chest-result" style="display:none;">
-                <h3 id="chest-reward-title">Kazanan!</h3>
-                <div class="reward-display" id="reward-display">
-                    <!-- Dynamic -->
-                </div>
-            </div>
+        <div class="finance-card">
+          <h3>📋 Taleplerim</h3>
+          <div id="my-requests"></div>
         </div>
+      </div>
     </div>
 
-    <!-- Ticket Modal -->
-    <div id="ticket-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-ticket-alt"></i> Yeni Destek Talebi</h2>
-                <button class="btn-close" onclick="closeModal('ticket-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <input type="text" id="ticket-title" placeholder="Konu başlığı" maxlength="50">
-                <textarea id="ticket-message" placeholder="Sorununuzu detaylı açıklayın..." rows="5"></textarea>
-                <button class="btn-primary" onclick="submitTicket()">
-                    <i class="fas fa-paper-plane"></i> Gönder
-                </button>
-            </div>
+    <!-- SETTINGS PANEL -->
+    <div class="panel" id="panel-settings-panel">
+      <div class="panel-header"><h2>⚙️ Ayarlar</h2></div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>🎨 Tema</h3>
+          <div class="theme-options">
+            <button class="theme-btn active" data-theme="dark">🌑 Gece Modu</button>
+            <button class="theme-btn" data-theme="pink">🌸 Pembe Tema</button>
+            <button class="theme-btn" data-theme="cyber">⚡ Siber</button>
+          </div>
         </div>
+        <div class="settings-card">
+          <h3>🔔 Bildirimler</h3>
+          <label class="toggle-row">
+            <span>Kazanç Bildirimleri</span>
+            <input type="checkbox" id="notif-earning" checked />
+          </label>
+          <label class="toggle-row">
+            <span>Sistem Bildirimleri</span>
+            <input type="checkbox" id="notif-system" checked />
+          </label>
+        </div>
+      </div>
     </div>
 
-    <!-- Toast Container -->
-    <div id="toast-container"></div>
-
-    <!-- Admin Panel (Hidden by default) -->
-    <div id="admin-panel" style="display:none;">
-        <button class="btn-admin-toggle" onclick="toggleAdminPanel()">
-            <i class="fas fa-user-shield"></i>
-        </button>
+    <!-- SUPPORT PANEL -->
+    <div class="panel" id="panel-support">
+      <div class="panel-header"><h2>🛟 Destek</h2></div>
+      <div class="support-container">
+        <div class="form-group">
+          <label>Konu</label>
+          <input type="text" id="support-subject" placeholder="Sorunun konu başlığı" />
+        </div>
+        <div class="form-group">
+          <label>Mesajın</label>
+          <textarea id="support-message" rows="5" placeholder="Sorununu detaylıca anlat..."></textarea>
+        </div>
+        <button class="btn-primary" id="btn-support-send">📨 Destek Talebi Gönder</button>
+        <div id="my-tickets" class="ticket-list"></div>
+      </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- HOW TO PLAY -->
+    <div class="panel" id="panel-howto">
+      <div class="panel-header"><h2>📖 Nasıl Oynanır</h2></div>
+      <div class="howto-container">
+        <div class="howto-card"><h3>⛏ Madencilik</h3><p>Her 20 dakikada otomatik kazanç sağlarsın. Online ya da offline olman fark etmez! Giriş yaptığında offline kazancın otomatik hesaplanır.</p></div>
+        <div class="howto-card"><h3>👷 Madenciler</h3><p>3 madencin var: Kübra (×2 PH), Beyza (×3 PH), Ali (×5 PH). Madenci seçerek PH çarpanını artır.</p></div>
+        <div class="howto-card"><h3>⚡ PH Sistemi</h3><p>PH (Power Hash) eşyalarından gelir. Madenci ile çarpılarak toplam gücünü oluşturur. Lig dağıtımında payın PH'ına göre hesaplanır.</p></div>
+        <div class="howto-card"><h3>🏆 Lig</h3><p>Her 30 dakikada 1000 banknot tüm oyuncular arasında PH oranına göre dağıtılır. Eşya topla, PH'ını artır!</p></div>
+        <div class="howto-card"><h3>📦 Sandıklar</h3><p>Mağazadan sandık açarak eşya, banknot veya altın kazanabilirsin. Her 3 saatte bir fırsatlı sandık çıkar!</p></div>
+        <div class="howto-card"><h3>💰 Para Sistemi</h3><p>10.000 Banknot = 1 Altın | 1.000 Altın = 10 ₺. Altın biriktirerek çekim talebi oluşturabilirsin (min 50 altın).</p></div>
+      </div>
+    </div>
+
+    <!-- STORE PANEL (accessed via bottom nav) -->
+    <div class="panel" id="panel-store">
+      <div class="panel-header"><h2>🛒 Mağaza</h2></div>
+      <div id="flash-deal-section" class="flash-deal-section">
+        <h3>⚡ Fırsatlı Sandık <span id="flash-timer">3:00:00</span></h3>
+        <div class="flash-deal-card" id="flash-deal-card">Yükleniyor...</div>
+      </div>
+      <div class="store-grid" id="store-grid">
+        <div class="chest-card" data-chest="bronze">
+          <div class="chest-icon">📦</div>
+          <div class="chest-name">Bronz Sandık</div>
+          <div class="chest-price">500 💰</div>
+          <div class="chest-desc">Temel eşyalar, az banknot</div>
+          <button class="btn-chest" data-chest="bronze">Satın Al</button>
+        </div>
+        <div class="chest-card" data-chest="silver">
+          <div class="chest-icon">🎁</div>
+          <div class="chest-name">Gümüş Sandık</div>
+          <div class="chest-price">1500 💰</div>
+          <div class="chest-desc">İyi eşyalar, banknot veya altın</div>
+          <button class="btn-chest" data-chest="silver">Satın Al</button>
+        </div>
+        <div class="chest-card" data-chest="gold">
+          <div class="chest-icon">🏆</div>
+          <div class="chest-name">Altın Sandık</div>
+          <div class="chest-price">5000 💰</div>
+          <div class="chest-desc">Nadir eşyalar, yüksek altın şansı</div>
+          <button class="btn-chest" data-chest="gold">Satın Al</button>
+        </div>
+        <div class="chest-card" data-chest="diamond">
+          <div class="chest-icon">💎</div>
+          <div class="chest-name">Elmas Sandık</div>
+          <div class="chest-price">15000 💰</div>
+          <div class="chest-desc">En nadir eşyalar, altın garantili</div>
+          <button class="btn-chest" data-chest="diamond">Satın Al</button>
+        </div>
+        <div class="chest-card" data-chest="legendary">
+          <div class="chest-icon">🌟</div>
+          <div class="chest-name">Efsanevi Sandık</div>
+          <div class="chest-price">50000 💰</div>
+          <div class="chest-desc">Yüksek PH eşyalar, çok altın</div>
+          <button class="btn-chest" data-chest="legendary">Satın Al</button>
+        </div>
+      </div>
+      <!-- Chest Result Modal -->
+      <div class="chest-result-modal" id="chest-result-modal" style="display:none">
+        <div class="chest-result-inner">
+          <div class="chest-result-icon" id="chest-result-icon">🎁</div>
+          <h2>Sandık Açıldı!</h2>
+          <div class="chest-result-items" id="chest-result-items"></div>
+          <button class="btn-primary" id="btn-close-chest">Kapat</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONVERT PANEL -->
+    <div class="panel" id="panel-convert">
+      <div class="panel-header"><h2>🔄 Dönüştürme</h2></div>
+      <div class="convert-container">
+        <div class="convert-card">
+          <h3>💰 → 🥇 Banknot'tan Altına</h3>
+          <div class="form-group">
+            <label>Banknot Miktarı (min: 10.000)</label>
+            <input type="number" id="convert-banknot" min="10000" step="10000" placeholder="10000" />
+          </div>
+          <div class="convert-preview" id="convert-preview">= 0 Altın</div>
+          <button class="btn-primary" id="btn-convert">🔄 Dönüştür</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS PANEL -->
+    <div class="panel" id="panel-notifications">
+      <div class="panel-header"><h2>🔔 Bildirimler</h2></div>
+      <div class="notif-list" id="notif-list">
+        <div class="empty-state">Henüz bildirim yok.</div>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div class="panel" id="panel-admin">
+      <div class="panel-header"><h2>👑 Admin Paneli</h2></div>
+      <div class="admin-grid">
+        <div class="admin-card">
+          <h3>👥 Kullanıcı İşlemleri</h3>
+          <div class="form-group">
+            <label>Kullanıcı Adı / UID</label>
+            <input type="text" id="admin-user-search" placeholder="Kullanıcı ara..." />
+            <button class="btn-small" id="btn-admin-search">🔍 Ara</button>
+          </div>
+          <div id="admin-user-result" class="admin-user-result"></div>
+          <div class="admin-actions" id="admin-actions" style="display:none">
+            <div class="form-group">
+              <label>Banknot İşlemi</label>
+              <div class="input-row">
+                <input type="number" id="admin-banknot-amount" placeholder="Miktar" />
+                <button class="btn-small btn-green" data-action="add-banknot">+ Ekle</button>
+                <button class="btn-small btn-red" data-action="remove-banknot">- Çıkar</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Altın İşlemi</label>
+              <div class="input-row">
+                <input type="number" id="admin-gold-amount" placeholder="Miktar" />
+                <button class="btn-small btn-green" data-action="add-gold">+ Ekle</button>
+                <button class="btn-small btn-red" data-action="remove-gold">- Çıkar</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Eşya Ekle (Rastgele)</label>
+              <div class="input-row">
+                <input type="number" id="admin-item-count" placeholder="Adet" min="1" />
+                <button class="btn-small btn-green" data-action="add-items">+ Ekle</button>
+              </div>
+            </div>
+            <div class="input-row">
+              <button class="btn-small btn-red" data-action="ban-user">🚫 Banla</button>
+              <button class="btn-small btn-red" data-action="delete-user">🗑 Sil</button>
+            </div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>📢 Bildirim Gönder</h3>
+          <div class="form-group">
+            <label>Hedef</label>
+            <select id="admin-notif-target">
+              <option value="all">Tüm Kullanıcılar</option>
+              <option value="single">Tek Kullanıcı</option>
+            </select>
+          </div>
+          <div id="admin-notif-user-row" style="display:none" class="form-group">
+            <input type="text" id="admin-notif-uid" placeholder="Kullanıcı UID" />
+          </div>
+          <div class="form-group">
+            <label>Tür</label>
+            <select id="admin-notif-type">
+              <option value="system">Sistem</option>
+              <option value="reward">Ödül</option>
+              <option value="announcement">Duyuru</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mesaj</label>
+            <textarea id="admin-notif-message" rows="3" placeholder="Bildirim mesajı..."></textarea>
+          </div>
+          <button class="btn-primary" id="btn-send-notif">📢 Gönder</button>
+        </div>
+        <div class="admin-card">
+          <h3>💳 Bekleyen Talepler</h3>
+          <div id="admin-requests-list"></div>
+        </div>
+        <div class="admin-card">
+          <h3>🛟 Destek Talepleri</h3>
+          <div id="admin-tickets-list"></div>
+        </div>
+        <div class="admin-card">
+          <h3>⚙️ Sistem</h3>
+          <label class="toggle-row">
+            <span>Bakım Modu</span>
+            <input type="checkbox" id="admin-maintenance" />
+          </label>
+          <div class="stat-row"><span>Toplam Kullanıcı</span><span id="admin-total-users">-</span></div>
+        </div>
+        <div class="admin-card">
+          <h3>💬 DM Mesajları</h3>
+          <div id="admin-dm-list"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="bot-nav-btn" data-panel="store">🛒<span>Mağaza</span></button>
+    <button class="bot-nav-btn" data-panel="convert">🔄<span>Dönüştür</span></button>
+    <button class="bot-nav-btn" data-panel="mine">⛏<span>Maden</span></button>
+    <button class="bot-nav-btn" data-panel="notifications">🔔<span>Bildirimler</span></button>
+    <button class="bot-nav-btn active" data-panel="mine">🏠<span>Ana</span></button>
+  </nav>
+
+</div>
+
+<!-- OFFLINE EARNINGS MODAL -->
+<div class="modal-overlay" id="offline-modal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-icon">😴</div>
+    <h2>Hoş Geldin!</h2>
+    <p>Yokluğunda çalışıldı...</p>
+    <div class="offline-reward" id="offline-reward">+0 💰</div>
+    <button class="btn-primary" id="btn-claim-offline">💰 Topla!</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- MAINTENANCE SCREEN -->
+<div id="maintenance-screen" class="screen" style="display:none">
+  <div class="maintenance-content">
+    <div class="maint-icon">🔧</div>
+    <h1>Bakım Modu</h1>
+    <p>Sunucular güncelleniyor. Lütfen bekleyin...</p>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module" src="game.js"></script>
 </body>
 </html>
