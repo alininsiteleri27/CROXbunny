@@ -181,7 +181,6 @@ const Toast = {
 // =============================================
 const Auth = {
   async login(username, password) {
-    // find email by username
     const q = query(collection(db, 'users'), where('username', '==', username));
     const snap = await getDocs(q);
     if (snap.empty) throw new Error('Kullanıcı adı bulunamadı.');
@@ -190,7 +189,6 @@ const Auth = {
   },
 
   async register(email, username, password) {
-    // check username unique
     const q = query(collection(db, 'users'), where('username', '==', username));
     const snap = await getDocs(q);
     if (!snap.empty) throw new Error('Bu kullanıcı adı zaten alınmış.');
@@ -239,14 +237,20 @@ class Game {
     this.isAdmin = false;
     this.mineTimerInterval = null;
     this.leagueTimerInterval = null;
-    this.flashDealInterval = null;
+    this.flashTimerInterval = null;
     this.dmUnsubscribe = null;
     this.notifUnsubscribe = null;
+    this.userUnsubscribe = null;
     this.unsubTargetUser = null;
     this.adminSelectedUid = null;
     this.adminSelectedData = null;
     this.flashDealItem = null;
     this.flashDealExpiry = null;
+    this._mining = false;
+    this._leagueStart = null;
+    this._distributing = false;
+    this.lastMineTime = null;
+    this.mineInterval = null;
   }
 
   // ---- INIT ----
@@ -287,7 +291,6 @@ class Game {
   }
 
   bindAuthUI() {
-    // Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -364,8 +367,7 @@ class Game {
     if (!snap.exists()) return;
     this.userData = snap.data();
     this.isAdmin = this.userData.isAdmin || false;
-
-    // Update lastActive
+    this.lastMineTime = this.userData.lastMineTime || Date.now();
     await updateDoc(ref, { lastActive: Date.now() });
   }
 
@@ -438,14 +440,12 @@ class Game {
       d.productionMode === 'gold' ? 'Altın' : 'Banknot';
     document.getElementById('item-count-display').textContent = `(${(d.items||[]).length})`;
 
-    // Miner cards
     const minerCards = document.querySelectorAll('.miner-card');
     minerCards.forEach(c => {
       c.classList.remove('active');
       if (c.dataset.miner === d.miner) c.classList.add('active');
     });
 
-    // Items grid
     const grid = document.getElementById('items-grid');
     const items = d.items || [];
     if (!items.length) {
@@ -460,7 +460,6 @@ class Game {
       `).join('');
     }
 
-    // Production mode buttons
     document.getElementById('prod-banknot').classList.toggle('active', d.productionMode !== 'gold');
     document.getElementById('prod-gold').classList.toggle('active', d.productionMode === 'gold');
   }
@@ -506,11 +505,9 @@ class Game {
 
   // ---- BIND GAME UI ----
   bindGameUI() {
-    // Prevent double binding
     if (this._uiBound) return;
     this._uiBound = true;
 
-    // Menu toggle
     document.getElementById('menu-toggle').addEventListener('click', () => {
       const sb = document.getElementById('sidebar');
       const mc = document.getElementById('main-content');
@@ -522,7 +519,6 @@ class Game {
       }
     });
 
-    // Sidebar buttons
     document.querySelectorAll('.sidebar-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         if (btn.dataset.panel) this.switchPanel(btn.dataset.panel);
@@ -530,7 +526,6 @@ class Game {
       });
     });
 
-    // Bottom nav
     document.querySelectorAll('.bot-nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.bot-nav-btn').forEach(b => b.classList.remove('active'));
@@ -539,37 +534,31 @@ class Game {
       });
     });
 
-    // Logout
     document.getElementById('btn-logout').addEventListener('click', async () => {
       this.clearTimers();
       if (this.dmUnsubscribe) this.dmUnsubscribe();
       if (this.notifUnsubscribe) this.notifUnsubscribe();
+      if (this.userUnsubscribe) this.userUnsubscribe();
       await Auth.logout();
     });
 
-    // Notification bell
     document.getElementById('notif-bell').addEventListener('click', () => this.switchPanel('notifications'));
 
-    // Profile chip
     document.getElementById('profile-chip').addEventListener('click', () => this.switchPanel('profile-panel'));
 
-    // Mine: production mode
     document.getElementById('prod-banknot').addEventListener('click', () => this.setProductionMode('banknot'));
     document.getElementById('prod-gold').addEventListener('click', () => this.setProductionMode('gold'));
 
-    // Split range
     document.getElementById('split-range').addEventListener('input', (e) => {
       const v = e.target.value;
       document.getElementById('split-label').textContent = `${v}% Banknot / ${100-v}% Altın`;
       this.updateUserData({ splitRatio: Number(v) });
     });
 
-    // Miner cards
     document.querySelectorAll('.miner-card:not(.locked)').forEach(c => {
       c.addEventListener('click', () => this.selectMiner(c.dataset.miner));
     });
 
-    // Store: buy chest
     document.querySelectorAll('.btn-chest').forEach(btn => {
       btn.addEventListener('click', () => this.buyChest(btn.dataset.chest));
     });
@@ -577,7 +566,6 @@ class Game {
       document.getElementById('chest-result-modal').style.display = 'none';
     });
 
-    // Convert
     document.getElementById('convert-banknot').addEventListener('input', (e) => {
       const amt = parseInt(e.target.value) || 0;
       const gold = Math.floor(amt / BANKNOT_TO_GOLD);
@@ -585,10 +573,8 @@ class Game {
     });
     document.getElementById('btn-convert').addEventListener('click', () => this.convertBanknotToGold());
 
-    // Finance
     document.getElementById('btn-withdraw').addEventListener('click', () => this.createWithdrawRequest());
 
-    // Profile changes
     document.getElementById('btn-set-avatar').addEventListener('click', () => {
       const url = document.getElementById('avatar-url-field').value.trim();
       if (!url) { Toast.show('URL gir.', 'warn'); return; }
@@ -601,16 +587,13 @@ class Game {
     document.getElementById('btn-change-username').addEventListener('click', () => this.changeUsername());
     document.getElementById('btn-change-pass').addEventListener('click', () => this.changePassword());
 
-    // DM
     document.getElementById('btn-dm-send').addEventListener('click', () => this.sendDM());
     document.getElementById('dm-input').addEventListener('keydown', e => {
       if (e.key === 'Enter') this.sendDM();
     });
 
-    // Support
     document.getElementById('btn-support-send').addEventListener('click', () => this.sendSupportTicket());
 
-    // Theme buttons
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
@@ -622,15 +605,12 @@ class Game {
       });
     });
 
-    // Admin UI
     this.bindAdminUI();
 
-    // Offline modal
     document.getElementById('btn-claim-offline').addEventListener('click', () => {
       document.getElementById('offline-modal').style.display = 'none';
     });
 
-    // Load my requests
     this.loadMyRequests();
     this.loadMyTickets();
   }
@@ -702,7 +682,9 @@ class Game {
     const elapsed = Date.now() - last;
     const remaining = MINE_INTERVAL_MS - elapsed;
     const el = document.getElementById('mine-timer');
+    
     if (remaining <= 0) {
+      if (el) el.textContent = "00:00";
       this.triggerMineReward();
     } else {
       if (el) el.textContent = formatCountdown(remaining);
@@ -712,47 +694,54 @@ class Game {
   async triggerMineReward() {
     if (this._mining) return;
     this._mining = true;
-    const miner = MINERS[this.userData.miner || 'kubra'];
-    let reward = miner.earn;
-    const mode = this.userData.productionMode || 'banknot';
-    const ratio = (this.userData.splitRatio ?? 100) / 100;
+    
+    try {
+      const miner = MINERS[this.userData.miner || 'kubra'];
+      let reward = miner.earn;
+      const mode = this.userData.productionMode || 'banknot';
+      const ratio = (this.userData.splitRatio ?? 100) / 100;
 
-    let updates = { lastMineTime: Date.now() };
+      let updates = { lastMineTime: Date.now() };
 
-    if (mode === 'gold') {
-      const goldAmt = Math.floor(reward / BANKNOT_TO_GOLD);
-      if (goldAmt > 0) {
-        updates.gold = (this.userData.gold || 0) + goldAmt;
-        this.userData.gold = updates.gold;
+      if (mode === 'gold') {
+        const goldAmt = Math.floor(reward / BANKNOT_TO_GOLD);
+        if (goldAmt > 0) {
+          updates.gold = (this.userData.gold || 0) + goldAmt;
+        } else {
+          updates.banknot = (this.userData.banknot || 0) + reward;
+        }
       } else {
-        updates.banknot = (this.userData.banknot || 0) + reward;
-        this.userData.banknot = updates.banknot;
+        const banknotAmt = Math.floor(reward * ratio);
+        const goldAmt = Math.floor((reward * (1-ratio)) / BANKNOT_TO_GOLD);
+        updates.banknot = (this.userData.banknot || 0) + banknotAmt;
+        if (goldAmt > 0) {
+          updates.gold = (this.userData.gold || 0) + goldAmt;
+        }
       }
-    } else {
-      const banknotAmt = Math.floor(reward * ratio);
-      const goldAmt = Math.floor((reward * (1-ratio)) / BANKNOT_TO_GOLD);
-      updates.banknot = (this.userData.banknot || 0) + banknotAmt;
-      this.userData.banknot = updates.banknot;
-      if (goldAmt > 0) {
-        updates.gold = (this.userData.gold || 0) + goldAmt;
-        this.userData.gold = updates.gold;
-      }
+
+      updates.totalEarned = (this.userData.totalEarned || 0) + reward;
+
+      await this.updateUserData(updates);
+      
+      Object.assign(this.userData, updates);
+      
+      this.renderHUD();
+      this.renderFinance();
+      this.renderControlCenter();
+      this.spawnOrePop();
+      
+      const el = document.getElementById('mine-timer');
+      if (el) el.textContent = formatCountdown(MINE_INTERVAL_MS);
+      
+      Toast.show(`Kazım tamamlandı! +${reward} 💰`, 'success');
+      await this.addNotification('Kazım tamamlandı! +' + reward + ' 💰', 'reward');
+      
+    } catch (e) {
+      console.error('Mining error:', e);
+      Toast.show('Kazım hatası!', 'error');
+    } finally {
+      this._mining = false;
     }
-
-    updates.totalEarned = (this.userData.totalEarned || 0) + reward;
-    this.userData.totalEarned = updates.totalEarned;
-    this.userData.lastMineTime = updates.lastMineTime;
-
-    await this.updateUserData(updates);
-    this.renderHUD();
-    this.renderFinance();
-    this.renderControlCenter();
-    this.spawnOrePop();
-    Toast.show(`Kazım tamamlandı! +${reward} 💰`, 'success');
-    this._mining = false;
-
-    // add notification
-    await this.addNotification('Kazım tamamlandı! +' + reward + ' 💰', 'reward');
   }
 
   // League timer
@@ -770,7 +759,6 @@ class Game {
       await this.distributeLeague();
     }
 
-    // estimate share
     this.updateLeagueShare();
   }
 
@@ -778,7 +766,6 @@ class Game {
     const myPH = this.calcTotalPH();
     const el = document.getElementById('league-share');
     if (!el) return;
-    // rough estimate based on our PH (without full query every second)
     const estimate = myPH > 0 ? Math.floor((myPH / Math.max(myPH, 1000)) * 1000) : 0;
     el.textContent = `~${estimate} 💰`;
   }
@@ -904,7 +891,6 @@ class Game {
     el.style.top = `${40 + Math.random()*20}%`;
     setTimeout(() => { el.className = 'ore-pop'; }, 1600);
 
-    // dust
     const dust = document.getElementById('dust');
     if (!dust) return;
     for (let i = 0; i < 6; i++) {
@@ -999,7 +985,6 @@ class Game {
       createdAt: serverTimestamp()
     });
 
-    // Freeze gold
     const newGold = (this.userData.gold || 0) - amt;
     await this.updateUserData({ gold: newGold });
     this.userData.gold = newGold;
@@ -1184,7 +1169,6 @@ class Game {
 
   // ---- REALTIME SUBSCRIPTIONS ----
   subscribeRealtime() {
-    // listen for unread notifications
     const nq = query(
       collection(db, 'notifications'),
       where('userId', 'in', [this.user.uid, 'all']),
@@ -1197,9 +1181,8 @@ class Game {
         badge.textContent = count;
         badge.style.display = count > 0 ? 'flex' : 'none';
       }
-    });
+    }, err => console.error('Notif listener error:', err));
 
-    // Listen to user doc for real-time updates (admin changes, etc.)
     const userRef = doc(db, 'users', this.user.uid);
     this.userUnsubscribe = onSnapshot(userRef, snap => {
       if (!snap.exists()) return;
@@ -1213,11 +1196,8 @@ class Game {
       this.renderHUD();
       this.renderFinance();
       this.applyTheme(this.userData?.settings?.theme || 'dark');
-      // check maintenance
-      // (handled by admin doc)
-    });
+    }, err => console.error('User listener error:', err));
 
-    // Check maintenance mode
     const sysRef = doc(db, 'system', 'config');
     onSnapshot(sysRef, snap => {
       if (!snap.exists()) return;
@@ -1230,7 +1210,7 @@ class Game {
         if (ms) ms.style.display = 'none';
         document.getElementById('game-screen').classList.add('active');
       }
-    });
+    }, err => console.error('System listener error:', err));
   }
 
   // ---- ADMIN PANEL ----
@@ -1239,7 +1219,6 @@ class Game {
 
     document.getElementById('btn-admin-search').addEventListener('click', () => this.adminSearchUser());
 
-    // Admin notif target
     document.getElementById('admin-notif-target').addEventListener('change', (e) => {
       document.getElementById('admin-notif-user-row').style.display =
         e.target.value === 'single' ? '' : 'none';
@@ -1247,12 +1226,10 @@ class Game {
 
     document.getElementById('btn-send-notif').addEventListener('click', () => this.adminSendNotif());
 
-    // Admin actions
     document.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', () => this.adminAction(btn.dataset.action));
     });
 
-    // Maintenance toggle
     document.getElementById('admin-maintenance').addEventListener('change', async (e) => {
       await setDoc(doc(db, 'system', 'config'), { maintenance: e.target.checked }, { merge: true });
       Toast.show(`Bakım modu ${e.target.checked ? 'aktif' : 'pasif'}`, 'info');
@@ -1275,13 +1252,11 @@ class Game {
 
     try {
       let found = null;
-      // try by username
       const q = query(collection(db, 'users'), where('username', '==', term));
       const snap = await getDocs(q);
       if (!snap.empty) {
         found = { id: snap.docs[0].id, ...snap.docs[0].data() };
       } else {
-        // try by UID
         const ref = doc(db, 'users', term);
         const d = await getDoc(ref);
         if (d.exists()) found = { id: d.id, ...d.data() };
@@ -1404,7 +1379,6 @@ class Game {
     const status = approve ? 'approved' : 'rejected';
     await updateDoc(doc(db, 'requests', reqId), { status });
     if (!approve) {
-      // return gold
       const ref = doc(db, 'users', userId);
       const d = await getDoc(ref);
       if (d.exists()) {
@@ -1495,7 +1469,6 @@ class Game {
       const snap = await getDocs(collection(db, 'users'));
       document.getElementById('admin-total-users').textContent = snap.size;
     } catch(e) {}
-    // load maintenance state
     try {
       const ref = doc(db, 'system', 'config');
       const d = await getDoc(ref);
@@ -1532,5 +1505,5 @@ class Game {
 
 // ---- BOOT ----
 const game = new Game();
-window.game = game; // expose for inline admin buttons
+window.game = game;
 game.init();
