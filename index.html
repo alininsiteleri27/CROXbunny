@@ -1,134 +1,234 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sapan Atma Oyunu</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<base target="_blank">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SapanKing 🏹</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Auth Modal -->
-    <div id="authModal" class="modal">
-        <div class="modal-content">
-            <h2>🎯 Sapan Atma</h2>
-            <div id="authTabs">
-                <button class="tab-btn active" onclick="showTab('login')">Giriş</button>
-                <button class="tab-btn" onclick="showTab('register')">Kayıt</button>
-                <button class="tab-btn" onclick="showTab('guest')">Misafir</button>
-            </div>
 
-            <div id="loginTab" class="tab-content active">
-                <input type="email" id="loginEmail" placeholder="E-posta">
-                <input type="password" id="loginPassword" placeholder="Şifre">
-                <button onclick="login()">Giriş Yap</button>
-            </div>
-
-            <div id="registerTab" class="tab-content">
-                <input type="text" id="registerName" placeholder="Kullanıcı Adı">
-                <input type="email" id="registerEmail" placeholder="E-posta">
-                <input type="password" id="registerPassword" placeholder="Şifre (min 6 karakter)">
-                <button onclick="register()">Kayıt Ol</button>
-            </div>
-
-            <div id="guestTab" class="tab-content">
-                <p>Misafir olarak oyna - Puanlar kaydedilmez!</p>
-                <button onclick="playAsGuest()">Misafir Olarak Başla</button>
-            </div>
-        </div>
+<!-- ======== AUTH SCREEN ======== -->
+<div id="auth-screen" class="screen active">
+  <div class="auth-bg-anim">
+    <div class="float-obj" style="left:8%;top:15%;animation-delay:0s">🥤</div>
+    <div class="float-obj" style="left:80%;top:10%;animation-delay:0.5s">🥤</div>
+    <div class="float-obj" style="left:20%;top:70%;animation-delay:1s">🏹</div>
+    <div class="float-obj" style="left:75%;top:65%;animation-delay:1.5s">⭐</div>
+    <div class="float-obj" style="left:50%;top:80%;animation-delay:0.8s">💫</div>
+    <div class="float-obj" style="left:5%;top:50%;animation-delay:2s">🥤</div>
+    <div class="float-obj" style="left:90%;top:40%;animation-delay:1.2s">⭐</div>
+  </div>
+  <div class="auth-card">
+    <div class="auth-logo">🏹</div>
+    <h1 class="auth-title">SapanKing</h1>
+    <p class="auth-sub">Oyna · Kazan · Çek</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-btn-login" onclick="switchTab('login')">Giriş Yap</button>
+      <button class="auth-tab" id="tab-btn-register" onclick="switchTab('register')">Kayıt Ol</button>
     </div>
-
-    <!-- Main Menu -->
-    <div id="mainMenu" class="hidden">
-        <div class="menu-container">
-            <h1>🎯 SAPAN ATMA</h1>
-            <div class="user-info">
-                <span id="userDisplay">Misafir</span>
-                <span id="levelDisplay">Level: 1</span>
-            </div>
-            <div class="stats">
-                <div class="stat-box">
-                    <span id="scoreDisplay">0</span>
-                    <small>Puan</small>
-                </div>
-                <div class="stat-box">
-                    <span id="moneyDisplay">0 TL</span>
-                    <small>Bakiye</small>
-                </div>
-            </div>
-
-            <div class="menu-buttons">
-                <button class="menu-btn play-btn" onclick="startGame()">🎮 Oyna</button>
-                <button class="menu-btn" onclick="showWallet()">💰 Cüzdan</button>
-                <button class="menu-btn" onclick="showLeaderboard()">🏆 Sıralama</button>
-                <button class="menu-btn" onclick="logout()">🚪 Çıkış</button>
-            </div>
-        </div>
+    <div id="form-login" class="auth-form active">
+      <input type="email" id="login-email" class="auth-input" placeholder="E-posta">
+      <input type="password" id="login-pass" class="auth-input" placeholder="Şifre">
+      <button class="btn-main" onclick="doLogin()">Giriş Yap</button>
     </div>
-
-    <!-- Game Area -->
-    <div id="gameArea" class="hidden">
-        <div class="game-ui">
-            <div class="game-stats">
-                <span>Level: <span id="gameLevel">1</span></span>
-                <span>Puan: <span id="gameScore">0</span></span>
-                <span>Mermi: <span id="ammo">10</span></span>
-            </div>
-            <button class="back-btn" onclick="backToMenu()">Menü</button>
-        </div>
-
-        <div id="gameContainer">
-            <canvas id="gameCanvas"></canvas>
-            <div id="powerBar">
-                <div id="powerFill"></div>
-            </div>
-            <div id="angleDisplay">Açı: 45°</div>
-        </div>
-
-        <div class="controls-info">
-            <p>🖱️ Mouse ile nişan al | 🖱️ Basılı tut güç topla | 🖱️ Bırak atış yap</p>
-        </div>
+    <div id="form-register" class="auth-form">
+      <input type="text" id="reg-user" class="auth-input" placeholder="Kullanıcı adı">
+      <input type="email" id="reg-email" class="auth-input" placeholder="E-posta">
+      <input type="password" id="reg-pass" class="auth-input" placeholder="Şifre (min 6 karakter)">
+      <button class="btn-main" onclick="doRegister()">Hesap Oluştur</button>
     </div>
+    <div class="auth-divider"><span>veya</span></div>
+    <button class="btn-guest" onclick="doGuest()">👤 Misafir Olarak Oyna</button>
+    <div id="auth-msg" class="auth-msg"></div>
+  </div>
+</div>
 
-    <!-- Wallet Modal -->
-    <div id="walletModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>💰 Cüzdanım</h2>
-            <div class="wallet-info">
-                <p>Toplam Puan: <strong id="walletPoints">0</strong></p>
-                <p>Bakiye: <strong id="walletMoney">0 TL</strong></p>
-                <p class="rate">1000 Puan = 10 TL</p>
-            </div>
-
-            <div class="withdraw-section">
-                <h3>Çekim Talebi</h3>
-                <select id="withdrawType">
-                    <option value="iban">IBAN</option>
-                    <option value="crypto">Kripto</option>
-                </select>
-                <input type="text" id="withdrawInfo" placeholder="IBAN veya Cüzdan Adresi">
-                <input type="number" id="withdrawAmount" placeholder="Miktar (TL)">
-                <button onclick="requestWithdraw()">Çekim Talep Et</button>
-            </div>
-
-            <button class="close-btn" onclick="closeWallet()">Kapat</button>
-        </div>
+<!-- ======== MAIN MENU ======== -->
+<div id="menu-screen" class="screen">
+  <canvas id="menu-canvas"></canvas>
+  <div class="top-bar">
+    <div class="top-left" onclick="showScreen('profile-screen')">
+      <div class="avatar" id="nav-avatar">👤</div>
+      <div>
+        <div class="nav-username" id="nav-username">Oyuncu</div>
+        <div class="nav-level" id="nav-level">⚡ Lv.1</div>
+      </div>
     </div>
-
-    <!-- Leaderboard Modal -->
-    <div id="leaderboardModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>🏆 Sıralama Tablosu</h2>
-            <div id="leaderboardList"></div>
-            <button class="close-btn" onclick="closeLeaderboard()">Kapat</button>
-        </div>
+    <div class="wallet-pill" onclick="showScreen('wallet-screen')">
+      <span>💰</span>
+      <span id="nav-points">0</span>
+      <span class="puan-text">puan</span>
     </div>
+    <div class="top-right" onclick="showScreen('leaderboard-screen')">
+      <div class="rank-icon">🏆</div>
+      <div class="nav-rank" id="nav-rank">#-</div>
+    </div>
+  </div>
+  <div class="menu-center">
+    <div class="menu-logo-wrap">
+      <div class="menu-logo">🏹</div>
+      <h1 class="menu-title">SapanKing</h1>
+      <p class="menu-tagline">Her atış seni kazandırır!</p>
+    </div>
+    <button class="btn-play" onclick="startGame()">
+      <span>▶</span> OYNA
+    </button>
+  </div>
+  <div class="bottom-bar">
+    <button class="bar-btn" onclick="toggleSound()">
+      <span id="sound-icon">🔊</span><span>Ses</span>
+    </button>
+    <div class="bar-spacer"></div>
+    <button class="bar-btn" onclick="showScreen('settings-screen')">
+      <span>⚙️</span><span>Ayarlar</span>
+    </button>
+  </div>
+</div>
 
-    <script src="game.js"></script>
+<!-- ======== GAME SCREEN ======== -->
+<div id="game-screen" class="screen">
+  <div class="game-top">
+    <button class="back-btn" onclick="exitGame()">← Menü</button>
+    <div class="game-stats">
+      <span class="g-stat">❤️ <span id="g-lives">3</span></span>
+      <span class="g-stat">⭐ <span id="g-points">0</span></span>
+      <span class="g-stat">🏅 Lv.<span id="g-level">1</span></span>
+    </div>
+    <div class="game-balls">🔵 <span id="g-balls">5</span></div>
+  </div>
+  <div class="game-progress-wrap">
+    <div class="game-progress-bar" id="game-progress"></div>
+  </div>
+  <canvas id="game-canvas"></canvas>
+  <div id="game-overlay" class="game-overlay hidden">
+    <div class="overlay-card">
+      <div class="overlay-icon" id="overlay-icon">🎉</div>
+      <h2 id="overlay-title">Level Tamamlandı!</h2>
+      <p id="overlay-msg">+150 puan kazandın!</p>
+      <button class="btn-main" id="overlay-btn" onclick="overlayAction()">Devam Et</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== PROFILE SCREEN ======== -->
+<div id="profile-screen" class="screen">
+  <div class="inner-top">
+    <button class="back-btn" onclick="showScreen('menu-screen')">← Geri</button>
+    <h2>Profilim</h2>
+  </div>
+  <div class="profile-body">
+    <div class="profile-avatar-big">👤</div>
+    <div class="profile-name" id="profile-username">-</div>
+    <div class="profile-email" id="profile-email">-</div>
+    <div class="profile-stats-grid">
+      <div class="pstat-card"><div class="pstat-val" id="ps-level">1</div><div class="pstat-lbl">Level</div></div>
+      <div class="pstat-card"><div class="pstat-val" id="ps-points">0</div><div class="pstat-lbl">Puan</div></div>
+      <div class="pstat-card"><div class="pstat-val" id="ps-shots">0</div><div class="pstat-lbl">Atış</div></div>
+      <div class="pstat-card"><div class="pstat-val" id="ps-rank">#-</div><div class="pstat-lbl">Sıra</div></div>
+    </div>
+    <div class="level-progress-wrap">
+      <div class="level-progress-label">Sonraki levele: <span id="next-level-pts">-</span> puan</div>
+      <div class="level-bar-bg"><div class="level-bar-fill" id="level-fill"></div></div>
+    </div>
+    <button class="btn-danger" onclick="doLogout()">🚪 Çıkış Yap</button>
+  </div>
+</div>
+
+<!-- ======== WALLET SCREEN ======== -->
+<div id="wallet-screen" class="screen">
+  <div class="inner-top">
+    <button class="back-btn" onclick="showScreen('menu-screen')">← Geri</button>
+    <h2>💰 Cüzdanım</h2>
+  </div>
+  <div class="wallet-body">
+    <div class="wallet-balance-card">
+      <div class="wb-label">Toplam Puanın</div>
+      <div class="wb-points" id="w-points">0</div>
+      <div class="wb-tl">≈ <span id="w-tl">0.00</span> TL</div>
+      <div class="wb-info">1.000 puan = 10 TL · Min. çekim: 5.000 puan</div>
+    </div>
+    <div class="withdraw-section">
+      <h3>Çekim Talebi</h3>
+      <div class="withdraw-tabs">
+        <button class="wtab active" id="wtab-iban" onclick="switchWTab('iban')">🏦 IBAN</button>
+        <button class="wtab" id="wtab-crypto" onclick="switchWTab('crypto')">₿ Kripto</button>
+      </div>
+      <div id="wform-iban" class="wform active">
+        <input type="text" id="w-iban" class="auth-input" placeholder="TR00 0000 0000 0000 0000 0000 00">
+        <input type="text" id="w-fullname" class="auth-input" placeholder="Ad Soyad (hesap sahibi)">
+        <input type="number" id="w-amount-iban" class="auth-input" placeholder="Kaç puan çekmek istiyorsun?">
+      </div>
+      <div id="wform-crypto" class="wform">
+        <select id="w-crypto-type" class="auth-input">
+          <option value="BTC">Bitcoin (BTC)</option>
+          <option value="ETH">Ethereum (ETH)</option>
+          <option value="USDT">Tether (USDT TRC20)</option>
+        </select>
+        <input type="text" id="w-crypto-addr" class="auth-input" placeholder="Cüzdan adresi">
+        <input type="number" id="w-amount-crypto" class="auth-input" placeholder="Kaç puan çekmek istiyorsun?">
+      </div>
+      <button class="btn-main" onclick="submitWithdraw()">📤 Talep Gönder</button>
+      <div id="withdraw-msg" class="auth-msg"></div>
+    </div>
+    <div class="withdraw-history">
+      <h3>Geçmiş Talepler</h3>
+      <div id="withdraw-list"><div class="empty-state">Henüz talep yok</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== LEADERBOARD SCREEN ======== -->
+<div id="leaderboard-screen" class="screen">
+  <div class="inner-top">
+    <button class="back-btn" onclick="showScreen('menu-screen')">← Geri</button>
+    <h2>🏆 Sıralama</h2>
+  </div>
+  <div class="lb-my-rank">
+    <span>Sıran: </span><strong id="lb-rank-num">#-</strong>
+    <span style="margin-left:16px">Puanın: </span><strong id="lb-rank-pts">0</strong>
+  </div>
+  <div class="lb-list" id="lb-list">
+    <div class="empty-state">Yükleniyor...</div>
+  </div>
+</div>
+
+<!-- ======== SETTINGS SCREEN ======== -->
+<div id="settings-screen" class="screen">
+  <div class="inner-top">
+    <button class="back-btn" onclick="showScreen('menu-screen')">← Geri</button>
+    <h2>⚙️ Ayarlar</h2>
+  </div>
+  <div class="settings-body">
+    <div class="setting-row">
+      <span>🔊 Ses Efektleri</span>
+      <label class="toggle"><input type="checkbox" id="set-sound" checked onchange="toggleSoundSetting()"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <span>🎵 Müzik</span>
+      <label class="toggle"><input type="checkbox" id="set-music" checked onchange="toggleMusic()"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <span>📳 Titreşim</span>
+      <label class="toggle"><input type="checkbox" id="set-vibrate" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <span>🌙 Karanlık Mod</span>
+      <label class="toggle"><input type="checkbox" id="set-dark" onchange="toggleDark()"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="settings-info">
+      <p>🏹 SapanKing v1.0</p>
+      <p>1.000 puan = 10 TL</p>
+      <p>Minimum çekim: 5.000 puan (50 TL)</p>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="game.js"></script>
 </body>
 </html>
