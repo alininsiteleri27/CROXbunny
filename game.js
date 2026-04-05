@@ -24,50 +24,54 @@ let soundEnabled = true;
 let musicEnabled = true;
 let overlayCallback = null;
 
+// League pay timer state
+let leaguePayTimer       = null;
+let leagueCountdownTimer = null;
+let leagueNextPayAt      = null; // timestamp ms
+
 // ---------- SHOP CONFIG ----------
 const SHOP_PARTS = generateShopParts();
 
 function generateShopParts() {
   const types = [
-    { name: 'Y Çatal', emoji: '🔱', ph: 1.2, cat: 'fork' },
-    { name: 'Titanyum Kol', emoji: '⚙️', ph: 1.5, cat: 'arm' },
-    { name: 'Karbon Bant', emoji: '🖤', ph: 1.8, cat: 'band' },
-    { name: 'Çelik Çatal', emoji: '🔧', ph: 2.0, cat: 'fork' },
-    { name: 'Kevlar Kol', emoji: '🛡️', ph: 2.2, cat: 'arm' },
-    { name: 'Lateks Bant', emoji: '🟡', ph: 1.1, cat: 'band' },
+    { name: 'Y Çatal',        emoji: '🔱', ph: 1.2, cat: 'fork' },
+    { name: 'Titanyum Kol',   emoji: '⚙️', ph: 1.5, cat: 'arm'  },
+    { name: 'Karbon Bant',    emoji: '🖤', ph: 1.8, cat: 'band' },
+    { name: 'Çelik Çatal',    emoji: '🔧', ph: 2.0, cat: 'fork' },
+    { name: 'Kevlar Kol',     emoji: '🛡️', ph: 2.2, cat: 'arm'  },
+    { name: 'Lateks Bant',    emoji: '🟡', ph: 1.1, cat: 'band' },
     { name: 'Tungsten Çatal', emoji: '⚡', ph: 2.8, cat: 'fork' },
-    { name: 'Nano Kol', emoji: '🔬', ph: 3.0, cat: 'arm' },
-    { name: 'Plazma Bant', emoji: '💜', ph: 3.5, cat: 'band' },
-    { name: 'Altın Çatal', emoji: '✨', ph: 4.0, cat: 'fork' },
-    { name: 'Elmas Kol', emoji: '💎', ph: 4.5, cat: 'arm' },
-    { name: 'Kuantum Bant', emoji: '🌀', ph: 5.0, cat: 'band' },
+    { name: 'Nano Kol',       emoji: '🔬', ph: 3.0, cat: 'arm'  },
+    { name: 'Plazma Bant',    emoji: '💜', ph: 3.5, cat: 'band' },
+    { name: 'Altın Çatal',    emoji: '✨', ph: 4.0, cat: 'fork' },
+    { name: 'Elmas Kol',      emoji: '💎', ph: 4.5, cat: 'arm'  },
+    { name: 'Kuantum Bant',   emoji: '🌀', ph: 5.0, cat: 'band' },
     { name: 'Obsidyen Çatal', emoji: '🖤', ph: 5.5, cat: 'fork' },
-    { name: 'Mithril Kol', emoji: '🌟', ph: 6.0, cat: 'arm' },
-    { name: 'Kozmik Bant', emoji: '🌌', ph: 6.5, cat: 'band' },
-    { name: 'Meteor Çatal', emoji: '☄️', ph: 7.0, cat: 'fork' },
-    { name: 'Kristal Kol', emoji: '🔮', ph: 7.5, cat: 'arm' },
-    { name: 'Aura Bant', emoji: '🌈', ph: 8.0, cat: 'band' },
-    { name: 'Ejderha Çatal', emoji: '🐉', ph: 9.0, cat: 'fork' },
-    { name: 'Fırtına Kol', emoji: '⛈️', ph: 9.5, cat: 'arm' },
-    { name: 'Şimşek Bant', emoji: '⚡', ph: 10.0, cat: 'band' },
-    { name: 'Volkan Çatal', emoji: '🌋', ph: 10.5, cat: 'fork' },
-    { name: 'Galaksi Kol', emoji: '🌠', ph: 11.0, cat: 'arm' },
-    { name: 'Kara Delik Bant', emoji: '🕳️', ph: 11.5, cat: 'band' },
-    { name: 'Soluk Yıldız Çatal', emoji: '💫', ph: 12.0, cat: 'fork' },
-    { name: 'Zaman Kol', emoji: '⏳', ph: 12.5, cat: 'arm' },
-    { name: 'Boyut Bant', emoji: '🔄', ph: 13.0, cat: 'band' },
-    { name: 'Tanrı Çatal', emoji: '👑', ph: 14.0, cat: 'fork' },
-    { name: 'Evren Kol', emoji: '🌍', ph: 14.5, cat: 'arm' },
-    { name: 'Sonsuz Bant', emoji: '♾️', ph: 15.0, cat: 'band' },
+    { name: 'Mithril Kol',    emoji: '🌟', ph: 6.0, cat: 'arm'  },
+    { name: 'Kozmik Bant',    emoji: '🌌', ph: 6.5, cat: 'band' },
+    { name: 'Meteor Çatal',   emoji: '☄️', ph: 7.0, cat: 'fork' },
+    { name: 'Kristal Kol',    emoji: '🔮', ph: 7.5, cat: 'arm'  },
+    { name: 'Aura Bant',      emoji: '🌈', ph: 8.0, cat: 'band' },
+    { name: 'Ejderha Çatal',  emoji: '🐉', ph: 9.0, cat: 'fork' },
+    { name: 'Fırtına Kol',    emoji: '⛈️', ph: 9.5, cat: 'arm'  },
+    { name: 'Şimşek Bant',    emoji: '⚡', ph:10.0, cat: 'band' },
+    { name: 'Volkan Çatal',   emoji: '🌋', ph:10.5, cat: 'fork' },
+    { name: 'Galaksi Kol',    emoji: '🌠', ph:11.0, cat: 'arm'  },
+    { name: 'Kara Delik Bant',emoji: '🕳️', ph:11.5, cat: 'band' },
+    { name: 'Yıldız Çatal',   emoji: '💫', ph:12.0, cat: 'fork' },
+    { name: 'Zaman Kol',      emoji: '⏳', ph:12.5, cat: 'arm'  },
+    { name: 'Boyut Bant',     emoji: '🔄', ph:13.0, cat: 'band' },
+    { name: 'Tanrı Çatal',    emoji: '👑', ph:14.0, cat: 'fork' },
+    { name: 'Evren Kol',      emoji: '🌍', ph:14.5, cat: 'arm'  },
+    { name: 'Sonsuz Bant',    emoji: '♾️', ph:15.0, cat: 'band' },
   ];
-
   const parts = [];
   for (let i = 0; i < 110; i++) {
     const base = types[i % types.length];
     const tier = Math.floor(i / types.length) + 1;
     parts.push({
       id: i,
-      name: `${base.name} ${tier > 1 ? 'Mk.' + tier : ''}`,
+      name: `${base.name}${tier > 1 ? ' Mk.' + tier : ''}`,
       emoji: base.emoji,
       ph: +(base.ph * tier * 0.7).toFixed(1),
       cat: base.cat,
@@ -79,23 +83,23 @@ function generateShopParts() {
 }
 
 const BOXES = [
-  { id: 'box_bronze', name: 'Bronz Kutu', emoji: '📦', cost: 5000, color: '#cd7f32', partsCount: [0, 29], guaranteed: 'common' },
-  { id: 'box_silver', name: 'Gümüş Kutu', emoji: '🎁', cost: 20000, color: '#aaa', partsCount: [30, 69], guaranteed: 'rare' },
-  { id: 'box_gold',   name: 'Altın Kutu',  emoji: '👑', cost: 80000, color: '#f7c948', partsCount: [70, 109], guaranteed: 'epic' },
+  { id:'box_bronze', name:'Bronz Kutu', emoji:'📦', cost:5000,  color:'#cd7f32', partsCount:[0,29],   guaranteed:'common'    },
+  { id:'box_silver', name:'Gümüş Kutu', emoji:'🎁', cost:20000, color:'#aaa',    partsCount:[30,69],  guaranteed:'rare'      },
+  { id:'box_gold',   name:'Altın Kutu', emoji:'👑', cost:80000, color:'#f7c948', partsCount:[70,109], guaranteed:'epic'      },
 ];
 
 // ---------- LEVEL CONFIG ----------
 const LEVELS = [
-  { minPts:      0, cups:  5, balls: 8, ptsPerCup: 10, targetCups: 4,  dist: 8  },
-  { minPts:    500, cups:  6, balls: 7, ptsPerCup: 12, targetCups: 4,  dist: 10 },
-  { minPts:   1200, cups:  7, balls: 7, ptsPerCup: 14, targetCups: 5,  dist: 12 },
-  { minPts:   2500, cups:  8, balls: 6, ptsPerCup: 16, targetCups: 5,  dist: 14 },
-  { minPts:   4500, cups:  9, balls: 6, ptsPerCup: 18, targetCups: 6,  dist: 15 },
-  { minPts:   7000, cups: 10, balls: 5, ptsPerCup: 20, targetCups: 7,  dist: 16 },
-  { minPts:  10000, cups: 12, balls: 5, ptsPerCup: 22, targetCups: 8,  dist: 17 },
-  { minPts:  15000, cups: 14, balls: 5, ptsPerCup: 25, targetCups: 10, dist: 18 },
-  { minPts:  22000, cups: 16, balls: 4, ptsPerCup: 28, targetCups: 12, dist: 20 },
-  { minPts:  32000, cups: 18, balls: 4, ptsPerCup: 32, targetCups: 14, dist: 22 },
+  { minPts:     0, cups: 5,  balls:8, ptsPerCup:10, targetCups:3,  dist:12 },
+  { minPts:   500, cups: 6,  balls:7, ptsPerCup:12, targetCups:4,  dist:13 },
+  { minPts:  1200, cups: 7,  balls:7, ptsPerCup:14, targetCups:5,  dist:14 },
+  { minPts:  2500, cups: 8,  balls:6, ptsPerCup:16, targetCups:5,  dist:15 },
+  { minPts:  4500, cups: 9,  balls:6, ptsPerCup:18, targetCups:6,  dist:16 },
+  { minPts:  7000, cups:10,  balls:5, ptsPerCup:20, targetCups:7,  dist:17 },
+  { minPts: 10000, cups:12,  balls:5, ptsPerCup:22, targetCups:8,  dist:18 },
+  { minPts: 15000, cups:14,  balls:5, ptsPerCup:25, targetCups:10, dist:19 },
+  { minPts: 22000, cups:16,  balls:4, ptsPerCup:28, targetCups:12, dist:20 },
+  { minPts: 32000, cups:18,  balls:4, ptsPerCup:32, targetCups:14, dist:21 },
 ];
 
 function getLevelConfig(level) {
@@ -175,8 +179,8 @@ async function doRegister() {
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     await db.collection('users').doc(cred.user.uid).set({
-      username, email, points: 0, level: 1, totalShots: 0, ph: 1.0,
-      ownedParts: [], lastLeaguePay: null,
+      username, email, points:0, level:1, totalShots:0, ph:1.0,
+      ownedParts:[], lastLeaguePay:null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch(e) { setMsg('auth-msg', firebaseErrTR(e.code)); }
@@ -208,7 +212,7 @@ auth.onAuthStateChanged(async (user) => {
       const snap = await docRef.get();
       if (!snap.exists) {
         await docRef.set({
-          username: 'Misafir#'+Math.floor(Math.random()*9999),
+          username:'Misafir#'+Math.floor(Math.random()*9999),
           email:'', points:0, level:1, totalShots:0, ph:1.0,
           ownedParts:[], lastLeaguePay:null, isGuest:true,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -217,7 +221,10 @@ auth.onAuthStateChanged(async (user) => {
       userData = (await docRef.get()).data();
     } else {
       const snap = await db.collection('users').doc(user.uid).get();
-      userData = snap.exists ? snap.data() : { username: user.email, email: user.email, points: 0, level: 1, totalShots: 0, ph: 1.0, ownedParts: [] };
+      userData = snap.exists ? snap.data() : {
+        username:user.email, email:user.email, points:0, level:1,
+        totalShots:0, ph:1.0, ownedParts:[]
+      };
     }
     updateNavUI();
     scheduleLeaguePay();
@@ -233,8 +240,8 @@ function updateNavUI() {
   const lv = getLevel(userData.points || 0);
   const ph = getUserPH();
   document.getElementById('nav-username').textContent = userData.username || 'Oyuncu';
-  document.getElementById('nav-level').textContent = '⚡ Lv.' + lv;
-  document.getElementById('nav-points').textContent = (userData.points || 0).toLocaleString('tr-TR');
+  document.getElementById('nav-level').textContent    = '⚡ Lv.' + lv;
+  document.getElementById('nav-points').textContent   = (userData.points || 0).toLocaleString('tr-TR');
   const phEl = document.getElementById('nav-ph');
   if (phEl) phEl.textContent = 'pH ' + ph.toFixed(1);
 }
@@ -242,43 +249,67 @@ function updateNavUI() {
 // ============================================================
 //  LEAGUE PAY SYSTEM - Every 20 minutes
 // ============================================================
-let leaguePayTimer = null;
+const LEAGUE_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 
 function scheduleLeaguePay() {
-  if (leaguePayTimer) clearInterval(leaguePayTimer);
-  leaguePayTimer = setInterval(distributeLeaguePay, 20 * 60 * 1000);
-  // Also check on startup if missed
-  checkMissedLeaguePay();
+  if (leaguePayTimer)       clearInterval(leaguePayTimer);
+  if (leagueCountdownTimer) clearInterval(leagueCountdownTimer);
+
+  // Determine next pay time
+  const last = userData.lastLeaguePay?.toDate ? userData.lastLeaguePay.toDate() : null;
+  const now  = Date.now();
+
+  if (last) {
+    const elapsed = now - last.getTime();
+    if (elapsed >= LEAGUE_INTERVAL_MS) {
+      // Missed payout - do immediately
+      leagueNextPayAt = now + 2000;
+    } else {
+      leagueNextPayAt = last.getTime() + LEAGUE_INTERVAL_MS;
+    }
+  } else {
+    leagueNextPayAt = now + LEAGUE_INTERVAL_MS;
+  }
+
+  // Countdown UI tick every second
+  leagueCountdownTimer = setInterval(updateLeagueCountdownUI, 1000);
+  updateLeagueCountdownUI();
+
+  // Check every second if it's pay time
+  leaguePayTimer = setInterval(async () => {
+    if (Date.now() >= leagueNextPayAt) {
+      await distributeLeaguePay();
+      leagueNextPayAt = Date.now() + LEAGUE_INTERVAL_MS;
+    }
+  }, 1000);
 }
 
-async function checkMissedLeaguePay() {
-  if (!currentUser || userData.isGuest) return;
-  const last = userData.lastLeaguePay?.toDate ? userData.lastLeaguePay.toDate() : null;
-  if (!last) return;
-  const diff = Date.now() - last.getTime();
-  if (diff >= 20 * 60 * 1000) {
-    await distributeLeaguePay();
-  }
+function updateLeagueCountdownUI() {
+  const el = document.getElementById('league-countdown');
+  if (!el || !leagueNextPayAt) return;
+  const remaining = Math.max(0, leagueNextPayAt - Date.now());
+  const m = Math.floor(remaining / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  el.textContent = `⏱ Lig payı: ${m}:${s.toString().padStart(2,'0')}`;
 }
 
 async function distributeLeaguePay() {
   if (!currentUser || userData.isGuest) return;
-  const DAILY_POOL = 50000;
+  const POOL = 50000;
   try {
-    const snap = await db.collection('users').orderBy('points', 'desc').limit(100).get();
+    const snap = await db.collection('users').orderBy('points','desc').limit(100).get();
     let totalPH = 0;
     const users = [];
     snap.forEach(d => {
-      const u = d.data();
+      const u  = d.data();
       const ph = calculatePHFromParts(u.ownedParts || []);
       totalPH += ph;
-      users.push({ id: d.id, ph, pts: u.points || 0 });
+      users.push({ id: d.id, ph });
     });
     if (totalPH === 0) return;
-    // Find current user share
     const me = users.find(u => u.id === currentUser.uid);
     if (!me) return;
-    const myShare = Math.floor((me.ph / totalPH) * DAILY_POOL);
+    const myShare = Math.floor((me.ph / totalPH) * POOL);
     if (myShare > 0) {
       await db.collection('users').doc(currentUser.uid).update({
         points: firebase.firestore.FieldValue.increment(myShare),
@@ -314,13 +345,13 @@ function showLeaguePayNotif(pts) {
 // ============================================================
 async function refreshProfile() {
   if (!currentUser) return;
-  const pts  = userData.points || 0;
-  const lv   = getLevel(pts);
-  const next = getNextLevelPts(pts);
+  const pts    = userData.points || 0;
+  const lv     = getLevel(pts);
+  const next   = getNextLevelPts(pts);
   const curMin = LEVELS[Math.min(lv-1, LEVELS.length-1)].minPts;
-  const nextMin = next || curMin + 10000;
-  const pct = Math.min(100, Math.round(((pts - curMin) / (nextMin - curMin)) * 100));
-  const ph = getUserPH();
+  const nxtMin = next || curMin + 10000;
+  const pct    = Math.min(100, Math.round(((pts - curMin) / (nxtMin - curMin)) * 100));
+  const ph     = getUserPH();
 
   document.getElementById('profile-username').textContent = userData.username || 'Misafir';
   document.getElementById('profile-email').textContent    = userData.email || '-';
@@ -329,29 +360,31 @@ async function refreshProfile() {
   document.getElementById('ps-shots').textContent  = userData.totalShots || 0;
   document.getElementById('ps-ph').textContent     = ph.toFixed(1);
   document.getElementById('level-fill').style.width = pct + '%';
-  document.getElementById('next-level-pts').textContent = next ? (next - pts).toLocaleString('tr-TR') + ' puan' : 'Max level!';
+  document.getElementById('next-level-pts').textContent = next
+    ? (next - pts).toLocaleString('tr-TR') + ' puan'
+    : 'Max level!';
 
   try {
     const snap = await db.collection('users').orderBy('points','desc').get();
     let rank = 1;
-    snap.forEach(d => { if (d.id === currentUser.uid) return; if ((d.data().points||0) > pts) rank++; });
+    snap.forEach(d => { if (d.id !== currentUser.uid && (d.data().points||0) > pts) rank++; });
     document.getElementById('ps-rank').textContent = '#' + rank;
     document.getElementById('nav-rank').textContent = '#' + rank;
   } catch(e) {}
 }
 
 // ============================================================
-//  WALLET - 100,000 puan = 1 TL
+//  WALLET
 // ============================================================
 function refreshWallet() {
   const pts = userData.points || 0;
   const tl  = (pts / 100000).toFixed(2);
   document.getElementById('w-points').textContent = pts.toLocaleString('tr-TR');
-  document.getElementById('w-tl').textContent = tl;
+  document.getElementById('w-tl').textContent     = tl;
   loadWithdrawHistory();
 }
 function switchWTab(tab) {
-  document.querySelectorAll('.wtab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.wtab').forEach(b  => b.classList.remove('active'));
   document.querySelectorAll('.wform').forEach(f => f.classList.remove('active'));
   document.getElementById('wtab-' + tab).classList.add('active');
   document.getElementById('wform-' + tab).classList.add('active');
@@ -359,31 +392,30 @@ function switchWTab(tab) {
 }
 async function submitWithdraw() {
   if (!currentUser || userData.isGuest) return setMsg('withdraw-msg','Misafirler çekim yapamaz. Kayıt ol!');
-  const pts = userData.points || 0;
+  const pts    = userData.points || 0;
   const isIban = document.getElementById('wtab-iban').classList.contains('active');
   let amount, payload;
   if (isIban) {
-    const iban   = document.getElementById('w-iban').value.trim();
-    const name   = document.getElementById('w-fullname').value.trim();
-    amount       = parseInt(document.getElementById('w-amount-iban').value) || 0;
+    const iban = document.getElementById('w-iban').value.trim();
+    const name = document.getElementById('w-fullname').value.trim();
+    amount     = parseInt(document.getElementById('w-amount-iban').value) || 0;
     if (!iban || !name || !amount) return setMsg('withdraw-msg','Lütfen tüm alanları doldur.');
     payload = { type:'iban', iban, fullName:name };
   } else {
-    const ctype  = document.getElementById('w-crypto-type').value;
-    const addr   = document.getElementById('w-crypto-addr').value.trim();
-    amount       = parseInt(document.getElementById('w-amount-crypto').value) || 0;
+    const ctype = document.getElementById('w-crypto-type').value;
+    const addr  = document.getElementById('w-crypto-addr').value.trim();
+    amount      = parseInt(document.getElementById('w-amount-crypto').value) || 0;
     if (!addr || !amount) return setMsg('withdraw-msg','Lütfen tüm alanları doldur.');
     payload = { type:'crypto', cryptoType:ctype, address:addr };
   }
   if (amount < 500000) return setMsg('withdraw-msg','Minimum çekim 500.000 puan (5 TL).');
   if (amount > pts)    return setMsg('withdraw-msg','Yetersiz puan.');
-
   try {
     const tlAmount = (amount / 100000).toFixed(2);
     await db.collection('withdrawals').add({
-      uid: currentUser.uid, username: userData.username,
-      points: amount, tl: parseFloat(tlAmount),
-      status: 'pending', ...payload,
+      uid:currentUser.uid, username:userData.username,
+      points:amount, tl:parseFloat(tlAmount),
+      status:'pending', ...payload,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     await db.collection('users').doc(currentUser.uid).update({
@@ -406,15 +438,15 @@ async function loadWithdrawHistory() {
     snap.forEach(d => {
       const w = d.data();
       const date = w.createdAt ? w.createdAt.toDate().toLocaleDateString('tr-TR') : '-';
-      const statusClass = {pending:'w-status-pending', done:'w-status-done', rejected:'w-status-rejected'}[w.status] || '';
-      const statusTxt   = {pending:'Beklemede', done:'Ödendi', rejected:'Reddedildi'}[w.status] || w.status;
+      const sc   = {pending:'w-status-pending', done:'w-status-done', rejected:'w-status-rejected'}[w.status] || '';
+      const st   = {pending:'Beklemede', done:'Ödendi', rejected:'Reddedildi'}[w.status] || w.status;
       list.innerHTML += `
         <div class="withdraw-item">
           <div>
             <div style="font-weight:700">${w.points.toLocaleString('tr-TR')} puan</div>
             <div style="color:var(--text2);font-size:0.78rem">${w.tl} TL · ${w.type==='iban'?'🏦 IBAN':'₿ Kripto'} · ${date}</div>
           </div>
-          <span class="${statusClass}">${statusTxt}</span>
+          <span class="${sc}">${st}</span>
         </div>`;
     });
   } catch(e) { list.innerHTML = '<div class="empty-state">Yüklenemedi</div>'; }
@@ -429,10 +461,11 @@ async function loadLeaderboard() {
   try {
     const snap = await db.collection('users').orderBy('points','desc').limit(50).get();
     list.innerHTML = '';
-    let myRank = '-'; const myPts = userData.points || 0;
-    let rank = 1;
+    let myRank = '-';
+    let rank   = 1;
+    const myPts = userData.points || 0;
     snap.forEach(d => {
-      const u = d.data();
+      const u    = d.data();
       const isMe = d.id === currentUser?.uid;
       if (isMe) myRank = rank;
       const rankClass = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
@@ -451,7 +484,7 @@ async function loadLeaderboard() {
     });
     document.getElementById('lb-rank-num').textContent = myRank!=='-'?'#'+myRank:'#'+rank;
     document.getElementById('lb-rank-pts').textContent = myPts.toLocaleString('tr-TR');
-    document.getElementById('nav-rank').textContent = myRank!=='-'?'#'+myRank:'#-';
+    document.getElementById('nav-rank').textContent    = myRank!=='-'?'#'+myRank:'#-';
   } catch(e) { list.innerHTML = '<div class="empty-state">Sıralama yüklenemedi</div>'; }
 }
 
@@ -465,20 +498,17 @@ function initShop() {
   renderShopParts();
   updateShopPH();
 }
-
 function updateShopPH() {
   const ph = getUserPH();
   const el = document.getElementById('shop-ph');
   if (el) el.textContent = 'Gücün: pH ' + ph.toFixed(1);
 }
-
 function filterShop(cat) {
   shopFilter = cat;
   document.querySelectorAll('.shop-filter-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`[data-filter="${cat}"]`).classList.add('active');
   renderShopParts();
 }
-
 function renderShopBoxes() {
   const el = document.getElementById('shop-boxes');
   if (!el) return;
@@ -488,12 +518,10 @@ function renderShopBoxes() {
       <div class="shop-box-name" style="color:${box.color}">${box.name}</div>
       <div class="shop-box-cost">💰 ${box.cost.toLocaleString('tr-TR')} puan</div>
       <div class="shop-box-hint">Parça kazan!</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
-
 function renderShopParts() {
-  const el = document.getElementById('shop-parts-list');
+  const el    = document.getElementById('shop-parts-list');
   if (!el) return;
   const owned = userData.ownedParts || [];
   const parts = shopFilter === 'all' ? SHOP_PARTS : SHOP_PARTS.filter(p => p.cat === shopFilter);
@@ -509,45 +537,32 @@ function renderShopParts() {
     </div>`;
   }).join('');
 }
-
 async function openBox(boxId) {
   const box = BOXES.find(b => b.id === boxId);
   if (!box) return;
   const pts = userData.points || 0;
-  if (pts < box.cost) {
-    showBoxResult(null, `Yetersiz puan! ${box.cost.toLocaleString('tr-TR')} puan gerekli.`);
-    return;
-  }
-
-  // Pick random part from range
+  if (pts < box.cost) { showBoxResult(null, `Yetersiz puan! ${box.cost.toLocaleString('tr-TR')} puan gerekli.`); return; }
   const [min, max] = box.partsCount;
   const partId = min + Math.floor(Math.random() * (max - min + 1));
-  const part = SHOP_PARTS[partId];
-
+  const part   = SHOP_PARTS[partId];
   try {
-    const owned = userData.ownedParts || [];
+    const owned    = userData.ownedParts || [];
     const newOwned = [...new Set([...owned, part.id])];
     await db.collection('users').doc(currentUser.uid).update({
-      points: firebase.firestore.FieldValue.increment(-box.cost),
+      points:    firebase.firestore.FieldValue.increment(-box.cost),
       ownedParts: newOwned,
-      ph: calculatePHFromParts(newOwned)
+      ph:        calculatePHFromParts(newOwned)
     });
-    userData.points = pts - box.cost;
+    userData.points     = pts - box.cost;
     userData.ownedParts = newOwned;
-    updateNavUI();
-    updateShopPH();
-    renderShopParts();
+    updateNavUI(); updateShopPH(); renderShopParts();
     showBoxResult(part, null);
-  } catch(e) {
-    showBoxResult(null, 'Hata: ' + e.message);
-  }
+  } catch(e) { showBoxResult(null, 'Hata: ' + e.message); }
 }
-
 function showBoxResult(part, error) {
-  const modal = document.getElementById('box-result-modal');
+  const modal   = document.getElementById('box-result-modal');
   const content = document.getElementById('box-result-content');
   if (!modal || !content) return;
-
   if (error) {
     content.innerHTML = `<div class="box-result-error">${error}</div>`;
   } else {
@@ -561,7 +576,6 @@ function showBoxResult(part, error) {
   }
   modal.classList.add('show');
 }
-
 function closeBoxModal() {
   document.getElementById('box-result-modal').classList.remove('show');
 }
@@ -570,12 +584,12 @@ function closeBoxModal() {
 //  SETTINGS
 // ============================================================
 function toggleSoundSetting() { soundEnabled = document.getElementById('set-sound').checked; }
-function toggleMusic() { musicEnabled = document.getElementById('set-music').checked; }
-function toggleDark() { document.body.classList.toggle('dark-mode', document.getElementById('set-dark').checked); }
+function toggleMusic()        { musicEnabled = document.getElementById('set-music').checked; }
+function toggleDark()         { document.body.classList.toggle('dark-mode', document.getElementById('set-dark').checked); }
 function toggleSound() {
   soundEnabled = !soundEnabled;
   document.getElementById('sound-icon').textContent = soundEnabled ? '🔊' : '🔇';
-  document.getElementById('set-sound').checked = soundEnabled;
+  document.getElementById('set-sound').checked      = soundEnabled;
 }
 
 // ============================================================
@@ -589,8 +603,8 @@ function getAudio() {
 function playTone(freq, type, duration, vol=0.3) {
   if (!soundEnabled) return;
   try {
-    const ctx = getAudio();
-    const osc = ctx.createOscillator();
+    const ctx  = getAudio();
+    const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain); gain.connect(ctx.destination);
     osc.type = type; osc.frequency.value = freq;
@@ -599,23 +613,12 @@ function playTone(freq, type, duration, vol=0.3) {
     osc.start(); osc.stop(ctx.currentTime + duration);
   } catch(e) {}
 }
-function sfxLaunch()  {
-  playTone(200, 'sawtooth', 0.1, 0.3);
-  setTimeout(() => playTone(400, 'sine', 0.15, 0.2), 80);
-}
-function sfxHit()     {
-  playTone(180,'square',0.1,0.4);
-  playTone(340,'sine',0.08,0.25);
-  setTimeout(() => playTone(500, 'sine', 0.1, 0.2), 60);
-}
-function sfxCombo(n)  {
-  const freqs = [523,659,784,880,1047];
-  const f = freqs[Math.min(n-2, freqs.length-1)];
-  playTone(f,'sine',0.4,0.5);
-}
-function sfxMiss()    { playTone(120,'sine',0.3,0.2); }
-function sfxWin()     { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.4),i*100)); }
-function sfxFail()    { [300,200,150].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',0.3),i*150)); }
+function sfxLaunch() { playTone(200,'sawtooth',0.1,0.3); setTimeout(()=>playTone(400,'sine',0.15,0.2),80); }
+function sfxHit()    { playTone(180,'square',0.1,0.4); playTone(340,'sine',0.08,0.25); setTimeout(()=>playTone(500,'sine',0.1,0.2),60); }
+function sfxCombo(n) { const f=[523,659,784,880,1047][Math.min(n-2,4)]; playTone(f,'sine',0.4,0.5); }
+function sfxMiss()   { playTone(120,'sine',0.3,0.2); }
+function sfxWin()    { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.4),i*100)); }
+function sfxFail()   { [300,200,150].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',0.3),i*150)); }
 
 // ============================================================
 //  MENU CANVAS ANIMATION
@@ -629,23 +632,21 @@ function initMenuCanvas() {
   canvas.height = window.innerHeight;
 
   const floaters = [];
-  const stars = [];
+  const stars    = [];
   for (let i = 0; i < 14; i++) {
     floaters.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      size: 20 + Math.random() * 30,
-      vx: (Math.random()-0.5)*0.5,
-      vy: -0.2 - Math.random()*0.4,
-      opacity: 0.06 + Math.random()*0.1,
-      emoji: ['🥤','🏹','⭐','💰','🎯','⚡','🔱','💎'][Math.floor(Math.random()*8)]
+      x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+      size:20+Math.random()*30,
+      vx:(Math.random()-0.5)*0.5, vy:-0.2-Math.random()*0.4,
+      opacity:0.06+Math.random()*0.1,
+      emoji:['🥤','🏹','⭐','💰','🎯','⚡','🔱','💎'][Math.floor(Math.random()*8)]
     });
   }
   for (let i = 0; i < 60; i++) {
     stars.push({
-      x: Math.random()*canvas.width, y: Math.random()*canvas.height,
-      r: 0.5+Math.random()*2, twinkle: Math.random()*Math.PI*2,
-      speed: 0.02+Math.random()*0.04
+      x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+      r:0.5+Math.random()*2, twinkle:Math.random()*Math.PI*2,
+      speed:0.02+Math.random()*0.04
     });
   }
 
@@ -666,9 +667,9 @@ function initMenuCanvas() {
       ctx.globalAlpha = c.opacity;
       ctx.fillText(c.emoji, c.x, c.y);
       c.x += c.vx; c.y += c.vy;
-      if (c.y < -40) { c.y = canvas.height+40; c.x = Math.random()*canvas.width; }
-      if (c.x < -40) c.x = canvas.width+40;
-      if (c.x > canvas.width+40) c.x = -40;
+      if (c.y < -40)                { c.y = canvas.height+40; c.x = Math.random()*canvas.width; }
+      if (c.x < -40)                 c.x = canvas.width+40;
+      if (c.x > canvas.width+40)    c.x = -40;
     });
     ctx.globalAlpha = 1;
     menuAnimId = requestAnimationFrame(draw);
@@ -682,18 +683,20 @@ function initMenuCanvas() {
 let gameState  = null;
 let gameAnimId = null;
 
-// Drag / sling state
-let isDragging   = false;
-let dragStart    = { x: 0, y: 0 };
-let dragCurrent  = { x: 0, y: 0 };
-const MAX_DRAG   = 100;
+// ---- DRAG / SLING STATE ----
+let isDragging  = false;
+let dragStartX  = 0;   // pointer start (screen)
+let dragStartY  = 0;
+let dragOffX    = 0;   // current offset from center
+let dragOffY    = 0;
+const MAX_PULL  = 90;  // max pixels pull
 
-// 3D Camera
-const CAM = {
-  fov: 70,
-  near: 0.1,
-  far: 50
-};
+// Camera settings
+const CAM = { fov:65, near:0.1, far:60 };
+
+// ---- World-space sling anchor (where the ball rests) ----
+// This is a fixed 3D point the player is "holding"
+const SLING_ANCHOR = { x:0, y:-0.55, z:-1.1 };  // slightly below and in front of camera
 
 function startGame() {
   if (menuAnimId) { cancelAnimationFrame(menuAnimId); menuAnimId = null; }
@@ -703,6 +706,7 @@ function startGame() {
 function exitGame() {
   if (gameAnimId) { cancelAnimationFrame(gameAnimId); gameAnimId = null; }
   gameState = null;
+  isDragging = false;
   showScreen('menu-screen');
 }
 
@@ -710,34 +714,31 @@ function initGameLevel(level) {
   const cfg    = getLevelConfig(level);
   const canvas = document.getElementById('game-canvas');
   canvas.width  = canvas.offsetWidth  || window.innerWidth;
-  canvas.height = canvas.offsetHeight || window.innerHeight - 110;
-
-  const cups = build3DCups(cfg.cups, cfg.dist);
+  canvas.height = canvas.offsetHeight || (window.innerHeight - 100);
 
   gameState = {
     level, cfg, canvas,
-    ctx: canvas.getContext('2d'),
-    cups,
-    balls: cfg.balls,
-    points: 0,
+    ctx:      canvas.getContext('2d'),
+    cups:     build3DCups(cfg.cups, cfg.dist),
+    balls:    cfg.balls,
+    points:   0,
     sessionPoints: 0,
-    lives: 3,
-    cupsHit: 0,
-    totalCups: cups.length,
-    particles: [],
-    projectile: null,
+    lives:    3,
+    cupsHit:  0,
+    particles:[],
+    projectile:null,
     launched: false,
-    done: false,
-    frameCount: 0,
-    combo: 0,
+    done:     false,
+    frameCount:0,
+    combo:    0,
     maxCombo: 0,
-    totalShots: 0,
-    ph: getUserPH(),
-    // 3D world
-    camX: 0, camY: 1.6, camZ: 0,
-    yaw: 0,   // horizontal angle
-    pitch: -0.05
+    totalShots:0,
+    ph:       getUserPH(),
   };
+
+  isDragging = false;
+  dragOffX   = 0;
+  dragOffY   = 0;
 
   updateGameHUD();
   setupGameInput(canvas);
@@ -745,26 +746,27 @@ function initGameLevel(level) {
   gameLoop();
 }
 
-// 3D Cup positions in world space
+// ---- Build cups in 3D world space ----
 function build3DCups(count, dist) {
   const cups = [];
-  const rows = count <= 6 ? 2 : count <= 10 ? 3 : 4;
-  const cols = Math.ceil(count / rows);
+  // Arrange in a grid, centred on Z axis
+  const cols = Math.ceil(Math.sqrt(count * 1.6));
+  const rows = Math.ceil(count / cols);
   let idx = 0;
-
   for (let r = 0; r < rows && idx < count; r++) {
-    const inRow = Math.ceil((count - idx) / (rows - r));
-    for (let c = 0; c < inRow && idx < count; c++) {
-      const x = (c - (inRow-1)/2) * 1.0;
-      const y = 0.0 + r * 0.9;
-      const z = -(dist + r * 0.5);
+    for (let c = 0; c < cols && idx < count; c++) {
+      const x = (c - (cols-1)/2) * 1.1;
+      const y = r * 0.95;          // stacked upward
+      const z = -(dist + r * 0.4);
       cups.push({
-        x, y: 0.4 + r*0.85, z,
-        w: 0.35, h: 0.5,
+        x, y, z,
+        w: 0.38, h: 0.52,
         alive: true,
-        color: ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#e91e63','#00bcd4'][idx % 7],
+        color: ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#e91e63','#00bcd4','#ff6b35'][idx % 8],
         idx,
-        hitAnim: 0
+        hitAnim: 0,
+        flyVx: 0, flyVy: 0, flyVz: 0, // when hit
+        flying: false
       });
       idx++;
     }
@@ -773,72 +775,107 @@ function build3DCups(count, dist) {
 }
 
 // ============================================================
-//  INPUT
+//  INPUT  (pointer-based, works on touch & mouse)
 // ============================================================
 function setupGameInput(canvas) {
-  // Mouse
-  canvas.onmousedown  = e => startDrag(e.offsetX, e.offsetY);
-  canvas.onmousemove  = e => { if (isDragging) moveDrag(e.offsetX, e.offsetY); };
-  canvas.onmouseup    = () => releaseDrag();
-  canvas.onmouseleave = () => { if (isDragging) releaseDrag(); };
-  // Touch
-  canvas.ontouchstart = e => { e.preventDefault(); const t=e.touches[0], r=canvas.getBoundingClientRect(); startDrag(t.clientX-r.left, t.clientY-r.top); };
-  canvas.ontouchmove  = e => { e.preventDefault(); const t=e.touches[0], r=canvas.getBoundingClientRect(); moveDrag(t.clientX-r.left, t.clientY-r.top); };
-  canvas.ontouchend   = () => releaseDrag();
+  canvas.addEventListener('mousedown',  onPointerDown, { passive:false });
+  canvas.addEventListener('mousemove',  onPointerMove, { passive:false });
+  canvas.addEventListener('mouseup',    onPointerUp,   { passive:false });
+  canvas.addEventListener('mouseleave', onPointerUp,   { passive:false });
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); const t=e.touches[0]; onPointerDown({clientX:t.clientX,clientY:t.clientY}); }, { passive:false });
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); const t=e.touches[0]; onPointerMove({clientX:t.clientX,clientY:t.clientY}); }, { passive:false });
+  canvas.addEventListener('touchend',   e => { e.preventDefault(); onPointerUp(); }, { passive:false });
 }
 
-function getSlingCenter(canvas) {
-  return { x: canvas.width / 2, y: canvas.height * 0.80 };
+function getSlingScreenPos() {
+  // Returns the pixel position on screen where the sling anchor projects
+  if (!gameState) return { x:0, y:0 };
+  return project3DtoScreen(SLING_ANCHOR.x, SLING_ANCHOR.y, SLING_ANCHOR.z, gameState.canvas);
 }
 
-function startDrag(x, y) {
+function onPointerDown(e) {
   if (!gameState || gameState.launched || gameState.done || gameState.balls <= 0) return;
-  const sc = getSlingCenter(gameState.canvas);
-  if (Math.hypot(x - sc.x, y - sc.y) < 70) {
+  const canvas = gameState.canvas;
+  const rect   = canvas.getBoundingClientRect();
+  const px     = e.clientX - rect.left;
+  const py     = e.clientY - rect.top;
+
+  // Hit test: within radius of sling anchor screen position
+  const sp = getSlingScreenPos();
+  if (!sp) return;
+  const dist = Math.hypot(px - sp.x, py - sp.y);
+  if (dist < 80) {
     isDragging = true;
-    dragStart   = { x: sc.x, y: sc.y };
-    dragCurrent = { x, y };
+    dragOffX   = 0;
+    dragOffY   = 0;
   }
 }
-function moveDrag(x, y) {
-  if (!isDragging) return;
-  const dx = x - dragStart.x, dy = y - dragStart.y;
-  const dist = Math.min(Math.hypot(dx, dy), MAX_DRAG);
-  const angle = Math.atan2(dy, dx);
-  dragCurrent = {
-    x: dragStart.x + Math.cos(angle) * dist,
-    y: dragStart.y + Math.sin(angle) * dist
-  };
+
+function onPointerMove(e) {
+  if (!isDragging || !gameState) return;
+  const canvas = gameState.canvas;
+  const rect   = canvas.getBoundingClientRect();
+  const px     = e.clientX - rect.left;
+  const py     = e.clientY - rect.top;
+
+  const sp   = getSlingScreenPos();
+  if (!sp) return;
+
+  // Raw offset from anchor
+  let ox = px - sp.x;
+  let oy = py - sp.y;
+
+  // Clamp to circle
+  const len = Math.hypot(ox, oy);
+  if (len > MAX_PULL) {
+    ox = (ox / len) * MAX_PULL;
+    oy = (oy / len) * MAX_PULL;
+  }
+
+  // Only allow pulling DOWN (toward camera / below the anchor)
+  if (oy < 0) oy = 0;
+
+  dragOffX = ox;
+  dragOffY = oy;
 }
-function releaseDrag() {
+
+function onPointerUp() {
   if (!isDragging || !gameState) return;
   isDragging = false;
-  const dx = dragStart.x - dragCurrent.x;
-  const dy = dragStart.y - dragCurrent.y;
-  const speed = Math.hypot(dx, dy);
-  if (speed < 12) return;
 
-  const ph = gameState.ph;
-  const power = (speed / MAX_DRAG) * (14 + ph * 0.5);
+  const pullLen = Math.hypot(dragOffX, dragOffY);
+  if (pullLen < 10) { dragOffX = 0; dragOffY = 0; return; } // too short, ignore
 
-  // Convert screen drag to 3D world direction
-  const normX = dx / speed;
-  const normY = dy / speed;
-  // Yaw from horizontal drag
-  const yawDelta = -normX * 0.3;
+  const t     = pullLen / MAX_PULL;       // 0..1
+  const ph    = gameState.ph;
+  const speed = (8 + ph * 0.8) * t;      // launch speed proportional to pull + pH
+
+  // Direction: opposite of pull
+  const nx  = -dragOffX / pullLen;
+  const ny  = -dragOffY / pullLen;
+
+  // Map screen pull to 3D velocity
+  // nx maps to world X (strafe), ny maps to world Y+Z (up+forward)
+  const vx  =  nx * speed * 0.5;
+  const vy  =  ny * speed * 0.6 + speed * 0.25;  // upward + forward component
+  const vz  = -speed;                              // always shoots forward
 
   gameState.projectile = {
-    x: 0, y: 1.6, z: 0,
-    vx: Math.sin(yawDelta) * power * 0.8,
-    vy: normY > 0 ? power * 0.5 : -power * 0.2,
-    vz: -power,
-    r: 0.15,
+    x: SLING_ANCHOR.x,
+    y: SLING_ANCHOR.y,
+    z: SLING_ANCHOR.z,
+    vx, vy, vz,
+    r: 0.14,
     trail: [],
-    age: 0
+    age: 0,
+    gravity: -0.022
   };
-  gameState.launched = true;
+
+  gameState.launched   = true;
   gameState.balls--;
   gameState.totalShots++;
+  dragOffX = 0;
+  dragOffY = 0;
   sfxLaunch();
   updateGameHUD();
 }
@@ -861,41 +898,60 @@ function update3D() {
   gs.particles = gs.particles.filter(p => p.life > 0);
   gs.particles.forEach(p => {
     p.x += p.vx; p.y += p.vy; p.z += p.vz;
-    p.vy -= 0.008;
+    p.vy -= 0.006;
     p.life--;
     p.alpha = p.life / p.maxLife;
   });
 
-  if (!gs.projectile) return;
+  // Flying cups (after hit)
+  gs.cups.forEach(cup => {
+    if (!cup.flying) return;
+    cup.x += cup.flyVx;
+    cup.y += cup.flyVy;
+    cup.z += cup.flyVz;
+    cup.flyVy -= 0.04;
+    cup.flyVz += 0.05;
+    if (cup.y < -5 || cup.z > 2) cup.flying = false;
+  });
+
+  if (!gs.projectile) {
+    // Auto-check end if no balls and no projectile
+    if (!gs.launched && gs.balls <= 0 && !gs.done) checkRoundEnd();
+    return;
+  }
+
   const p = gs.projectile;
   p.age++;
 
   // Trail
   p.trail.push({ x:p.x, y:p.y, z:p.z });
-  if (p.trail.length > 16) p.trail.shift();
+  if (p.trail.length > 18) p.trail.shift();
 
-  // Physics
-  p.vy -= 0.025; // gravity
-  p.x += p.vx * 0.016 * 60;
-  p.y += p.vy * 0.016 * 60;
-  p.z += p.vz * 0.016 * 60;
+  // Physics (per frame, ~60fps assumed)
+  p.vy    += p.gravity;
+  p.x     += p.vx  * 0.28;
+  p.y     += p.vy  * 0.28;
+  p.z     += p.vz  * 0.28;
 
-  // Hit detection in 3D
+  // ---- Hit detection ----
   let hitThisFrame = false;
   gs.cups.forEach(cup => {
     if (!cup.alive) return;
     const dx = Math.abs(p.x - cup.x);
     const dy = Math.abs(p.y - cup.y);
     const dz = Math.abs(p.z - cup.z);
-    if (dx < cup.w*1.1 && dy < cup.h*1.2 && dz < 0.5) {
-      cup.alive = false;
-      cup.hitAnim = 1;
+    if (dx < cup.w + p.r && dy < cup.h + p.r && dz < 0.45 + p.r) {
+      cup.alive   = false;
+      cup.flying  = true;
+      cup.flyVx   = (Math.random()-0.5)*0.12 + p.vx*0.04;
+      cup.flyVy   =  0.15 + Math.random()*0.1;
+      cup.flyVz   = -p.vz * 0.08;
       gs.cupsHit++;
       gs.combo++;
       gs.maxCombo = Math.max(gs.maxCombo, gs.combo);
       const comboBonus = gs.combo > 1 ? Math.floor(gs.cfg.ptsPerCup * (gs.combo * 0.5)) : 0;
-      const earned = gs.cfg.ptsPerCup + comboBonus;
-      gs.points += earned;
+      const earned     = gs.cfg.ptsPerCup + comboBonus;
+      gs.points        += earned;
       gs.sessionPoints += earned;
       spawn3DParticles(cup.x, cup.y, cup.z, cup.color, earned);
       sfxHit();
@@ -904,16 +960,20 @@ function update3D() {
       hitThisFrame = true;
       updateGameHUD();
       showComboUI(gs.combo);
+
+      // Deflect ball slightly
+      p.vx += (Math.random()-0.5)*0.5;
+      p.vy += 0.3;
+      p.vz  = p.vz * 0.6;
     }
   });
-  if (!hitThisFrame && gs.projectile) gs.combo = 0;
+  if (!hitThisFrame) { /* combo resets only on full miss (no hit at all in flight) */ }
 
-  // Out of bounds
-  if (p.z < -40 || p.y < -5 || Math.abs(p.x) > 20) {
+  // Out of range
+  if (p.z < -60 || p.y < -8 || p.z > 2 || Math.abs(p.x) > 15) {
     gs.projectile = null;
-    gs.launched = false;
-    gs.combo = 0;
-    sfxMiss();
+    gs.launched   = false;
+    if (!hitThisFrame) { gs.combo = 0; sfxMiss(); }
     checkRoundEnd();
   }
 }
@@ -930,52 +990,54 @@ function showComboUI(combo) {
 
 function spawn3DParticles(x, y, z, color, pts) {
   const gs = gameState;
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 14; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const spd   = 0.05 + Math.random() * 0.12;
+    const spd   = 0.04 + Math.random() * 0.10;
     gs.particles.push({
       x, y, z,
-      vx: Math.cos(angle)*spd, vy: 0.08+Math.random()*0.1, vz: Math.sin(angle)*spd*0.3,
-      r: 0.04+Math.random()*0.08, color, alpha:1,
-      life: 40+Math.random()*20, maxLife: 60,
-      text: null
+      vx: Math.cos(angle)*spd, vy:0.08+Math.random()*0.1, vz:Math.sin(angle)*spd*0.3,
+      r:0.04+Math.random()*0.07, color, alpha:1,
+      life:40+Math.random()*20, maxLife:60, text:null
     });
   }
-  gs.particles.push({ x, y:y+0.3, z, vx:0, vy:0.03, vz:0, r:0, color:'#f7c948', alpha:1, life:55, maxLife:55, text:'+'+pts });
+  gs.particles.push({
+    x, y:y+0.4, z, vx:0, vy:0.025, vz:0,
+    r:0, color:'#f7c948', alpha:1, life:70, maxLife:70, text:'+'+pts
+  });
 }
 
 function checkRoundEnd() {
   const gs = gameState;
-  const aliveCups  = gs.cups.filter(c => c.alive).length;
-  const allHit     = aliveCups === 0;
-  const noAmmo     = gs.balls <= 0;
-  const hitEnough  = gs.cupsHit >= gs.cfg.targetCups;
+  if (gs.done) return;
+  const alive     = gs.cups.filter(c => c.alive).length;
+  const allHit    = alive === 0;
+  const noAmmo    = gs.balls <= 0 && !gs.projectile;
+  const hitEnough = gs.cupsHit >= gs.cfg.targetCups;
 
   if (allHit || (noAmmo && hitEnough)) {
     gs.done = true; sfxWin();
-    setTimeout(() => showOverlay('win'), 600);
+    setTimeout(() => showOverlay('win'), 800);
   } else if (noAmmo && !hitEnough) {
     gs.lives--;
-    gs.done = true;
-    sfxFail();
-    setTimeout(() => showOverlay(gs.lives <= 0 ? 'fail' : 'retry'), 600);
+    gs.done = true; sfxFail();
+    setTimeout(() => showOverlay(gs.lives <= 0 ? 'fail' : 'retry'), 800);
   }
 }
 
 function showOverlay(type) {
-  const gs = gameState;
-  const earned = gs.sessionPoints;
-  document.getElementById('game-overlay').classList.remove('hidden');
+  const gs       = gameState;
+  const earned   = gs.sessionPoints;
   const comboTxt = gs.maxCombo > 1 ? ` · Max Combo x${gs.maxCombo}` : '';
+  document.getElementById('game-overlay').classList.remove('hidden');
   if (type === 'win') {
     document.getElementById('overlay-icon').textContent  = '🎉';
     document.getElementById('overlay-title').textContent = 'Level Tamamlandı!';
     document.getElementById('overlay-msg').textContent   = `+${earned.toLocaleString('tr-TR')} puan${comboTxt}`;
     document.getElementById('overlay-btn').textContent   = 'Sonraki Level →';
-    overlayCallback = async () => { await savePoints(earned); initGameLevel(getLevel(userData.points||0)); };
+    overlayCallback = async () => { await savePoints(earned); initGameLevel(getLevel((userData.points||0))); };
   } else if (type === 'retry') {
     document.getElementById('overlay-icon').textContent  = '😅';
-    document.getElementById('overlay-title').textContent = 'Yeterli Bardak Vurulmadı!';
+    document.getElementById('overlay-title').textContent = 'Yeterli Bardak Yıkılmadı!';
     document.getElementById('overlay-msg').textContent   = `${gs.cupsHit}/${gs.cfg.targetCups} bardak · ❤️ ${gs.lives} can · +${earned} puan`;
     document.getElementById('overlay-btn').textContent   = 'Tekrar Dene';
     overlayCallback = async () => { await savePoints(earned); initGameLevel(gs.level); };
@@ -998,105 +1060,108 @@ async function savePoints(pts) {
     const newLevel = getLevel(newTotal);
     const newShots = (userData.totalShots||0) + (gameState?.totalShots||0);
     await db.collection('users').doc(currentUser.uid).update({
-      points: firebase.firestore.FieldValue.increment(pts),
-      level: newLevel,
+      points:     firebase.firestore.FieldValue.increment(pts),
+      level:      newLevel,
       totalShots: firebase.firestore.FieldValue.increment(gameState?.totalShots||0)
     });
-    userData.points = newTotal;
-    userData.level  = newLevel;
+    userData.points     = newTotal;
+    userData.level      = newLevel;
     userData.totalShots = newShots;
     updateNavUI();
   } catch(e) { console.error('Save error:', e); }
 }
 
 // ============================================================
-//  3D RENDERER (Software Raycast / Perspective Projection)
+//  3D PROJECTION HELPERS
 // ============================================================
-function project3D(wx, wy, wz, canvas) {
-  const relZ = -wz; // world Z is negative = forward
+function project3DtoScreen(wx, wy, wz, canvas) {
+  // Camera is at origin looking down -Z
+  const relZ = -wz;
   if (relZ <= CAM.near) return null;
   const fovRad = (CAM.fov * Math.PI) / 180;
-  const f = (canvas.width * 0.5) / Math.tan(fovRad * 0.5);
-  const sx = (wx / relZ) * f + canvas.width * 0.5;
+  const f  = (canvas.height * 0.5) / Math.tan(fovRad * 0.5);
+  const sx = (wx / relZ) * f + canvas.width  * 0.5;
   const sy = (-wy / relZ) * f + canvas.height * 0.5;
-  const scale = f / relZ;
-  return { sx, sy, scale, depth: relZ };
+  return { sx, sy, scale: f / relZ, depth: relZ };
 }
 
+// ============================================================
+//  RENDERER
+// ============================================================
 function render3D() {
   const gs = gameState;
   const { ctx, canvas, cups, projectile, particles } = gs;
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // ---- SKY GRADIENT ----
-  const sky = ctx.createLinearGradient(0,0,0,canvas.height);
-  sky.addColorStop(0,'#0a0820');
-  sky.addColorStop(0.5,'#1a1445');
-  sky.addColorStop(1,'#2d2060');
+  // ---- SKY ----
+  const sky = ctx.createLinearGradient(0,0,0,canvas.height*0.62);
+  sky.addColorStop(0,'#060412');
+  sky.addColorStop(1,'#1a1445');
   ctx.fillStyle = sky;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillRect(0,0,canvas.width, canvas.height*0.62);
 
   // ---- FLOOR ----
-  const horizonY = canvas.height * 0.55;
+  const horizonY = canvas.height * 0.62;
   const floor = ctx.createLinearGradient(0, horizonY, 0, canvas.height);
   floor.addColorStop(0,'#1a1630');
   floor.addColorStop(1,'#0d0b1a');
   ctx.fillStyle = floor;
   ctx.fillRect(0, horizonY, canvas.width, canvas.height - horizonY);
 
-  // Floor grid lines (perspective)
-  ctx.strokeStyle = 'rgba(100,80,200,0.15)';
-  ctx.lineWidth = 1;
-  for (let i = 1; i <= 12; i++) {
-    const t = i / 12;
-    const y = horizonY + (canvas.height - horizonY) * (1 - Math.pow(1-t, 2));
-    const w = canvas.width * t * 1.5;
+  // Floor grid
+  ctx.strokeStyle = 'rgba(100,80,200,0.18)';
+  ctx.lineWidth   = 1;
+  for (let i = 1; i <= 14; i++) {
+    const t = i / 14;
+    const y = horizonY + (canvas.height - horizonY) * Math.pow(t, 1.8);
+    const w = canvas.width * t * 2.2;
     ctx.beginPath();
     ctx.moveTo(canvas.width/2 - w/2, y);
     ctx.lineTo(canvas.width/2 + w/2, y);
     ctx.stroke();
   }
-  for (let i = -6; i <= 6; i++) {
+  for (let i = -8; i <= 8; i++) {
     ctx.beginPath();
-    ctx.moveTo(canvas.width/2 + i*(canvas.width/10), canvas.height);
+    ctx.moveTo(canvas.width/2 + i*(canvas.width/7), canvas.height + 20);
     ctx.lineTo(canvas.width/2, horizonY);
     ctx.stroke();
   }
 
   // Stars
-  ctx.fillStyle = 'rgba(255,255,200,0.6)';
-  for (let i = 0; i < 40; i++) {
-    const sx = (Math.sin(i * 137.5) * 0.5 + 0.5) * canvas.width;
-    const sy = (Math.sin(i * 97.3) * 0.5 + 0.5) * horizonY;
-    const r = 0.5 + Math.sin(gs.frameCount * 0.04 + i) * 0.3;
-    ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI*2); ctx.fill();
+  for (let i = 0; i < 50; i++) {
+    const sx    = (Math.sin(i*137.5)*0.5+0.5)*canvas.width;
+    const sy    = (Math.sin(i*97.3)*0.5+0.5)*horizonY*0.95;
+    const r     = 0.4 + Math.sin(gs.frameCount*0.04+i)*0.35;
+    ctx.fillStyle = `rgba(255,255,200,${0.4+Math.sin(gs.frameCount*0.03+i*2)*0.3})`;
+    ctx.beginPath(); ctx.arc(sx,sy,r,0,Math.PI*2); ctx.fill();
   }
 
-  // ---- CUPS (sorted back-to-front) ----
-  const sortedCups = [...cups].filter(c => c.alive)
-    .sort((a, b) => a.z - b.z);
+  // ---- CUPS (back to front) ----
+  const allCups = cups.filter(c => c.alive || c.flying)
+    .sort((a,b) => a.z - b.z);
 
-  sortedCups.forEach(cup => {
-    const proj = project3D(cup.x, cup.y, cup.z, canvas);
-    if (!proj || proj.depth > CAM.far) return;
-    const w = cup.w * proj.scale * 80;
-    const h = cup.h * proj.scale * 80;
-    const x = proj.sx - w/2;
-    const y = proj.sy - h/2;
-    draw3DCup(ctx, x, y, w, h, cup.color, proj.depth);
+  allCups.forEach(cup => {
+    const proj = project3DtoScreen(cup.x, cup.y, cup.z, canvas);
+    if (!proj || proj.depth > CAM.far || proj.depth <= 0) return;
+    const w = cup.w * proj.scale * 100;
+    const h = cup.h * proj.scale * 100;
+    draw3DCup(ctx, proj.sx - w/2, proj.sy - h/2, w, h, cup.color, proj.depth, cup.alive);
   });
 
   // ---- PARTICLES ----
   particles.forEach(p => {
-    const proj = project3D(p.x, p.y, p.z, canvas);
-    if (!proj) return;
+    const proj = project3DtoScreen(p.x, p.y, p.z, canvas);
+    if (!proj || proj.depth <= 0) return;
     ctx.globalAlpha = p.alpha;
     if (p.text) {
-      ctx.font = `bold ${Math.max(10, 22*proj.scale*8)}px Boogaloo, cursive`;
+      const fs = Math.max(11, 20 * proj.scale * 10);
+      ctx.font = `bold ${fs}px Boogaloo, cursive`;
       ctx.fillStyle = p.color;
+      ctx.textAlign = 'center';
       ctx.fillText(p.text, proj.sx, proj.sy);
+      ctx.textAlign = 'left';
     } else {
-      const r = Math.max(1, p.r * proj.scale * 80);
+      const r = Math.max(1.5, p.r * proj.scale * 80);
       ctx.beginPath(); ctx.arc(proj.sx, proj.sy, r, 0, Math.PI*2);
       ctx.fillStyle = p.color; ctx.fill();
     }
@@ -1105,246 +1170,288 @@ function render3D() {
 
   // ---- PROJECTILE TRAIL ----
   if (projectile) {
-    projectile.trail.forEach((pt, i) => {
-      const proj = project3D(pt.x, pt.y, pt.z, canvas);
-      if (!proj) return;
-      const alpha = (i / projectile.trail.length) * 0.6;
-      const r = Math.max(2, (4 + i*0.5) * proj.scale * 10);
+    projectile.trail.forEach((pt,i) => {
+      const proj = project3DtoScreen(pt.x, pt.y, pt.z, canvas);
+      if (!proj || proj.depth <= 0) return;
+      const alpha = (i / projectile.trail.length) * 0.55;
+      const r     = Math.max(2, (3 + i*0.5) * proj.scale * 10);
       ctx.globalAlpha = alpha;
       ctx.beginPath(); ctx.arc(proj.sx, proj.sy, r, 0, Math.PI*2);
       ctx.fillStyle = '#6dd5fa'; ctx.fill();
     });
     ctx.globalAlpha = 1;
-
-    // Ball
-    const bp = project3D(projectile.x, projectile.y, projectile.z, canvas);
-    if (bp) {
-      const br = Math.max(4, projectile.r * bp.scale * 80);
+    const bp = project3DtoScreen(projectile.x, projectile.y, projectile.z, canvas);
+    if (bp && bp.depth > 0) {
+      const br = Math.max(5, projectile.r * bp.scale * 100);
       drawBall3D(ctx, bp.sx, bp.sy, br);
     }
   }
 
-  // ---- SLING (3D first-person view) ----
-  drawSling3D(ctx, canvas, isDragging, dragCurrent, dragStart);
+  // ---- SLING (first-person, fixed bottom) ----
+  drawSling3D(ctx, canvas);
 
-  // ---- CROSSHAIR ----
+  // ---- CROSSHAIR (fixed centre of screen) ----
   drawCrosshair(ctx, canvas);
 
-  // ---- PROGRESS BAR ----
+  // ---- HUD progress ----
   const pct = gs.cupsHit / gs.cfg.targetCups;
   document.getElementById('game-progress').style.width = Math.min(pct*100,100) + '%';
 }
 
-function draw3DCup(ctx, x, y, w, h, color, depth) {
-  const alpha = Math.max(0.3, 1 - depth/CAM.far*0.5);
-  ctx.globalAlpha = alpha;
+// ---- Cup drawing ----
+function draw3DCup(ctx, x, y, w, h, color, depth, alive) {
+  if (w < 2 || h < 2) return;
+  const alpha = Math.max(0.25, 1 - depth / CAM.far * 0.4);
+  ctx.globalAlpha = alive ? alpha : alpha * 0.55;
 
-  // Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  // Shadow ellipse on floor
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
   ctx.beginPath();
-  ctx.ellipse(x+w/2, y+h+2, w*0.5, h*0.08, 0, 0, Math.PI*2);
+  ctx.ellipse(x+w/2, y+h+3, w*0.48, h*0.07, 0, 0, Math.PI*2);
   ctx.fill();
 
-  // Cup body (trapezoid)
+  // Cup body
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(x + w*0.08, y);
-  ctx.lineTo(x + w*0.92, y);
-  ctx.lineTo(x + w, y + h);
-  ctx.lineTo(x, y + h);
+  ctx.moveTo(x + w*0.1, y);
+  ctx.lineTo(x + w*0.9, y);
+  ctx.lineTo(x + w,     y + h);
+  ctx.lineTo(x,         y + h);
   ctx.closePath();
   ctx.fill();
 
   // Rim
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.fillRect(x + w*0.05, y, w*0.9, h*0.08);
+  ctx.fillStyle = 'rgba(255,255,255,0.38)';
+  ctx.fillRect(x + w*0.05, y, w*0.9, h*0.09);
 
   // Shine stripe
-  const shine = ctx.createLinearGradient(x, y, x+w*0.3, y);
-  shine.addColorStop(0,'rgba(255,255,255,0.25)');
+  const shine = ctx.createLinearGradient(x, y, x+w*0.35, y);
+  shine.addColorStop(0,'rgba(255,255,255,0.28)');
   shine.addColorStop(1,'rgba(255,255,255,0)');
   ctx.fillStyle = shine;
   ctx.beginPath();
-  ctx.moveTo(x+w*0.08, y+h*0.1);
-  ctx.lineTo(x+w*0.22, y+h*0.1);
-  ctx.lineTo(x+w*0.18, y+h*0.85);
-  ctx.lineTo(x+w*0.05, y+h*0.85);
+  ctx.moveTo(x+w*0.1,  y+h*0.1);
+  ctx.lineTo(x+w*0.24, y+h*0.1);
+  ctx.lineTo(x+w*0.19, y+h*0.88);
+  ctx.lineTo(x+w*0.05, y+h*0.88);
   ctx.closePath(); ctx.fill();
 
-  // 3D side face
-  ctx.fillStyle = `rgba(0,0,0,0.22)`;
+  // Right face 3D
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
   ctx.beginPath();
-  ctx.moveTo(x+w*0.92, y);
-  ctx.lineTo(x+w*0.92+w*0.06, y+h*0.12);
-  ctx.lineTo(x+w+w*0.06, y+h);
-  ctx.lineTo(x+w, y+h);
+  ctx.moveTo(x+w*0.9, y);
+  ctx.lineTo(x+w*0.9+w*0.07, y+h*0.1);
+  ctx.lineTo(x+w+w*0.07,     y+h);
+  ctx.lineTo(x+w,            y+h);
   ctx.closePath(); ctx.fill();
+
+  // Bottom base
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(x + w*0.05, y+h - h*0.07, w*0.9, h*0.07);
 
   ctx.globalAlpha = 1;
 }
 
 function drawBall3D(ctx, x, y, r) {
-  const g = ctx.createRadialGradient(x-r*0.3, y-r*0.3, r*0.1, x, y, r);
-  g.addColorStop(0,'#a8edff');
-  g.addColorStop(0.4,'#3498db');
-  g.addColorStop(1,'#1a4a7a');
-  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+  const g = ctx.createRadialGradient(x-r*0.3, y-r*0.35, r*0.08, x, y, r);
+  g.addColorStop(0,'#c8f0ff');
+  g.addColorStop(0.35,'#3498db');
+  g.addColorStop(1,'#0d2a4a');
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
   ctx.fillStyle = g; ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1; ctx.stroke();
-  // Shine
-  ctx.beginPath(); ctx.arc(x-r*0.3, y-r*0.3, r*0.28, 0, Math.PI*2);
-  ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth=1; ctx.stroke();
+  // Highlight
+  ctx.beginPath(); ctx.arc(x-r*0.32, y-r*0.32, r*0.26, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fill();
 }
 
-function drawSling3D(ctx, canvas, dragging, dragCur, dragSt) {
-  const cx = canvas.width / 2;
-  const cy = canvas.height;
-  const forkH = canvas.height * 0.28;
-  const armW  = canvas.width * 0.04;
-  const forkW = canvas.width * 0.09;
+// ============================================================
+//  SLING RENDERER  (FPS first-person view, fixed to bottom)
+// ============================================================
+function drawSling3D(ctx, canvas) {
+  const W  = canvas.width;
+  const H  = canvas.height;
 
-  // Post shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  // Anchor: where the ball rests in screen space
+  const sp = project3DtoScreen(SLING_ANCHOR.x, SLING_ANCHOR.y, SLING_ANCHOR.z, canvas);
+  const anchorX = sp ? sp.sx : W * 0.5;
+  const anchorY = sp ? sp.sy : H * 0.72;
+
+  // Fork tip positions in screen (relative to anchor)
+  const forkSpread = W * 0.075;
+  const forkLiftY  = H * 0.055;
+  const leftTipX   = anchorX - forkSpread;
+  const leftTipY   = anchorY - forkLiftY;
+  const rightTipX  = anchorX + forkSpread;
+  const rightTipY  = anchorY - forkLiftY;
+
+  // Handle bottom (off-screen bottom)
+  const handleX = anchorX;
+  const handleY = H + 60;
+
+  // ---- Handle / post ----
+  const handleW = W * 0.045;
+  const postGrad = ctx.createLinearGradient(handleX - handleW/2, 0, handleX + handleW/2, 0);
+  postGrad.addColorStop(0,'#3a1a08');
+  postGrad.addColorStop(0.4,'#7a3a10');
+  postGrad.addColorStop(1,'#3a1a08');
+  ctx.fillStyle  = postGrad;
   ctx.beginPath();
-  ctx.ellipse(cx, cy-2, armW*1.2, armW*0.4, 0, 0, Math.PI*2);
+  ctx.moveTo(handleX - handleW/2, handleY);
+  ctx.lineTo(handleX + handleW/2, handleY);
+  ctx.lineTo(anchorX + handleW*0.35, anchorY + 10);
+  ctx.lineTo(anchorX - handleW*0.35, anchorY + 10);
+  ctx.closePath();
   ctx.fill();
 
-  // Main post
-  const postGrad = ctx.createLinearGradient(cx-armW/2, 0, cx+armW/2, 0);
-  postGrad.addColorStop(0,'#5a2d0c');
-  postGrad.addColorStop(0.4,'#8b4513');
-  postGrad.addColorStop(1,'#4a1f08');
-  ctx.fillStyle = postGrad;
-  ctx.fillRect(cx - armW/2, cy - forkH*1.1, armW, forkH*1.1);
-
-  // Wood grain lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 5; i++) {
+  // Wood grain
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+  ctx.lineWidth   = 1.2;
+  for (let i = 0; i < 4; i++) {
+    const gx = handleX - handleW/2 + i * (handleW/4);
     ctx.beginPath();
-    ctx.moveTo(cx - armW/2 + i*(armW/5), cy);
-    ctx.lineTo(cx - armW/2 + i*(armW/5), cy - forkH);
+    ctx.moveTo(gx, handleY);
+    ctx.lineTo(anchorX - handleW*0.35 + i*(handleW*0.7/4), anchorY+10);
     ctx.stroke();
   }
 
-  // Fork left arm
-  const forkY = cy - forkH;
-  const forkGrad = ctx.createLinearGradient(cx-forkW, forkY-30, cx, forkY);
-  forkGrad.addColorStop(0,'#6b3a1f');
-  forkGrad.addColorStop(1,'#8b4513');
-  ctx.strokeStyle = forkGrad;
-  ctx.lineWidth = armW * 0.75;
-  ctx.lineCap = 'round';
+  // ---- Left fork arm ----
+  const armW = W * 0.022;
+  const forkGradL = ctx.createLinearGradient(leftTipX, leftTipY, anchorX, anchorY);
+  forkGradL.addColorStop(0,'#5a2800'); forkGradL.addColorStop(1,'#8b4513');
+  ctx.strokeStyle = forkGradL;
+  ctx.lineWidth   = armW;
+  ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(cx, forkY + armW);
-  ctx.lineTo(cx - forkW, forkY - 24);
+  ctx.moveTo(anchorX - handleW*0.2, anchorY + 5);
+  ctx.quadraticCurveTo(anchorX - forkSpread*0.5, anchorY - forkLiftY*0.3, leftTipX, leftTipY);
   ctx.stroke();
 
-  // Fork right arm
+  // ---- Right fork arm ----
+  const forkGradR = ctx.createLinearGradient(rightTipX, rightTipY, anchorX, anchorY);
+  forkGradR.addColorStop(0,'#5a2800'); forkGradR.addColorStop(1,'#8b4513');
+  ctx.strokeStyle = forkGradR;
   ctx.beginPath();
-  ctx.moveTo(cx, forkY + armW);
-  ctx.lineTo(cx + forkW, forkY - 24);
+  ctx.moveTo(anchorX + handleW*0.2, anchorY + 5);
+  ctx.quadraticCurveTo(anchorX + forkSpread*0.5, anchorY - forkLiftY*0.3, rightTipX, rightTipY);
   ctx.stroke();
 
-  // Fork tips (dark)
-  ctx.fillStyle = '#4a1f08';
-  ctx.beginPath(); ctx.arc(cx - forkW, forkY - 24, armW*0.45, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx + forkW, forkY - 24, armW*0.45, 0, Math.PI*2); ctx.fill();
+  // Fork tip caps
+  ctx.fillStyle = '#3a1208';
+  ctx.beginPath(); ctx.arc(leftTipX,  leftTipY,  armW*0.55, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(rightTipX, rightTipY, armW*0.55, 0, Math.PI*2); ctx.fill();
 
-  // Ball rest position
-  const ballX = cx;
-  const ballY = forkY - 24;
-  const ballR = canvas.width * 0.028;
+  // ---- Ball / drag position ----
+  const ballR  = W * 0.03;
+  const ballX  = isDragging ? anchorX + dragOffX : anchorX;
+  const ballY  = isDragging ? anchorY + dragOffY : anchorY;
 
-  // Rubber bands (when dragging)
-  if (dragging) {
-    ctx.strokeStyle = '#c8860a';
-    ctx.lineWidth = canvas.width * 0.007;
-    ctx.lineCap = 'round';
+  if (isDragging || (!gameState.launched && gameState.balls > 0 && !gameState.done)) {
+    // Rubber bands
+    const bandColor = isDragging ? '#c08010' : '#a07030';
+    const bandW     = W * 0.006;
+    ctx.strokeStyle = bandColor;
+    ctx.lineWidth   = bandW;
+    ctx.lineCap     = 'round';
+
     // Left band
     ctx.beginPath();
-    ctx.moveTo(cx - forkW, forkY - 24);
+    ctx.moveTo(leftTipX, leftTipY);
     ctx.quadraticCurveTo(
-      (cx - forkW + dragCur.x)/2, (forkY - 24 + dragCur.y)/2 + 10,
-      dragCur.x, dragCur.y
+      (leftTipX + ballX)/2 + 3, (leftTipY + ballY)/2 + (isDragging ? 8 : 2),
+      ballX, ballY
     );
     ctx.stroke();
+
     // Right band
     ctx.beginPath();
-    ctx.moveTo(cx + forkW, forkY - 24);
+    ctx.moveTo(rightTipX, rightTipY);
     ctx.quadraticCurveTo(
-      (cx + forkW + dragCur.x)/2, (forkY - 24 + dragCur.y)/2 + 10,
-      dragCur.x, dragCur.y
+      (rightTipX + ballX)/2 - 3, (rightTipY + ballY)/2 + (isDragging ? 8 : 2),
+      ballX, ballY
     );
     ctx.stroke();
 
-    // Stretch glow
-    const stretch = Math.hypot(dragCur.x - dragSt.x, dragCur.y - dragSt.y) / MAX_DRAG;
-    ctx.strokeStyle = `rgba(247,180,50,${stretch*0.3})`;
-    ctx.lineWidth = canvas.width * 0.012;
-    ctx.beginPath();
-    ctx.moveTo(cx - forkW, forkY - 24);
-    ctx.lineTo(dragCur.x, dragCur.y);
-    ctx.lineTo(cx + forkW, forkY - 24);
-    ctx.stroke();
+    // Stretch glow when dragging
+    if (isDragging) {
+      const stretch = Math.hypot(dragOffX, dragOffY) / MAX_PULL;
+      if (stretch > 0.05) {
+        ctx.strokeStyle = `rgba(247,180,50,${stretch*0.35})`;
+        ctx.lineWidth   = bandW * 2.5;
+        ctx.beginPath();
+        ctx.moveTo(leftTipX, leftTipY);
+        ctx.lineTo(ballX, ballY);
+        ctx.lineTo(rightTipX, rightTipY);
+        ctx.stroke();
 
-    // Ball at drag position
-    drawBall3D(ctx, dragCur.x, dragCur.y, ballR);
+        // Trajectory preview dots
+        drawTrajectoryDots(ctx, canvas, ballX, ballY, anchorX, anchorY);
+      }
+    }
 
-    // Trajectory preview
-    drawTrajectoryPreview(ctx, canvas, dragCur, dragSt, ballR);
-  } else if (!gameState?.launched && gameState?.balls > 0 && !gameState?.done) {
-    // Idle rubber bands
-    ctx.strokeStyle = '#a07030';
-    ctx.lineWidth = canvas.width * 0.005;
-    ctx.beginPath(); ctx.moveTo(cx - forkW, forkY-24); ctx.lineTo(ballX, ballY); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx + forkW, forkY-24); ctx.lineTo(ballX, ballY); ctx.stroke();
+    // Draw ball
     drawBall3D(ctx, ballX, ballY, ballR);
 
-    // Hint pulse
-    if (gameState.frameCount % 90 < 45) {
-      ctx.fillStyle = 'rgba(247,201,72,0.7)';
-      ctx.font = `bold ${canvas.width*0.032}px Boogaloo,cursive`;
-      ctx.textAlign = 'center';
-      ctx.fillText('↕ Aşağı çek & bırak!', cx, ballY - ballR - 12);
-      ctx.textAlign = 'left';
+    // Idle hint
+    if (!isDragging && gameState.frameCount % 90 < 50) {
+      ctx.fillStyle  = 'rgba(247,201,72,0.8)';
+      ctx.font       = `bold ${W*0.033}px Boogaloo, cursive`;
+      ctx.textAlign  = 'center';
+      ctx.fillText('↙ Çek & Bırak!', anchorX, ballY - ballR - 14);
+      ctx.textAlign  = 'left';
     }
   }
+
+  // Reset lineCap
+  ctx.lineCap = 'butt';
 }
 
-function drawTrajectoryPreview(ctx, canvas, dragCur, dragSt, ballR) {
-  const dx = dragSt.x - dragCur.x;
-  const dy = dragSt.y - dragCur.y;
-  const speed = Math.hypot(dx, dy);
-  const power = (speed / MAX_DRAG) * 14;
-  const normX = dx / speed;
-  const normY = dy / speed;
-  // Simple 2D arc preview
-  ctx.setLineDash([4, 8]);
-  ctx.strokeStyle = 'rgba(247,201,72,0.35)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  let px = dragCur.x, py = dragCur.y;
-  let pvx = normX * power * 1.2, pvy = normY * power;
-  for (let t = 0; t < 22; t++) {
-    pvy += 0.6;
-    px += pvx * 0.5; py += pvy * 0.5;
-    if (t === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-    if (py > canvas.height + 20) break;
+function drawTrajectoryDots(ctx, canvas, ballX, ballY, anchorX, anchorY) {
+  // pullDir: direction of pull (from anchor to ball)
+  const dx    = ballX - anchorX;
+  const dy    = ballY - anchorY;
+  const len   = Math.hypot(dx, dy);
+  const t     = len / MAX_PULL;
+  const speed = (6 + gameState.ph * 0.5) * t;
+
+  // Launch direction is opposite the pull
+  let lvx = -dx / len * speed * 1.1;
+  let lvy = -dy / len * speed * 0.85;
+  const gravity = 0.55;
+
+  let px = ballX, py = ballY;
+  ctx.fillStyle = 'rgba(247,201,72,0.55)';
+  for (let i = 0; i < 24; i++) {
+    lvy += gravity;
+    px  += lvx * 0.45;
+    py  += lvy * 0.45;
+    if (py > canvas.height + 20 || px < -50 || px > canvas.width + 50) break;
+    const r = Math.max(1.5, 3 - i * 0.1);
+    ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI*2); ctx.fill();
   }
-  ctx.stroke();
-  ctx.setLineDash([]);
 }
 
 function drawCrosshair(ctx, canvas) {
-  const cx = canvas.width/2, cy = canvas.height * 0.46;
-  const size = canvas.width * 0.018;
-  ctx.strokeStyle = 'rgba(247,201,72,0.7)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(cx-size,cy); ctx.lineTo(cx+size,cy); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx,cy-size); ctx.lineTo(cx,cy+size); ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx,cy,size*0.5,0,Math.PI*2); ctx.stroke();
+  const cx   = canvas.width  * 0.5;
+  const cy   = canvas.height * 0.42;  // slightly above center (looking toward cups)
+  const size = canvas.width  * 0.019;
+  const gap  = size * 0.28;
+
+  ctx.strokeStyle = 'rgba(247,220,72,0.85)';
+  ctx.lineWidth   = 1.8;
+  ctx.lineCap     = 'round';
+
+  // Horizontal
+  ctx.beginPath(); ctx.moveTo(cx-size, cy); ctx.lineTo(cx-gap, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+gap,  cy); ctx.lineTo(cx+size, cy); ctx.stroke();
+  // Vertical
+  ctx.beginPath(); ctx.moveTo(cx, cy-size); ctx.lineTo(cx, cy-gap); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, cy+gap);  ctx.lineTo(cx, cy+size); ctx.stroke();
+  // Dot
+  ctx.fillStyle = 'rgba(247,220,72,0.9)';
+  ctx.beginPath(); ctx.arc(cx, cy, 1.8, 0, Math.PI*2); ctx.fill();
+
+  ctx.lineCap = 'butt';
 }
 
 function updateGameHUD() {
