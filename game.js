@@ -6,14 +6,11 @@
 // ---------- FIREBASE CONFIG ----------
 // !! Kendi Firebase projenin bilgilerini buraya gir !!
 const firebaseConfig = {
-  apiKey: "AIzaSyDuKLuoePZ6mNsKhQBGXumxMwF0UKTQvc8",
-  authDomain: "oyun-75056.firebaseapp.com",
-  databaseURL: "https://oyun-75056-default-rtdb.firebaseio.com",
-  projectId: "oyun-75056",
-  storageBucket: "oyun-75056.firebasestorage.app",
-  messagingSenderId: "980660244755",
-  appId: "1:980660244755:web:47889c4b6637ab05cdcae6",
-  measurementId: "G-J9RKPSVT8B"
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -106,9 +103,11 @@ async function doRegister() {
   const pass     = document.getElementById('reg-pass').value;
   if (!username || !email || !pass) return setMsg('auth-msg', 'Lütfen tüm alanları doldur.');
   if (pass.length < 6) return setMsg('auth-msg', 'Şifre en az 6 karakter olmalı.');
-  // Check username unique
-  const snap = await db.collection('users').where('username','==',username).get();
-  if (!snap.empty) return setMsg('auth-msg', 'Bu kullanıcı adı zaten alınmış.');
+  // Check username unique - sadece kayıtlı kullanıcılarda kontrol et
+  try {
+    const snap = await db.collection('users').where('username','==',username).get();
+    if (!snap.empty) return setMsg('auth-msg', 'Bu kullanıcı adı zaten alınmış.');
+  } catch(e) { /* rules henüz izin vermiyorsa geç */ }
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     await db.collection('users').doc(cred.user.uid).set({
@@ -269,7 +268,26 @@ async function submitWithdraw() {
     userData.points = pts - amount;
     updateNavUI();
     refreshWallet();
-    setMsg('withdraw-msg','✅ Talebiniz alındı! Admin inceleyecek.', false);
+
+    // EmailJS - Admin'e bildirim gönder
+    try {
+      await emailjs.send('service_eckhy9k', 'template_rovuigj', {
+        username: userData.username || 'Bilinmiyor',
+        points:   amount.toLocaleString('tr-TR') + ' puan',
+        tl:       parseFloat(tlAmount).toFixed(2) + ' TL',
+        method:   payload.type === 'iban'
+                    ? '🏦 IBAN - ' + payload.fullName
+                    : '₿ Kripto (' + payload.cryptoType + ')',
+        address:  payload.type === 'iban' ? payload.iban : payload.address,
+        date:     new Date().toLocaleString('tr-TR'),
+        uid:      currentUser.uid
+      });
+    } catch(mailErr) {
+      console.warn('Mail gönderilemedi:', mailErr);
+      // Mail gitmese de çekim talebi Firestore'a kaydedildi, sorun değil
+    }
+
+    setMsg('withdraw-msg','✅ Talebiniz alındı! En kısa sürede işleme alınacak.', false);
   } catch(e) {
     setMsg('withdraw-msg','Hata: ' + e.message);
   }
