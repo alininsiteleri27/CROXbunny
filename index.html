@@ -9,6 +9,28 @@
 </head>
 <body>
 
+<!-- ======== LEAGUE PAY NOTIFICATION ======== -->
+<div id="league-notif" class="league-notif">
+  <div class="league-notif-inner">
+    <span class="league-notif-icon">⚡</span>
+    <div>
+      <div class="league-notif-title">Lig Payı Geldi!</div>
+      <div class="league-notif-pts">+<span id="league-notif-pts">0</span> puan</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== BOX RESULT MODAL ======== -->
+<div id="box-result-modal" class="box-modal" onclick="closeBoxModal()">
+  <div class="box-modal-inner" onclick="event.stopPropagation()">
+    <div id="box-result-content"></div>
+    <button class="btn-main" onclick="closeBoxModal()" style="margin-top:1rem">Harika! 🎉</button>
+  </div>
+</div>
+
+<!-- ======== COMBO DISPLAY ======== -->
+<div id="combo-display" class="combo-display"></div>
+
 <!-- ======== AUTH SCREEN ======== -->
 <div id="auth-screen" class="screen active">
   <div class="auth-bg-anim">
@@ -56,16 +78,21 @@
         <div class="nav-level" id="nav-level">⚡ Lv.1</div>
       </div>
     </div>
-    <div class="wallet-pill" onclick="showScreen('wallet-screen')">
-      <span>💰</span>
-      <span id="nav-points">0</span>
-      <span class="puan-text">puan</span>
+    <div class="top-center-pills">
+      <div class="wallet-pill" onclick="showScreen('wallet-screen')">
+        <span>💰</span>
+        <span id="nav-points">0</span>
+      </div>
+      <div class="ph-pill">
+        <span id="nav-ph">pH 1.0</span>
+      </div>
     </div>
     <div class="top-right" onclick="showScreen('leaderboard-screen')">
       <div class="rank-icon">🏆</div>
       <div class="nav-rank" id="nav-rank">#-</div>
     </div>
   </div>
+
   <div class="menu-center">
     <div class="menu-logo-wrap">
       <div class="menu-logo">🏹</div>
@@ -76,11 +103,14 @@
       <span>▶</span> OYNA
     </button>
   </div>
+
   <div class="bottom-bar">
     <button class="bar-btn" onclick="toggleSound()">
       <span id="sound-icon">🔊</span><span>Ses</span>
     </button>
-    <div class="bar-spacer"></div>
+    <button class="bar-btn shop-bar-btn" onclick="showScreen('shop-screen')">
+      <span>🛒</span><span>Mağaza</span>
+    </button>
     <button class="bar-btn" onclick="showScreen('settings-screen')">
       <span>⚙️</span><span>Ayarlar</span>
     </button>
@@ -95,6 +125,7 @@
       <span class="g-stat">❤️ <span id="g-lives">3</span></span>
       <span class="g-stat">⭐ <span id="g-points">0</span></span>
       <span class="g-stat">🏅 Lv.<span id="g-level">1</span></span>
+      <span class="g-stat ph-stat">⚡ <span id="g-ph">pH 1.0</span></span>
     </div>
     <div class="game-balls">🔵 <span id="g-balls">5</span></div>
   </div>
@@ -108,6 +139,35 @@
       <h2 id="overlay-title">Level Tamamlandı!</h2>
       <p id="overlay-msg">+150 puan kazandın!</p>
       <button class="btn-main" id="overlay-btn" onclick="overlayAction()">Devam Et</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== SHOP SCREEN ======== -->
+<div id="shop-screen" class="screen">
+  <div class="inner-top">
+    <button class="back-btn" onclick="showScreen('menu-screen')">← Geri</button>
+    <h2>🛒 Mağaza</h2>
+    <div id="shop-ph" class="shop-ph-badge">pH 1.0</div>
+  </div>
+  <div class="shop-body">
+    <!-- Mystery Boxes -->
+    <div class="shop-section">
+      <div class="shop-section-title">🎁 Gizem Kutuları</div>
+      <div class="shop-section-sub">Rastgele sapan parçası kazan · pH gücünü artır</div>
+      <div id="shop-boxes" class="shop-boxes"></div>
+    </div>
+
+    <!-- Parts Filter -->
+    <div class="shop-section">
+      <div class="shop-section-title">⚙️ Sapan Parçaları (110 Parça)</div>
+      <div class="shop-filter-bar">
+        <button class="shop-filter-btn active" data-filter="all" onclick="filterShop('all')">Tümü</button>
+        <button class="shop-filter-btn" data-filter="fork" onclick="filterShop('fork')">🔱 Çatal</button>
+        <button class="shop-filter-btn" data-filter="arm" onclick="filterShop('arm')">⚙️ Kol</button>
+        <button class="shop-filter-btn" data-filter="band" onclick="filterShop('band')">🎯 Bant</button>
+      </div>
+      <div id="shop-parts-list" class="shop-parts-list"></div>
     </div>
   </div>
 </div>
@@ -127,9 +187,10 @@
       <div class="pstat-card"><div class="pstat-val" id="ps-points">0</div><div class="pstat-lbl">Puan</div></div>
       <div class="pstat-card"><div class="pstat-val" id="ps-shots">0</div><div class="pstat-lbl">Atış</div></div>
       <div class="pstat-card"><div class="pstat-val" id="ps-rank">#-</div><div class="pstat-lbl">Sıra</div></div>
+      <div class="pstat-card pstat-ph"><div class="pstat-val" id="ps-ph">1.0</div><div class="pstat-lbl">⚡ pH Gücü</div></div>
     </div>
     <div class="level-progress-wrap">
-      <div class="level-progress-label">Sonraki levele: <span id="next-level-pts">-</span> puan</div>
+      <div class="level-progress-label">Sonraki levele: <span id="next-level-pts">-</span></div>
       <div class="level-bar-bg"><div class="level-bar-fill" id="level-fill"></div></div>
     </div>
     <button class="btn-danger" onclick="doLogout()">🚪 Çıkış Yap</button>
@@ -147,7 +208,7 @@
       <div class="wb-label">Toplam Puanın</div>
       <div class="wb-points" id="w-points">0</div>
       <div class="wb-tl">≈ <span id="w-tl">0.00</span> TL</div>
-      <div class="wb-info">1.000 puan = 10 TL · Min. çekim: 5.000 puan</div>
+      <div class="wb-info">100.000 puan = 1 TL · Min. çekim: 500.000 puan (5 TL)</div>
     </div>
     <div class="withdraw-section">
       <h3>Çekim Talebi</h3>
@@ -157,8 +218,8 @@
       </div>
       <div id="wform-iban" class="wform active">
         <input type="text" id="w-iban" class="auth-input" placeholder="TR00 0000 0000 0000 0000 0000 00">
-        <input type="text" id="w-fullname" class="auth-input" placeholder="Ad Soyad (hesap sahibi)">
-        <input type="number" id="w-amount-iban" class="auth-input" placeholder="Kaç puan çekmek istiyorsun?">
+        <input type="text" id="w-fullname" class="auth-input" placeholder="Ad Soyad">
+        <input type="number" id="w-amount-iban" class="auth-input" placeholder="Kaç puan? (min. 500.000)">
       </div>
       <div id="wform-crypto" class="wform">
         <select id="w-crypto-type" class="auth-input">
@@ -167,7 +228,7 @@
           <option value="USDT">Tether (USDT TRC20)</option>
         </select>
         <input type="text" id="w-crypto-addr" class="auth-input" placeholder="Cüzdan adresi">
-        <input type="number" id="w-amount-crypto" class="auth-input" placeholder="Kaç puan çekmek istiyorsun?">
+        <input type="number" id="w-amount-crypto" class="auth-input" placeholder="Kaç puan? (min. 500.000)">
       </div>
       <button class="btn-main" onclick="submitWithdraw()">📤 Talep Gönder</button>
       <div id="withdraw-msg" class="auth-msg"></div>
@@ -218,16 +279,14 @@
       <label class="toggle"><input type="checkbox" id="set-dark" onchange="toggleDark()"><span class="toggle-slider"></span></label>
     </div>
     <div class="settings-info">
-      <p>🏹 SapanKing v1.0</p>
-      <p>1.000 puan = 10 TL</p>
-      <p>Minimum çekim: 5.000 puan (50 TL)</p>
+      <p>🏹 SapanKing v2.0</p>
+      <p>100.000 puan = 1 TL</p>
+      <p>Minimum çekim: 500.000 puan (5 TL)</p>
+      <p>⚡ Lig payı her 20 dakikada bir dağıtılır</p>
+      <p>💡 pH gücün ne kadar yüksekse o kadar çok pay alırsın</p>
     </div>
   </div>
 </div>
-
-<!-- EmailJS -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script>emailjs.init("pLJVDtGI3_TwX9yMd");</script>
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
